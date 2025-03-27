@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">{{ 'Modifier' if field else 'Ajouter' }} un champ personnalisé</h2>
+        </div>
+        <div class="card-body">
+            <form method="POST" class="needs-validation" novalidate>
+                <div class="mb-3">
+                    <label for="entity_type" class="form-label">Type d'entité</label>
+                    <select class="form-select" id="entity_type" name="entity_type" required>
+                        <option value="client" {% if field and field.entity_type == 'client' %}selected{% endif %}>Client</option>
+                        <option value="prestation" {% if field and field.entity_type == 'prestation' %}selected{% endif %}>Prestation</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="name" class="form-label">Nom du champ</label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ field.name if field else '' }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="field_type" class="form-label">Type de champ</label>
+                    <select class="form-select" id="field_type" name="field_type" required>
+                        <option value="text" {% if field and field.field_type == 'text' %}selected{% endif %}>Texte</option>
+                        <option value="number" {% if field and field.field_type == 'number' %}selected{% endif %}>Nombre</option>
+                        <option value="dropdown" {% if field and field.field_type == 'dropdown' %}selected{% endif %}>Menu déroulant</option>
+                        <option value="boolean" {% if field and field.field_type == 'boolean' %}selected{% endif %}>Oui/Non</option>
+                        <option value="textarea" {% if field and field.field_type == 'textarea' %}selected{% endif %}>Zone de texte</option>
+                    </select>
+                </div>
+
+                <div class="mb-3" id="options_container" style="display: none;">
+                    <label for="options" class="form-label">Options (une par ligne)</label>
+                    <textarea class="form-control" id="options" name="options" rows="4">{{ field.get_options()|join('\n') if field else '' }}</textarea>
+                    <small class="form-text text-muted">Pour les menus déroulants, entrez une option par ligne</small>
+                </div>
+
+                {% if current_user.role == 'superadmin' %}
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="is_locked" name="is_locked" {% if field and field.is_locked %}checked{% endif %}>
+                    <label class="form-check-label" for="is_locked">Verrouiller ce champ</label>
+                    <small class="form-text text-muted d-block">Un champ verrouillé ne peut être modifié que par un super administrateur</small>
+                </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('custom_fields_list') }}" class="btn btn-secondary">Annuler</a>
+                    <button type="submit" class="btn btn-primary">{{ 'Modifier' if field else 'Ajouter' }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('field_type').addEventListener('change', function() {
+    const optionsContainer = document.getElementById('options_container');
+    optionsContainer.style.display = this.value === 'dropdown' ? 'block' : 'none';
+});
+
+// Trigger the change event on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('field_type').dispatchEvent(new Event('change'));
+});
+</script>
+{% endblock %}

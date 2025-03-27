@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des utilisateurs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gestion des utilisateurs</h1>
+        {% if current_user.role in ['superadmin', 'admin'] %}
+        <a href="{{ url_for('user_add') }}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>Nouvel utilisateur
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Prénom</th>
+                            <th>Nom d'utilisateur</th>
+                            <th>Rôle</th>
+                            <th>Statut</th>
+                            <th>Véhicule</th>
+                            <th>Dernière connexion</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.nom }}</td>
+                            <td>{{ user.prenom }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>
+                                <span class="badge {% if user.role == 'superadmin' %}bg-danger
+                                                 {% elif user.role == 'admin' %}bg-warning
+                                                 {% elif user.role == 'commercial' %}bg-success
+                                                 {% else %}bg-primary{% endif %}">
+                                    {{ user.role }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if user.statut == 'actif' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ user.statut }}
+                                </span>
+                            </td>
+                            <td>{{ user.vehicule or '-' }}</td>
+                            <td>{{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else 'Jamais' }}</td>
+                            <td>
+                                {% if current_user.role == 'superadmin' or 
+                                   (current_user.role == 'admin' and user.role not in ['superadmin', 'admin']) %}
+                                <a href="{{ url_for('user_edit', id=user.id) }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

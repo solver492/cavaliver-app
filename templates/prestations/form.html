@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">{{ title }}</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {{ form.csrf_token }}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.client_id.label(class="form-label") }}
+                                    {{ form.client_id(class="form-select") }}
+                                    {% if form.client_id.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.client_id.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.transporteur_id.label(class="form-label") }}
+                                    {{ form.transporteur_id(class="form-select") }}
+                                    {% if form.transporteur_id.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.transporteur_id.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.date_debut.label(class="form-label") }}
+                                    {{ form.date_debut(class="form-control", type="datetime-local") }}
+                                    {% if form.date_debut.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.date_debut.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.date_fin.label(class="form-label") }}
+                                    {{ form.date_fin(class="form-control", type="datetime-local") }}
+                                    {% if form.date_fin.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.date_fin.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            {{ form.trajet_depart.label(class="form-label") }}
+                            {{ form.trajet_depart(class="form-control") }}
+                            {% if form.trajet_depart.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.trajet_depart.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            {{ form.trajet_destination.label(class="form-label") }}
+                            {{ form.trajet_destination(class="form-control") }}
+                            {% if form.trajet_destination.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.trajet_destination.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.societe.label(class="form-label") }}
+                                    {{ form.societe(class="form-control") }}
+                                    {% if form.societe.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.societe.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.montant.label(class="form-label") }}
+                                    {{ form.montant(class="form-control") }}
+                                    {% if form.montant.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.montant.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.priorite.label(class="form-label") }}
+                                    {{ form.priorite(class="form-select") }}
+                                    {% if form.priorite.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.priorite.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.statut.label(class="form-label") }}
+                                    {{ form.statut(class="form-select") }}
+                                    {% if form.statut.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.statut.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            {{ form.observation.label(class="form-label") }}
+                            {{ form.observation(class="form-control", rows=3) }}
+                            {% if form.observation.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.observation.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('prestations_list') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Retour
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Enregistrer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

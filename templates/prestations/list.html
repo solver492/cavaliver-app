@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Liste des prestations{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Liste des prestations</h1>
+        {% if current_user.role != 'transporteur' %}
+        <a href="{{ url_for('prestation_add') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Ajouter une prestation
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Date début</th>
+                            <th>Date fin</th>
+                            <th>Départ</th>
+                            <th>Destination</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prestation in prestations %}
+                        <tr>
+                            <td>{{ prestation.client.nom }} {{ prestation.client.prenom }}</td>
+                            <td>{{ prestation.date_debut.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>{{ prestation.date_fin.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>{{ prestation.adresse_depart }}</td>
+                            <td>{{ prestation.adresse_arrivee }}</td>
+                            <td>
+                                <span class="badge {% if prestation.statut == 'todo' %}bg-primary
+                                    {% elif prestation.statut == 'done' %}bg-success
+                                    {% elif prestation.statut == 'mod' %}bg-warning
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ prestation.statut }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('prestation_edit', id=prestation.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('generate_mission', id=prestation.id) }}" class="btn btn-sm btn-secondary" target="_blank">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

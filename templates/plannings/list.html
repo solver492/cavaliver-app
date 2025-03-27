@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Plannings</h2>
+        {% if current_user.role in ['superadmin', 'admin'] %}
+        <a href="{{ url_for('planning_add') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Créer un planning
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        {% for planning in plannings %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0">{{ planning.name }}</h5>
+                        {% if planning.is_default %}
+                        <span class="badge bg-success">Par défaut</span>
+                        {% endif %}
+                    </div>
+                    <p class="card-text">
+                        <small class="text-muted">
+                            Créé par: {{ planning.created_by.username }}<br>
+                            Le: {{ planning.date_creation.strftime('%d/%m/%Y') }}
+                        </small>
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <button class="btn btn-primary btn-sm expand-planning" data-planning-id="{{ planning.id }}">
+                            <i class="fas fa-expand"></i> Agrandir
+                        </button>
+                        {% if current_user.role in ['superadmin', 'admin'] %}
+                        <div class="btn-group">
+                            <a href="{{ url_for('planning_edit', id=planning.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% if not planning.is_default %}
+                            <form method="POST" action="{{ url_for('planning_set_default', id=planning.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-star"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal pour l'affichage en plein écran -->
+<div class="modal fade" id="fullscreenPlanningModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Planning</h5>
+                <div class="ms-auto">
+                    <button type="button" class="btn btn-outline-primary me-2" id="addEventBtn">
+                        <i class="fas fa-plus"></i> Ajouter un événement
+                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="fullscreenCalendar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour l'ajout/modification d'événement -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalTitle">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalTitle">Ajouter un événement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="eventForm" onsubmit="return false;">
+                    <div class="mb-3">
+                        <label for="eventTitle" class="form-label">Titre</label>
+                        <input type="text" class="form-control" id="eventTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="eventDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="eventDescription" rows="3"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="eventStart" class="form-label">Début</label>
+                            <input type="datetime-local" class="form-control" id="eventStart" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="eventEnd" class="form-label">Fin</label>
+                            <input type="datetime-local" class="form-control" id="eventEnd" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="eventColor" class="form-label">Couleur</label>
+                        <input type="color" class="form-control form-control-color w-100" id="eventColor" value="#0d6efd">
+                    </div>
+                    <input type="hidden" id="eventId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="deleteEventBtn" style="display: none;">Supprimer</button>
+                <button type="button" class="btn btn-primary" id="saveEventBtn">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const planningModal = new bootstrap.Modal(document.getElementById('fullscreenPlanningModal'));
+    const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+    let fullscreenCalendar = null;
+    let currentPlanningId = null;
+
+    // Initialisation du calendrier
+    function initCalendar() {
+        const calendarEl = document.getElementById('fullscreenCalendar');
+        fullscreenCalendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            locale: 'fr',
+            editable: true,
+            selectable: true,
+            selectMirror: true,
+            dayMaxEvents: true,
+            weekNumbers: true,
+            nowIndicator: true,
+            height: 'calc(100vh - 200px)',
+            select: function(info) {
+                showEventModal('add', {
+                    start: info.start,
+                    end: info.end
+                });
+            },
+            eventClick: function(info) {
+                if (info.event.extendedProps.type === 'custom') {
+                    showEventModal('edit', {
+                        id: info.event.id,
+                        title: info.event.title,
+                        description: info.event.extendedProps.description,
+                        start: info.event.start,
+                        end: info.event.end,
+                        color: info.event.backgroundColor
+                    });
+                }
+            },
+            eventDrop: function(info) {
+                if (info.event.extendedProps.type === 'custom') {
+                    updateEvent(info.event);
+                } else {
+                    info.revert();
+                }
+            },
+            eventResize: function(info) {
+                if (info.event.extendedProps.type === 'custom') {
+                    updateEvent(info.event);
+                } else {
+                    info.revert();
+                }
+            }
+        });
+    }
+
+    // Gestionnaire pour le bouton "Agrandir"
+    document.querySelectorAll('.expand-planning').forEach(button => {
+        button.addEventListener('click', function() {
+            const planningId = this.getAttribute('data-planning-id');
+            currentPlanningId = planningId;
+
+            if (!fullscreenCalendar) {
+                initCalendar();
+            }
+
+            // Charger les événements
+            fetch(`/planning/${planningId}/events`)
+                .then(response => response.json())
+                .then(events => {
+                    planningModal.show();
+                    if (!fullscreenCalendar.isRendered) {
+                        fullscreenCalendar.render();
+                    }
+                    fullscreenCalendar.removeAllEvents();
+                    fullscreenCalendar.addEventSource(events);
+                })
+                .catch(error => {
+                    console.error('Erreur lors du chargement des événements:', error);
+                    alert('Erreur lors du chargement des événements');
+                });
+        });
+    });
+
+    // Gestionnaire pour le bouton "Ajouter un événement"
+    document.getElementById('addEventBtn').addEventListener('click', function() {
+        showEventModal('add', {
+            start: new Date(),
+            end: new Date(new Date().getTime() + 3600000)
+        });
+    });
+
+    // Gestionnaire pour le formulaire d'événement
+    document.getElementById('saveEventBtn').addEventListener('click', function() {
+        const eventId = document.getElementById('eventId').value;
+        const eventData = {
+            title: document.getElementById('eventTitle').value,
+            description: document.getElementById('eventDescription').value,
+            start: document.getElementById('eventStart').value,
+            end: document.getElementById('eventEnd').value,
+            color: document.getElementById('eventColor').value
+        };
+
+        const url = eventId ? 
+            `/planning/${currentPlanningId}/event/${eventId.replace('event_', '')}` : 
+            `/planning/${currentPlanningId}/event`;
+
+        fetch(url, {
+            method: eventId ? 'PUT' : 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(eventData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erreur lors de la sauvegarde');
+            }
+            return response.json();
+        })
+        .then(event => {
+            if (eventId) {
+                const fcEvent = fullscreenCalendar.getEventById(eventId);
+                if (fcEvent) {
+                    fcEvent.setProp('title', event.title);
+                    fcEvent.setExtendedProp('description', event.description);
+                    fcEvent.setDates(event.start, event.end);
+                    fcEvent.setProp('backgroundColor', event.backgroundColor);
+                }
+            } else {
+                fullscreenCalendar.addEvent(event);
+            }
+            eventModal.hide();
+        })
+        .catch(error => {
+            console.error('Erreur lors de la sauvegarde:', error);
+            alert('Erreur lors de la sauvegarde de l\'événement');
+        });
+    });
+
+    // Gestionnaire pour la suppression d'événement
+    document.getElementById('deleteEventBtn').addEventListener('click', function() {
+        const eventId = document.getElementById('eventId').value;
+        if (!eventId) return;
+
+        if (confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
+            fetch(`/planning/${currentPlanningId}/event/${eventId.replace('event_', '')}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    const fcEvent = fullscreenCalendar.getEventById(eventId);
+                    if (fcEvent) {
+                        fcEvent.remove();
+                    }
+                    eventModal.hide();
+                } else {
+                    throw new Error('Erreur lors de la suppression');
+                }
+            })
+            .catch(error => {
+                console.error('Erreur lors de la suppression:', error);
+                alert('Erreur lors de la suppression de l\'événement');
+            });
+        }
+    });
+});
+
+function showEventModal(type, eventData) {
+    const title = document.getElementById('eventModalTitle');
+    const deleteBtn = document.getElementById('deleteEventBtn');
+
+    title.textContent = type === 'add' ? 'Ajouter un événement' : 'Modifier l\'événement';
+    deleteBtn.style.display = type === 'edit' ? 'block' : 'none';
+
+    document.getElementById('eventId').value = eventData.id || '';
+    document.getElementById('eventTitle').value = eventData.title || '';
+    document.getElementById('eventDescription').value = eventData.description || '';
+    document.getElementById('eventStart').value = formatDateTime(eventData.start);
+    document.getElementById('eventEnd').value = formatDateTime(eventData.end);
+    document.getElementById('eventColor').value = eventData.color || '#0d6efd';
+
+    const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+    eventModal.show();
+}
+
+function formatDateTime(date) {
+    if (typeof date === 'string') {
+        date = new Date(date);
+    }
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function updateEvent(event) {
+    const eventData = {
+        title: event.title,
+        description: event.extendedProps.description,
+        start: event.start.toISOString(),
+        end: event.end.toISOString(),
+        color: event.backgroundColor
+    };
+
+    fetch(`/planning/${currentPlanningId}/event/${event.id.replace('event_', '')}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData)
+    })
+    .catch(error => {
+        console.error('Erreur lors de la mise à jour:', error);
+        alert('Erreur lors de la mise à jour de l\'événement');
+    });
+}
+</script>
+{% endblock %}

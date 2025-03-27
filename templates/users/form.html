@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Modifier' if user else 'Ajouter' }} un utilisateur{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">{{ 'Modifier' if user else 'Ajouter' }} un utilisateur</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nom d'utilisateur</label>
+                                <input type="text" name="username" class="form-control" value="{{ user.username if user else '' }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Mot de passe</label>
+                                <input type="password" name="password" class="form-control" {% if not user %}required{% endif %}>
+                                {% if user %}
+                                <small class="text-muted">Laissez vide pour conserver le mot de passe actuel</small>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nom</label>
+                                <input type="text" name="nom" class="form-control" value="{{ user.nom if user else '' }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Prénom</label>
+                                <input type="text" name="prenom" class="form-control" value="{{ user.prenom if user else '' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Rôle</label>
+                                <select name="role" class="form-select" required>
+                                    {% if current_user.role == 'superadmin' %}
+                                    <option value="superadmin" {% if user and user.role == 'superadmin' %}selected{% endif %}>Super Admin</option>
+                                    {% endif %}
+                                    <option value="admin" {% if user and user.role == 'admin' %}selected{% endif %}>Admin</option>
+                                    <option value="commercial" {% if user and user.role == 'commercial' %}selected{% endif %}>Commercial</option>
+                                    <option value="transporteur" {% if user and user.role == 'transporteur' %}selected{% endif %}>Transporteur</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Statut</label>
+                                <select name="statut" class="form-select" required>
+                                    <option value="actif" {% if user and user.statut == 'actif' %}selected{% endif %}>Actif</option>
+                                    <option value="inactif" {% if user and user.statut == 'inactif' %}selected{% endif %}>Inactif</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="vehicule-field">
+                            <label class="form-label">Véhicule</label>
+                            <input type="text" name="vehicule" class="form-control" value="{{ user.vehicule if user else '' }}">
+                            <small class="text-muted">Requis uniquement pour les transporteurs</small>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('users_list') }}" class="btn btn-secondary me-md-2">Annuler</a>
+                            <button type="submit" class="btn btn-primary">Enregistrer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.querySelector('select[name="role"]');
+    const vehiculeField = document.querySelector('#vehicule-field');
+
+    function toggleVehiculeField() {
+        if (roleSelect.value === 'transporteur') {
+            vehiculeField.style.display = 'block';
+            vehiculeField.querySelector('input').required = true;
+        } else {
+            vehiculeField.style.display = 'none';
+            vehiculeField.querySelector('input').required = false;
+        }
+    }
+
+    roleSelect.addEventListener('change', toggleVehiculeField);
+    toggleVehiculeField();
+});
+</script>
+{% endblock %}
