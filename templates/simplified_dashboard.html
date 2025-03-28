@@ -1,0 +1,50 @@
+{% extends "simplified_base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Tableau de bord</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success">
+                        <h5 class="alert-heading"><i class="fas fa-check-circle me-2"></i>Connexion réussie!</h5>
+                        <p>Bienvenue sur la version simplifiée de l'application de déménagement.</p>
+                        <hr>
+                        <p class="mb-0">Cette version utilise une base de données en mémoire pour démontrer que le déploiement fonctionne.</p>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-users me-2"></i>Clients</h5>
+                                    <p class="card-text display-4">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-box me-2"></i>Prestations</h5>
+                                    <p class="card-text display-4">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h5 class="card-title"><i class="fas fa-calendar me-2"></i>Plannings</h5>
+                                    <p class="card-text display-4">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
