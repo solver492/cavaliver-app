@@ -91,20 +91,41 @@ body {
     background-color: white;
 }
 
-/* Calendrier */
+/* Calendrier - Design amélioré et motivant */
+.calendar-card {
+    background: linear-gradient(to bottom, #ffffff, #f8f9fa);
+    border: none;
+    box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.08);
+}
+.calendar-card .card-title {
+    font-size: 1.3rem;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+.calendar-card .card-title i {
+    margin-right: 0.5rem;
+    color: #4e73df;
+}
 .calendar-container {
     position: relative;
     transition: all 0.3s ease;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: inset 0 0 0.5rem rgba(0, 0, 0, 0.05);
+    padding: 1rem;
 }
 .calendar-controls {
     position: absolute;
-    top: 1rem;
+    top: 0;
     right: 1rem;
     z-index: 10;
+    display: flex;
 }
 .calendar-controls .btn {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     padding: 0;
     display: flex;
@@ -112,12 +133,25 @@ body {
     justify-content: center;
     margin-left: 0.5rem;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background: #4e73df;
+    border: none;
+    color: white;
+    transition: all 0.2s ease;
+}
+.calendar-controls .btn:hover {
+    background: #375bce;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+.calendar-controls .btn:active {
+    transform: translateY(0);
 }
 #calendar {
     margin-top: 20px;
     margin-bottom: 30px;
     height: 650px;
     transition: all 0.3s ease;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .calendar-fullscreen {
     position: fixed;
@@ -129,12 +163,55 @@ body {
     background: white;
     padding: 20px;
     height: 100vh !important;
+    width: 100vw !important;
     overflow-y: auto;
+}
+.fc {
+    --fc-border-color: #e9ecef;
+    --fc-today-bg-color: #e8f4ff;
+    --fc-neutral-bg-color: #f8f9fa;
+    --fc-page-bg-color: #ffffff;
+}
+.fc-theme-standard .fc-scrollgrid {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e9ecef;
+}
+.fc-theme-standard th {
+    border-bottom-width: 2px;
+}
+.fc-day-today {
+    background-color: #e8f4ff !important;
+    font-weight: bold;
+}
+.fc-col-header-cell {
+    background-color: #4e73df;
+    color: white;
+}
+.fc-col-header-cell-cushion {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 10px;
+}
+.fc-daygrid-day-number {
+    color: #495057;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 8px;
 }
 .fc-event {
     cursor: pointer;
     border-radius: 6px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: none;
+    padding: 2px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.fc-event:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
 }
 .fc-event-title {
     font-weight: 600;
@@ -143,12 +220,14 @@ body {
 .fc-toolbar-title {
     font-size: 1.5rem !important;
     font-weight: 700 !important;
+    color: #2c3e50;
 }
 .fc .fc-button {
     border-radius: 30px;
     padding: 0.4rem 1rem;
     font-weight: 500;
     text-transform: none;
+    transition: all 0.2s;
 }
 .fc .fc-button-primary {
     background: #4e73df;
@@ -157,6 +236,24 @@ body {
 .fc .fc-button-primary:hover {
     background: #375bce;
     border-color: #375bce;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.fc .fc-button-primary:not(:disabled):active {
+    background: #2e59d9;
+    border-color: #2e59d9;
+}
+.fc-day-sat, .fc-day-sun {
+    background-color: #f8f9fa;
+}
+
+/* Animation pour les transitions plein écran */
+.fullscreen-transition {
+    animation: fullscreenTransition 0.3s ease-in-out;
+}
+@keyframes fullscreenTransition {
+    0% { opacity: 0.7; transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
 }
 
 /* Tableau des prestations récentes */
@@ -254,12 +351,12 @@ body {
     <!-- Calendrier complet -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
+            <div class="card calendar-card">
                 <div class="card-body">
-                    <h5 class="card-title">Calendrier des prestations</h5>
+                    <h5 class="card-title"><i class="fas fa-calendar-alt"></i> Calendrier des prestations</h5>
                     <div class="calendar-container">
                         <div class="calendar-controls">
-                            <button class="btn btn-primary" id="toggle-fullscreen">
+                            <button class="btn btn-primary" id="toggle-fullscreen" title="Agrandir/Réduire le calendrier">
                                 <i class="fas fa-expand"></i>
                             </button>
                         </div>
@@ -328,13 +425,25 @@ body {
             isFullScreen = !isFullScreen;
             
             if (isFullScreen) {
+                // Basculer en mode plein écran
                 calendarEl.classList.add('calendar-fullscreen');
+                calendarEl.classList.add('fullscreen-transition');
                 toggleBtn.innerHTML = '<i class="fas fa-compress"></i>';
-                calendar.updateSize();
+                toggleBtn.title = 'Réduire le calendrier';
+                setTimeout(() => {
+                    calendar.updateSize();
+                    calendarEl.classList.remove('fullscreen-transition');
+                }, 300);
             } else {
+                // Revenir à la taille normale
+                calendarEl.classList.add('fullscreen-transition');
                 calendarEl.classList.remove('calendar-fullscreen');
                 toggleBtn.innerHTML = '<i class="fas fa-expand"></i>';
-                calendar.updateSize();
+                toggleBtn.title = 'Agrandir le calendrier';
+                setTimeout(() => {
+                    calendar.updateSize();
+                    calendarEl.classList.remove('fullscreen-transition');
+                }, 300);
             }
         });
         
@@ -375,10 +484,29 @@ body {
                 if (info.event.extendedProps.description) {
                     $(info.el).attr('title', info.event.extendedProps.description);
                 }
+            },
+            // Ajouter un visuel pour les jours de weekend
+            dayCellClassNames: function(arg) {
+                if (arg.date.getDay() === 0 || arg.date.getDay() === 6) {
+                    return ['weekend-day'];
+                }
+                return [];
             }
         });
         
         calendar.render();
+        
+        // Ajouter des écouteurs d'événements pour le redimensionnement de la fenêtre
+        window.addEventListener('resize', function() {
+            calendar.updateSize();
+        });
+        
+        // Gestion des raccourcis clavier pour le mode plein écran
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && isFullScreen) {
+                toggleBtn.click(); // Réduire le calendrier avec la touche Echap
+            }
+        });
     });
 </script>
 {% endblock %}
