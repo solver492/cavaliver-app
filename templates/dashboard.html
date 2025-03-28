@@ -4,6 +4,7 @@
 
 {% block styles %}
 {{ super() }}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
 <style>
 /* Styles généraux */
 .dashboard-container {
@@ -49,6 +50,19 @@
 }
 .recent-prestations .btn-group {
     white-space: nowrap;
+}
+
+/* Style pour le calendrier */
+#calendar {
+    margin-top: 20px;
+    margin-bottom: 30px;
+    height: 600px;
+}
+.fc-event {
+    cursor: pointer;
+}
+.fc-event-title {
+    font-weight: bold;
 }
 </style>
 {% endblock %}
@@ -118,6 +132,18 @@
         </div>
     </div>
 
+    <!-- Calendrier complet -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Calendrier des prestations</h5>
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Dernières prestations -->
     <div class="row">
         <div class="col-12">
@@ -162,4 +188,45 @@
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/locales/fr.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'fr',
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+            },
+            buttonText: {
+                today: "Aujourd'hui",
+                month: 'Mois',
+                week: 'Semaine',
+                day: 'Jour',
+                list: 'Liste'
+            },
+            events: '/api/calendar-events',
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            },
+            eventClick: function(info) {
+                // Rediriger vers la page de détail de la prestation
+                if (info.event.extendedProps.prestation_id) {
+                    window.location.href = '/prestation/' + info.event.extendedProps.prestation_id;
+                }
+            },
+            dayMaxEvents: true,
+            height: 'auto'
+        });
+        
+        calendar.render();
+    });
+</script>
 {% endblock %}

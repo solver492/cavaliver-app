@@ -596,6 +596,58 @@ def get_prestations():
         'statut': p.statut
     } for p in prestations])
 
+@app.route('/api/calendar-events')
+@login_required
+def calendar_events():
+    """Fournit les événements pour le calendrier au format JSON."""
+    # Récupérer toutes les prestations
+    prestations = Prestation.query.all()
+    
+    # Formater les prestations pour FullCalendar
+    events = []
+    for prestation in prestations:
+        # Nom du client pour le titre de l'événement
+        client_name = f"{prestation.client.nom} {prestation.client.prenom}"
+        
+        # Couleur basée sur le statut
+        color = '#28a745' if prestation.statut == 'done' else '#ffc107' 
+        if prestation.statut == 'cancelled':
+            color = '#dc3545'
+        
+        events.append({
+            'id': prestation.id,
+            'title': f"Déménagement: {client_name}",
+            'start': prestation.date_debut.isoformat(),
+            'end': prestation.date_fin.isoformat(),
+            'color': color,
+            'extendedProps': {
+                'prestation_id': prestation.id,
+                'client_id': prestation.client_id,
+                'adresse_depart': prestation.adresse_depart,
+                'adresse_arrivee': prestation.adresse_arrivee,
+                'statut': prestation.statut
+            },
+            'description': f"De {prestation.adresse_depart} à {prestation.adresse_arrivee}"
+        })
+    
+    # Récupérer également les événements de planning s'ils existent
+    planning_events = PlanningEvent.query.filter_by(prestation_id=None).all()  # Événements non liés à une prestation
+    
+    for event in planning_events:
+        events.append({
+            'id': f"event_{event.id}",
+            'title': event.title,
+            'start': event.start_time.isoformat(),
+            'end': event.end_time.isoformat(),
+            'color': event.color,
+            'extendedProps': {
+                'description': event.description,
+                'type': event.type
+            }
+        })
+    
+    return jsonify(events)
+
 # Import des formulaires
 from forms import LoginForm, UserForm, ClientForm, PrestationForm
 from utils import generate_mission_pdf, generate_client_pdf, format_date_for_input
