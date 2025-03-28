@@ -9,4 +9,10 @@ services:
         value: 3.9.0
       - key: FLASK_APP
         value: app.py
+      - key: RENDER
+        value: true
     autoDeploy: true
+    disk:
+      name: database
+      mountPath: /etc/render/database
+      sizeGB: 1

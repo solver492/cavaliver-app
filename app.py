@@ -7,7 +7,15 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'votre_clé_secrète_ici'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/demenage.db'
+
+# Configurer la base de données pour fonctionner sur Render.com
+if os.environ.get('RENDER'):
+    # Nous sommes sur Render.com, utiliser le volume persistant
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////etc/render/database/demenage.db'
+else:
+    # Nous sommes en local, utiliser le chemin normal
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/demenage.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
 
