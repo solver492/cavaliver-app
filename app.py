@@ -6,17 +6,13 @@ from functools import wraps
 import os
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'votre_clé_secrète_ici'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'votre_clé_secrète_ici')
 
-# Configurer la base de données pour fonctionner sur Render.com
-if os.environ.get('RENDER'):
-    # Nous sommes sur Render.com, utiliser le volume persistant
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////etc/render/database/demenage.db'
-else:
-    # Nous sommes en local, utiliser le chemin normal
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/demenage.db'
-
+# Configurer la base de données (simplifié pour fonctionner sur Render.com)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///demenage.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Configurez le dossier d'uploads
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
 
 # Créer le dossier uploads s'il n'existe pas
