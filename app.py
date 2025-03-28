@@ -4,11 +4,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
 import os
+import sqlite3
+
+# Import des modèles de données
+from models import db, User, Client, Prestation, CustomField, CustomFieldValue, Planning, Document, PlanningEvent
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'votre_clé_secrète_ici')
 
-# Configurer la base de données (simplifié pour fonctionner sur Render.com)
+# Configurer la base de données (pour fonctionner sur Render.com)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///demenage.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -19,11 +23,10 @@ app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
-# Import des modèles
-from models import db, User, Client, Prestation, CustomField, CustomFieldValue, Planning, Document, PlanningEvent
+# Initialiser l'extension
+db.init_app(app)
 
 # Initialisation des extensions
-db.init_app(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'

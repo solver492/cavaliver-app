@@ -1,9 +1,21 @@
 #!/bin/bash
 
-echo "Du00e9marrage de l'application en mode debug"
+echo "======= Début du processus de démarrage sur Render.com ======="
 
-# Initialiser la base de donnu00e9es
+echo "[1] Affichage des fichiers dans le répertoire courant :"
+ls -la
+
+echo "\n[2] Installation des dépendances nécessaires"
+pip install flask flask-login flask-sqlalchemy werkzeug gunicorn
+
+echo "\n[3] Création du répertoire d'instance si nécessaire"
+mkdir -p instance
+
+echo "\n[4] Initialisation de la base de données"
 python init_render_db.py
 
-# Du00e9marrer l'application avec Gunicorn (en mode debug)
-gunicorn app:app --log-level debug
+echo "\n[5] Affichage des fichiers après initialisation:"
+ls -la
+
+echo "\n[6] Démarrage de l'application avec Gunicorn (en mode debug)"
+gunicorn app:app --bind=0.0.0.0:80 --log-level debug
