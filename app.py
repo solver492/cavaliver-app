@@ -460,8 +460,19 @@ def prestation_edit(id):
         prestation.date_fin = form.date_fin.data
         prestation.adresse_depart = form.adresse_depart.data
         prestation.adresse_arrivee = form.adresse_arrivee.data
-        prestation.trajet_depart = form.trajet_depart.data
-        prestation.trajet_destination = form.trajet_destination.data
+        
+        # Essayer d'assigner les champs trajet_depart et trajet_destination si disponibles
+        try:
+            prestation.trajet_depart = form.trajet_depart.data
+            prestation.trajet_destination = form.trajet_destination.data
+        except Exception as e:
+            print(f"Impossible d'assigner les trajets: {e}")
+            # Si les colonnes n'existent pas, stocker les valeurs dans les champs adresse
+            if form.trajet_depart.data and form.trajet_depart.data != prestation.adresse_depart:
+                prestation.adresse_depart = form.trajet_depart.data
+            if form.trajet_destination.data and form.trajet_destination.data != prestation.adresse_arrivee:
+                prestation.adresse_arrivee = form.trajet_destination.data
+        
         prestation.observation = form.observation.data
         prestation.statut = form.statut.data
         prestation.requires_packaging = bool(form.requires_packaging.data)
@@ -661,7 +672,34 @@ def mark_notification_read(id):
 def dashboard():
     # Récupérer les prestations à venir
     today = datetime.utcnow().date()
-    prestations_a_venir = Prestation.query.filter(Prestation.date_debut >= today).order_by(Prestation.date_debut).limit(5).all()
+    try:
+        # Essayer la requête complète d'abord
+        prestations_a_venir = Prestation.query.filter(Prestation.date_debut >= today).order_by(Prestation.date_debut).limit(5).all()
+    except Exception as e:
+        # En cas d'erreur, essayer une requête avec un sous-ensemble de colonnes
+        print(f"Erreur lors de la récupération des prestations: {e}")
+        prestations_a_venir = db.session.query(
+            Prestation.id, 
+            Prestation.client_id,
+            Prestation.date_debut, 
+            Prestation.date_fin,
+            Prestation.adresse_depart,
+            Prestation.adresse_arrivee,
+            Prestation.observation,
+            Prestation.statut,
+            Prestation.requires_packaging,
+            Prestation.demenagement_type,
+            Prestation.camion_type,
+            Prestation.priorite,
+            Prestation.societe,
+            Prestation.montant,
+            Prestation.tags,
+            Prestation.created_by_id,
+            Prestation.id_user_commercial,
+            Prestation.planning_id,
+            Prestation.date_creation,
+            Prestation.archived
+        ).filter(Prestation.date_debut >= today).order_by(Prestation.date_debut).limit(5).all()
     
     # Récupérer les factures en attente
     factures_en_attente = Facture.query.filter_by(statut='en_attente').order_by(Facture.date_emission.desc()).limit(5).all()
@@ -848,25 +886,42 @@ def prestation_add():
     suggestions_destinations = list(set(suggestions_destinations))
     
     if form.validate_on_submit():
-        prestation = Prestation(
-            client_id=form.client_id.data,
-            date_debut=form.date_debut.data,
-            date_fin=form.date_fin.data,
-            adresse_depart=form.adresse_depart.data,
-            adresse_arrivee=form.adresse_arrivee.data,
-            observation=form.observation.data,
-            statut=form.statut.data,
-            requires_packaging=bool(form.requires_packaging.data),
-            demenagement_type=form.demenagement_type.data,
-            societe=form.societe.data,
-            montant=form.montant.data,
-            priorite=form.priorite.data,
-            trajet_depart=form.trajet_depart.data,
-            trajet_destination=form.trajet_destination.data,
-            camion_type=form.camion_type.data,
-            tags=form.tags.data,
-            created_by_id=current_user.id  # Ajout de l'ID de l'utilisateur qui crée la prestation
-        )
+        # Créer une nouvelle prestation avec les valeurs obligatoires
+        prestation_args = {
+            'client_id': form.client_id.data,
+            'date_debut': form.date_debut.data,
+            'date_fin': form.date_fin.data,
+            'adresse_depart': form.adresse_depart.data,
+            'adresse_arrivee': form.adresse_arrivee.data,
+            'observation': form.observation.data,
+            'statut': form.statut.data,
+            'requires_packaging': bool(form.requires_packaging.data),
+            'demenagement_type': form.demenagement_type.data,
+            'societe': form.societe.data,
+            'montant': form.montant.data,
+            'priorite': form.priorite.data,
+            'tags': form.tags.data,
+            'camion_type': form.camion_type.data,
+            'created_by_id': current_user.id
+        }
+        
+        # Essayer d'ajouter les colonnes trajet_depart et trajet_destination si elles existent
+        try:
+            # Vérifions si ces attributs sont disponibles dans le modèle
+            test_attr = getattr(Prestation, 'trajet_depart', None)
+            if test_attr is not None:
+                prestation_args['trajet_depart'] = form.trajet_depart.data
+                prestation_args['trajet_destination'] = form.trajet_destination.data
+        except Exception as e:
+            print(f"Impossible d'assigner les trajets lors de la création: {e}")
+            # Pas besoin de faire quoi que ce soit ici, nous utilisons déjà adresse_depart et adresse_arrivee
+
+        # Ajouter l'ID du commercial si présent
+        if form.id_user_commercial.data:
+            prestation_args['id_user_commercial'] = form.id_user_commercial.data
+        
+        # Créer la prestation
+        prestation = Prestation(**prestation_args)
         db.session.add(prestation)
         db.session.commit()
         
@@ -1329,7 +1384,8 @@ def prestation_accepter(id):
         user_id=prestation.created_by_id,
         type='info',
         message=f"Le transporteur {current_user.prenom} {current_user.nom} a accepté la prestation #{prestation.id}",
-        is_read=False
+        is_read=False,
+        related_prestation_id=prestation.id
     )
     
     db.session.add(notification)
@@ -1497,6 +1553,58 @@ def calendar_events():
             events.append(end_event)
     
     return jsonify(events)
+
+@app.route('/suggest_depart')
+@login_required
+def suggest_depart():
+    try:
+        # Essayer d'utiliser trajet_depart d'abord
+        points_depart = db.session.query(Prestation.trajet_depart).filter(
+            Prestation.trajet_depart != None, 
+            Prestation.trajet_depart != ''
+        ).distinct().all()
+        
+        # Convertir les tuples en liste de valeurs
+        suggestions = [point[0] for point in points_depart]
+        
+    except Exception as e:
+        print(f"Erreur lors de la récupération des trajets de départ: {e}")
+        # Utiliser adresse_depart comme alternative
+        points_depart = db.session.query(Prestation.adresse_depart).filter(
+            Prestation.adresse_depart != None, 
+            Prestation.adresse_depart != ''
+        ).distinct().all()
+        
+        # Convertir les tuples en liste de valeurs
+        suggestions = [point[0] for point in points_depart]
+    
+    return jsonify(suggestions)
+
+@app.route('/suggest_destination')
+@login_required
+def suggest_destination():
+    try:
+        # Essayer d'utiliser trajet_destination d'abord
+        points_destination = db.session.query(Prestation.trajet_destination).filter(
+            Prestation.trajet_destination != None, 
+            Prestation.trajet_destination != ''
+        ).distinct().all()
+        
+        # Convertir les tuples en liste de valeurs
+        suggestions = [point[0] for point in points_destination]
+        
+    except Exception as e:
+        print(f"Erreur lors de la récupération des trajets de destination: {e}")
+        # Utiliser adresse_arrivee comme alternative
+        points_destination = db.session.query(Prestation.adresse_arrivee).filter(
+            Prestation.adresse_arrivee != None, 
+            Prestation.adresse_arrivee != ''
+        ).distinct().all()
+        
+        # Convertir les tuples en liste de valeurs
+        suggestions = [point[0] for point in points_destination]
+    
+    return jsonify(suggestions)
 
 if __name__ == '__main__':
     with app.app_context():

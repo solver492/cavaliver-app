@@ -27,13 +27,25 @@ def generate_mission_pdf(prestation):
         data = [
             ['Date de début:', prestation.date_debut.strftime('%d/%m/%Y %H:%M')],
             ['Date de fin:', prestation.date_fin.strftime('%d/%m/%Y %H:%M')],
-            ['Client:', f"{prestation.client.nom} {prestation.client.prenom}"],
-            ['Adresse de départ:', prestation.trajet_depart],
-            ['Adresse de destination:', prestation.trajet_destination],
+            ['Client:', f"{prestation.client.nom} {prestation.client.prenom}"]
+        ]
+        
+        # Ajout des champs avec gestion des attributs potentiellement manquants
+        try:
+            data.append(['Adresse de départ:', prestation.trajet_depart if hasattr(prestation, 'trajet_depart') else prestation.adresse_depart])
+        except:
+            data.append(['Adresse de départ:', prestation.adresse_depart])
+            
+        try:
+            data.append(['Adresse de destination:', prestation.trajet_destination if hasattr(prestation, 'trajet_destination') else prestation.adresse_arrivee])
+        except:
+            data.append(['Adresse de destination:', prestation.adresse_arrivee])
+        
+        data.extend([
             ['Société:', prestation.societe or ''],
             ['Montant:', f"{prestation.montant}€" if prestation.montant else ''],
             ['Observations:', prestation.observation or '']
-        ]
+        ])
 
         table = Table(data, colWidths=[150, 350])
         table.setStyle(TableStyle([

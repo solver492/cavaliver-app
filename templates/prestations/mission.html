@@ -75,8 +75,20 @@
                                             <p><strong>Fin :</strong> {{ prestation.date_fin.strftime('%d/%m/%Y %H:%M') }}</p>
                                             
                                             <h5>Trajet</h5>
-                                            <p><i class="fas fa-map-marker-alt"></i> <strong>Départ :</strong> {{ prestation.trajet_depart }}</p>
-                                            <p><i class="fas fa-flag-checkered"></i> <strong>Destination :</strong> {{ prestation.trajet_destination }}</p>
+                                            <p><i class="fas fa-map-marker-alt"></i> <strong>Départ :</strong> 
+                                                {% if prestation.trajet_depart is defined and prestation.trajet_depart %}
+                                                    {{ prestation.trajet_depart }}
+                                                {% else %}
+                                                    {{ prestation.adresse_depart }}
+                                                {% endif %}
+                                            </p>
+                                            <p><i class="fas fa-flag-checkered"></i> <strong>Destination :</strong> 
+                                                {% if prestation.trajet_destination is defined and prestation.trajet_destination %}
+                                                    {{ prestation.trajet_destination }}
+                                                {% else %}
+                                                    {{ prestation.adresse_arrivee }}
+                                                {% endif %}
+                                            </p>
                                             
                                             <h5>Statut</h5>
                                             <p>
