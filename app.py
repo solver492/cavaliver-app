@@ -432,10 +432,24 @@ def prestation_edit(id):
     form.transporteur_ids.choices = [(t.id, f"{t.nom} {t.prenom}") for t in available_transporters]
     
     # Récupérer les suggestions d'adresses des prestations existantes
-    adresses_depart = db.session.query(Prestation.adresse_depart).distinct().all()
-    adresses_arrivee = db.session.query(Prestation.adresse_arrivee).distinct().all()
-    points_depart = db.session.query(Prestation.trajet_depart).filter(Prestation.trajet_depart != None, Prestation.trajet_depart != '').distinct().all()
-    destinations = db.session.query(Prestation.trajet_destination).filter(Prestation.trajet_destination != None, Prestation.trajet_destination != '').distinct().all()
+    try:
+        adresses_depart = db.session.query(Prestation.adresse_depart).distinct().all()
+        adresses_arrivee = db.session.query(Prestation.adresse_arrivee).distinct().all()
+        
+        # Essayer d'obtenir les trajets également, mais gérer l'erreur si les colonnes n'existent pas
+        try:
+            points_depart = db.session.query(Prestation.trajet_depart).filter(Prestation.trajet_depart != None, Prestation.trajet_depart != '').distinct().all()
+            destinations = db.session.query(Prestation.trajet_destination).filter(Prestation.trajet_destination != None, Prestation.trajet_destination != '').distinct().all()
+        except Exception as e:
+            print(f"Erreur lors de la récupération des trajets (normal si colonnes manquantes): {e}")
+            points_depart = []
+            destinations = []
+    except Exception as e:
+        print(f"Erreur lors de la récupération des adresses: {e}")
+        adresses_depart = []
+        adresses_arrivee = []
+        points_depart = []
+        destinations = []
     
     # Convertir les résultats en listes plates
     suggestions_depart = [addr[0] for addr in adresses_depart if addr[0]]
@@ -670,18 +684,16 @@ def mark_notification_read(id):
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Récupérer les prestations à venir
+    # Récupérer le nombre d'opérations en attente
     today = datetime.utcnow().date()
+    
+    # Récupérer les prestations à venir sans essayer d'accéder aux colonnes problématiques
     try:
-        # Essayer la requête complète d'abord
-        prestations_a_venir = Prestation.query.filter(Prestation.date_debut >= today).order_by(Prestation.date_debut).limit(5).all()
-    except Exception as e:
-        # En cas d'erreur, essayer une requête avec un sous-ensemble de colonnes
-        print(f"Erreur lors de la récupération des prestations: {e}")
+        # Utiliser une sélection explicite de colonnes pour éviter les colonnes inexistantes
         prestations_a_venir = db.session.query(
-            Prestation.id, 
+            Prestation.id,
             Prestation.client_id,
-            Prestation.date_debut, 
+            Prestation.date_debut,
             Prestation.date_fin,
             Prestation.adresse_depart,
             Prestation.adresse_arrivee,
@@ -700,6 +712,10 @@ def dashboard():
             Prestation.date_creation,
             Prestation.archived
         ).filter(Prestation.date_debut >= today).order_by(Prestation.date_debut).limit(5).all()
+    except Exception as e:
+        print(f"Erreur lors de la récupération des prestations: {e}")
+        # En cas d'erreur, utiliser une requête plus simple
+        prestations_a_venir = Prestation.query.filter(Prestation.date_debut >= today).order_by(Prestation.date_debut).limit(5).all()
     
     # Récupérer les factures en attente
     factures_en_attente = Facture.query.filter_by(statut='en_attente').order_by(Facture.date_emission.desc()).limit(5).all()
@@ -864,10 +880,24 @@ def prestation_add():
     form.transporteur_ids.choices = [(t.id, f"{t.nom} {t.prenom}") for t in available_transporters]
     
     # Récupérer les suggestions d'adresses des prestations existantes
-    adresses_depart = db.session.query(Prestation.adresse_depart).distinct().all()
-    adresses_arrivee = db.session.query(Prestation.adresse_arrivee).distinct().all()
-    points_depart = db.session.query(Prestation.trajet_depart).filter(Prestation.trajet_depart != None, Prestation.trajet_depart != '').distinct().all()
-    destinations = db.session.query(Prestation.trajet_destination).filter(Prestation.trajet_destination != None, Prestation.trajet_destination != '').distinct().all()
+    try:
+        adresses_depart = db.session.query(Prestation.adresse_depart).distinct().all()
+        adresses_arrivee = db.session.query(Prestation.adresse_arrivee).distinct().all()
+        
+        # Essayer d'obtenir les trajets également, mais gérer l'erreur si les colonnes n'existent pas
+        try:
+            points_depart = db.session.query(Prestation.trajet_depart).filter(Prestation.trajet_depart != None, Prestation.trajet_depart != '').distinct().all()
+            destinations = db.session.query(Prestation.trajet_destination).filter(Prestation.trajet_destination != None, Prestation.trajet_destination != '').distinct().all()
+        except Exception as e:
+            print(f"Erreur lors de la récupération des trajets (normal si colonnes manquantes): {e}")
+            points_depart = []
+            destinations = []
+    except Exception as e:
+        print(f"Erreur lors de la récupération des adresses: {e}")
+        adresses_depart = []
+        adresses_arrivee = []
+        points_depart = []
+        destinations = []
     
     # Convertir les résultats en listes plates
     suggestions_depart = [addr[0] for addr in adresses_depart if addr[0]]
@@ -899,23 +929,18 @@ def prestation_add():
             'demenagement_type': form.demenagement_type.data,
             'societe': form.societe.data,
             'montant': form.montant.data,
-            'priorite': form.priorite.data,
-            'tags': form.tags.data,
             'camion_type': form.camion_type.data,
+            'tags': form.tags.data,
+            'priorite': form.priorite.data,
             'created_by_id': current_user.id
         }
         
-        # Essayer d'ajouter les colonnes trajet_depart et trajet_destination si elles existent
-        try:
-            # Vérifions si ces attributs sont disponibles dans le modèle
-            test_attr = getattr(Prestation, 'trajet_depart', None)
-            if test_attr is not None:
-                prestation_args['trajet_depart'] = form.trajet_depart.data
-                prestation_args['trajet_destination'] = form.trajet_destination.data
-        except Exception as e:
-            print(f"Impossible d'assigner les trajets lors de la création: {e}")
-            # Pas besoin de faire quoi que ce soit ici, nous utilisons déjà adresse_depart et adresse_arrivee
-
+        # Si les champs trajet sont remplis, utiliser leurs valeurs dans les adresses correspondantes
+        if form.trajet_depart.data:
+            prestation_args['adresse_depart'] = form.trajet_depart.data
+        if form.trajet_destination.data:
+            prestation_args['adresse_arrivee'] = form.trajet_destination.data
+        
         # Ajouter l'ID du commercial si présent
         if form.id_user_commercial.data:
             prestation_args['id_user_commercial'] = form.id_user_commercial.data

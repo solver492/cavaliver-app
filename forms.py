@@ -39,8 +39,11 @@ class PrestationForm(FlaskForm):
     transporteur_ids = SelectField('Transporteurs', coerce=int, validators=[Optional()])
     date_debut = DateTimeLocalField('Date et heure de début', format='%Y-%m-%dT%H:%M')
     date_fin = DateTimeLocalField('Date et heure de fin', format='%Y-%m-%dT%H:%M')
-    trajet_depart = TextAreaField('Adresse de départ', validators=[DataRequired()])
-    trajet_destination = TextAreaField('Adresse de destination', validators=[DataRequired()])
+    adresse_depart = TextAreaField('Adresse de départ', validators=[DataRequired()])
+    adresse_arrivee = TextAreaField('Adresse de destination', validators=[DataRequired()])
+    # Ces champs sont conservés pour la compatibilité, mais ils seront stockés dans adresse_depart et adresse_arrivee
+    trajet_depart = TextAreaField('Point de départ', validators=[Optional()])
+    trajet_destination = TextAreaField('Point de destination', validators=[Optional()])
     societe = StringField('Société')
     montant = FloatField('Montant')
     observation = TextAreaField('Observations')

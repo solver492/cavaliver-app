@@ -107,7 +107,7 @@
                             {% endif %}
                         </div>
 
-                        <div class="form-group mb-3">
+                        <div class="form-group mb-3 d-none">
                             {{ form.trajet_depart.label(class="form-label") }}
                             {{ form.trajet_depart(class="form-control", list="suggestions-depart", autocomplete="off") }}
                             <datalist id="suggestions-depart">
@@ -124,7 +124,7 @@
                             {% endif %}
                         </div>
 
-                        <div class="form-group mb-3">
+                        <div class="form-group mb-3 d-none">
                             {{ form.trajet_destination.label(class="form-label") }}
                             {{ form.trajet_destination(class="form-control", list="suggestions-destination", autocomplete="off") }}
                             <datalist id="suggestions-destination">

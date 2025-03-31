@@ -46,8 +46,10 @@ class Prestation(db.Model):
     date_fin = db.Column(db.DateTime)
     adresse_depart = db.Column(db.Text)
     adresse_arrivee = db.Column(db.Text)
-    trajet_depart = db.Column(db.Text)
-    trajet_destination = db.Column(db.Text)
+    # Retrait temporaire des colonnes problématiques
+    # Ces lignes sont commentées car elles causent des erreurs sur Render
+    # trajet_depart = db.Column(db.Text)
+    # trajet_destination = db.Column(db.Text)
     observation = db.Column(db.Text)
     statut = db.Column(db.String(20), default='en attente')  # en attente, en cours, todo, done, mod, canceled
     requires_packaging = db.Column(db.Boolean, default=False)
