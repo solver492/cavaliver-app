@@ -18,16 +18,19 @@ echo "\n[4] Recréation complète de la base de données"
 python recreate_db.py
 chmod 666 /opt/render/project/src/instance/demenage.db
 
-echo "\n[5] Vérification des utilisateurs créés (debug)"
+echo "\n[5] Mise à jour du schéma de la base de données"
+python update_db_schema.py
+
+echo "\n[6] Vérification des utilisateurs créés (debug)"
 python -c "from app import app; from models import User; with app.app_context(): users = User.query.all(); print('Utilisateurs dans la base:'); [print(f'- {u.username} (rôle: {u.role})') for u in users];"
 
-echo "\n[6] Création des notifications pour les transporteurs déjà assignés"
+echo "\n[7] Création des notifications pour les transporteurs déjà assignés"
 python create_missing_notifications.py
 
-echo "\n[7] Affichage des fichiers après initialisation:"
+echo "\n[8] Affichage des fichiers après initialisation:"
 ls -la
 
-echo "\n[8] Démarrage de l'application avec Gunicorn (en mode production)"
+echo "\n[9] Démarrage de l'application avec Gunicorn (en mode production)"
 export FLASK_APP=app.py
 export FLASK_ENV=production 
 export SECRET_KEY=votre_clef_secrete
