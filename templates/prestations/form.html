@@ -30,11 +30,12 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    {{ form.transporteur_id.label(class="form-label") }}
-                                    {{ form.transporteur_id(class="form-select") }}
-                                    {% if form.transporteur_id.errors %}
+                                    {{ form.transporteur_ids.label(class="form-label") }}
+                                    {{ form.transporteur_ids(class="form-select", multiple=true) }}
+                                    <div class="form-text">Maintenez Ctrl pour sélectionner plusieurs transporteurs</div>
+                                    {% if form.transporteur_ids.errors %}
                                     <div class="invalid-feedback d-block">
-                                        {% for error in form.transporteur_id.errors %}
+                                        {% for error in form.transporteur_ids.errors %}
                                         <span>{{ error }}</span>
                                         {% endfor %}
                                     </div>
@@ -73,8 +74,47 @@
                         </div>
 
                         <div class="form-group mb-3">
+                            {{ form.adresse_depart.label(class="form-label") }}
+                            {{ form.adresse_depart(class="form-control", list="suggestions-adresse-depart", rows=3) }}
+                            <datalist id="suggestions-adresse-depart">
+                                {% for suggestion in suggestions_depart %}
+                                <option value="{{ suggestion }}">
+                                {% endfor %}
+                            </datalist>
+                            {% if form.adresse_depart.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.adresse_depart.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            {{ form.adresse_arrivee.label(class="form-label") }}
+                            {{ form.adresse_arrivee(class="form-control", list="suggestions-adresse-arrivee", rows=3) }}
+                            <datalist id="suggestions-adresse-arrivee">
+                                {% for suggestion in suggestions_arrivee %}
+                                <option value="{{ suggestion }}">
+                                {% endfor %}
+                            </datalist>
+                            {% if form.adresse_arrivee.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.adresse_arrivee.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
                             {{ form.trajet_depart.label(class="form-label") }}
-                            {{ form.trajet_depart(class="form-control") }}
+                            {{ form.trajet_depart(class="form-control", list="suggestions-depart", autocomplete="off") }}
+                            <datalist id="suggestions-depart">
+                                {% for suggestion in suggestions_points %}
+                                <option value="{{ suggestion }}">
+                                {% endfor %}
+                            </datalist>
                             {% if form.trajet_depart.errors %}
                             <div class="invalid-feedback d-block">
                                 {% for error in form.trajet_depart.errors %}
@@ -86,10 +126,69 @@
 
                         <div class="form-group mb-3">
                             {{ form.trajet_destination.label(class="form-label") }}
-                            {{ form.trajet_destination(class="form-control") }}
+                            {{ form.trajet_destination(class="form-control", list="suggestions-destination", autocomplete="off") }}
+                            <datalist id="suggestions-destination">
+                                {% for suggestion in suggestions_destinations %}
+                                <option value="{{ suggestion }}">
+                                {% endfor %}
+                            </datalist>
                             {% if form.trajet_destination.errors %}
                             <div class="invalid-feedback d-block">
                                 {% for error in form.trajet_destination.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.requires_packaging.label(class="form-label") }}
+                                    {{ form.requires_packaging(class="form-select") }}
+                                    {% if form.requires_packaging.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.requires_packaging.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.demenagement_type.label(class="form-label") }}
+                                    {{ form.demenagement_type(class="form-select") }}
+                                    {% if form.demenagement_type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.demenagement_type.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            {{ form.camion_type.label(class="form-label") }}
+                            {{ form.camion_type(class="form-select") }}
+                            <div class="form-text">Choisissez le type de camion adapté à votre déménagement</div>
+                            {% if form.camion_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.camion_type.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            {{ form.tags.label(class="form-label") }}
+                            {{ form.tags(class="form-control", placeholder="ex: urgent, fragile, volumineux") }}
+                            {% if form.tags.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.tags.errors %}
                                 <span>{{ error }}</span>
                                 {% endfor %}
                             </div>

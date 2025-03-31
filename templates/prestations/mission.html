@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Mission #{{ prestation.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between">
+                        <h2 class="mb-0">
+                            <i class="fas fa-file-contract"></i> Fiche de Mission #{{ prestation.id }}
+                        </h2>
+                        <div>
+                            <button onclick="window.print()" class="btn btn-light">
+                                <i class="fas fa-print"></i> Imprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header bg-secondary text-white">
+                                    <h4 class="mb-0">{{ prestation.societe or 'NASSALI RAFIK' }} - Déménagement</h4>
+                                </div>
+                                <div class="card-body">
+                                    <p>Service de déménagement professionnel</p>
+                                    <p>Déménagement résidentiel, d'entreprise et transport d'équipements industriels</p>
+                                    <p>Opère en Normandie et dans toute la France</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header bg-info text-white">
+                                    <h4 class="mb-0">Informations Client</h4>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <th>Nom :</th>
+                                            <td>{{ prestation.client.nom }} {{ prestation.client.prenom }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Téléphone :</th>
+                                            <td>{{ prestation.client.telephone }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Email :</th>
+                                            <td>{{ prestation.client.email }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card mb-3">
+                                <div class="card-header bg-success text-white">
+                                    <h4 class="mb-0">Détails de la Mission</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h5>Type de déménagement</h5>
+                                            <p class="badge bg-info">{{ prestation.demenagement_type }}</p>
+                                            
+                                            <h5>Dates</h5>
+                                            <p><strong>Début :</strong> {{ prestation.date_debut.strftime('%d/%m/%Y %H:%M') }}</p>
+                                            <p><strong>Fin :</strong> {{ prestation.date_fin.strftime('%d/%m/%Y %H:%M') }}</p>
+                                            
+                                            <h5>Trajet</h5>
+                                            <p><i class="fas fa-map-marker-alt"></i> <strong>Départ :</strong> {{ prestation.trajet_depart }}</p>
+                                            <p><i class="fas fa-flag-checkered"></i> <strong>Destination :</strong> {{ prestation.trajet_destination }}</p>
+                                            
+                                            <h5>Statut</h5>
+                                            <p>
+                                                <span class="badge 
+                                                    {% if prestation.statut == 'en_attente' %}bg-warning
+                                                    {% elif prestation.statut == 'en_cours' %}bg-primary
+                                                    {% elif prestation.statut == 'terminee' %}bg-success
+                                                    {% elif prestation.statut == 'annulee' %}bg-danger
+                                                    {% else %}bg-secondary{% endif %}">
+                                                    {{ prestation.statut|replace('_', ' ')|title }}
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h5>Adresse complète de départ</h5>
+                                            <p>{{ prestation.adresse_depart }}</p>
+                                            
+                                            <h5>Adresse complète d'arrivée</h5>
+                                            <p>{{ prestation.adresse_arrivee }}</p>
+                                            
+                                            <h5>Équipement</h5>
+                                            <p><strong>Type de camion :</strong> {{ prestation.camion_type }}</p>
+                                            <p><strong>Emballage nécessaire :</strong> {{ 'Oui' if prestation.requires_packaging else 'Non' }}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mt-3">
+                                        <div class="col-md-12">
+                                            <h5>Observations</h5>
+                                            <div class="border p-3 rounded">
+                                                {{ prestation.observation or 'Aucune observation' }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {% if prestation.tags %}
+                                    <div class="row mt-3">
+                                        <div class="col-md-12">
+                                            <h5>Tags</h5>
+                                            {% for tag in prestation.tags.split(',') %}
+                                            <span class="badge bg-secondary">{{ tag.strip() }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card mb-3">
+                                <div class="card-header bg-warning">
+                                    <h4 class="mb-0">Transport et Personnel</h4>
+                                </div>
+                                <div class="card-body">
+                                    {% if prestation.prestation_transporters.count() > 0 %}
+                                    <h5>Transporteurs assignés</h5>
+                                    <ul class="list-group">
+                                        {% for pt in prestation.prestation_transporters %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            {{ pt.transporter.prenom }} {{ pt.transporter.nom }} - {{ pt.transporter.telephone or 'N° non renseigné' }}
+                                            <span class="badge {% if pt.statut == 'acceptee' %}bg-success{% elif pt.statut == 'refusee' %}bg-danger{% else %}bg-warning{% endif %}">
+                                                {{ pt.statut|capitalize }}
+                                            </span>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% else %}
+                                    <p>Aucun transporteur assigné à cette mission.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if current_user.role == 'transporteur' %}
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h4 class="mb-0">Actions du transporteur</h4>
+                                </div>
+                                <div class="card-body">
+                                    {% set current_assignment = prestation.prestation_transporters.filter_by(transporter_id=current_user.id).first() %}
+                                    
+                                    {% if current_assignment %}
+                                        {% if current_assignment.statut == 'acceptee' %}
+                                            <div class="alert alert-success">
+                                                <i class="fas fa-check-circle me-2"></i>
+                                                Vous avez accepté cette prestation. Vous devez l'exécuter selon le planning prévu.
+                                                {% if prestation.statut == 'en_cours' %}
+                                                <hr>
+                                                <form action="{{ url_for('prestation_terminer', id=prestation.id) }}" method="POST" class="mt-3">
+                                                    <button type="submit" class="btn btn-success">
+                                                        <i class="fas fa-flag-checkered me-2"></i>Marquer comme terminée
+                                                    </button>
+                                                </form>
+                                                {% endif %}
+                                            </div>
+                                        {% elif current_assignment.statut == 'refusee' %}
+                                            <div class="alert alert-danger">
+                                                <i class="fas fa-times-circle me-2"></i>
+                                                Vous avez refusé cette prestation.
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                Vous avez été assigné à cette prestation. Veuillez accepter ou refuser cette mission.
+                                            </div>
+                                            
+                                            <div class="d-flex gap-3">
+                                                <form action="{{ url_for('prestation_accepter', id=prestation.id) }}" method="POST">
+                                                    <button type="submit" class="btn btn-success">
+                                                        <i class="fas fa-check me-2"></i>Accepter la mission
+                                                    </button>
+                                                </form>
+                                                <form action="{{ url_for('prestation_refuser', id=prestation.id) }}" method="POST">
+                                                    <button type="submit" class="btn btn-danger">
+                                                        <i class="fas fa-times me-2"></i>Refuser la mission
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            Vous n'êtes pas assigné à cette prestation.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if prestation.montant %}
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card mb-3">
+                                <div class="card-header bg-dark text-white">
+                                    <h4 class="mb-0">Informations financières</h4>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Montant :</strong> {{ prestation.montant }} €</p>
+                                    {% if prestation.societe %}
+                                    <p><strong>Société :</strong> {{ prestation.societe }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row mt-5">
+                        <div class="col-md-6">
+                            <div class="border-top pt-3">
+                                <p>Signature du client :</p>
+                                <div style="height: 100px; border: 1px solid #ccc;"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border-top pt-3">
+                                <p>Signature du transporteur :</p>
+                                <div style="height: 100px; border: 1px solid #ccc;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    <p class="mb-0">Document généré le {{ prestation.date_creation.strftime('%d/%m/%Y à %H:%M') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .navbar, .card-header button, .btn {
+        display: none !important;
+    }
+    body {
+        padding: 0;
+        margin: 0;
+    }
+    .card {
+        border: none !important;
+    }
+    .card-header {
+        background-color: #f8f9fa !important;
+        color: #000 !important;
+    }
+    .card-body {
+        padding: 0.5rem !important;
+    }
+}
+</style>
+{% endblock %}

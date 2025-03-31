@@ -13,6 +13,39 @@
         {% endif %}
     </div>
 
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('prestations_list') }}">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="q" value="{{ search_query|default('') }}" 
+                                placeholder="Rechercher une prestation (client, adresse, type...)">
+                            <button class="btn btn-outline-secondary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="showArchived" 
+                                name="show_archived" value="true" {% if show_archived %}checked{% endif %} 
+                                onchange="this.form.submit()">
+                            <label class="form-check-label" for="showArchived">Afficher les prestations archivées</label>
+                        </div>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        {% if request.args.get('q') or show_archived %}
+                        <a href="{{ url_for('prestations_list') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Réinitialiser
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
@@ -24,34 +57,64 @@
                             <th>Date fin</th>
                             <th>Départ</th>
                             <th>Destination</th>
+                            <th>Type</th>
                             <th>Statut</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for prestation in prestations %}
-                        <tr>
-                            <td>{{ prestation.client.nom }} {{ prestation.client.prenom }}</td>
-                            <td>{{ prestation.date_debut.strftime('%d/%m/%Y %H:%M') }}</td>
-                            <td>{{ prestation.date_fin.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <tr {% if prestation.archived %}class="table-secondary"{% endif %}>
+                            <td>
+                                {{ prestation.client.nom }} {{ prestation.client.prenom }}
+                                {% if prestation.archived %}
+                                <span class="badge bg-secondary ms-1">Archivée</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ prestation.date_debut.strftime('%d/%m/%Y %H:%M') if prestation.date_debut else 'Non définie' }}</td>
+                            <td>{{ prestation.date_fin.strftime('%d/%m/%Y %H:%M') if prestation.date_fin else 'Non définie' }}</td>
                             <td>{{ prestation.adresse_depart }}</td>
                             <td>{{ prestation.adresse_arrivee }}</td>
+                            <td>{{ prestation.demenagement_type }}</td>
                             <td>
                                 <span class="badge {% if prestation.statut == 'todo' %}bg-primary
                                     {% elif prestation.statut == 'done' %}bg-success
+                                    {% elif prestation.statut == 'en cours' %}bg-info
                                     {% elif prestation.statut == 'mod' %}bg-warning
-                                    {% else %}bg-danger{% endif %}">
+                                    {% elif prestation.statut == 'payé' %}bg-success
+                                    {% elif prestation.statut == 'del' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
                                     {{ prestation.statut }}
                                 </span>
                             </td>
                             <td>
                                 <div class="btn-group">
-                                    <a href="{{ url_for('prestation_edit', id=prestation.id) }}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-edit"></i>
+                                    <a href="{{ url_for('prestation_details', id=prestation.id) }}" class="btn btn-sm btn-info" title="Voir les détails">
+                                        <i class="fas fa-eye"></i> Voir
                                     </a>
-                                    <a href="{{ url_for('generate_mission', id=prestation.id) }}" class="btn btn-sm btn-secondary" target="_blank">
-                                        <i class="fas fa-file-pdf"></i>
+                                    {% if current_user.role != 'transporteur' %}
+                                    <a href="{{ url_for('prestation_edit', id=prestation.id) }}" class="btn btn-sm btn-primary" title="Modifier">
+                                        <i class="fas fa-edit"></i> Modifier
                                     </a>
+                                    {% endif %}
+                                    <a href="{{ url_for('generate_mission', id=prestation.id) }}" class="btn btn-sm btn-secondary" target="_blank" title="Générer PDF">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </a>
+                                    {% if current_user.role in ['admin', 'super_admin', 'commercial'] and not prestation.archived %}
+                                    <a href="{{ url_for('prestation_archive', id=prestation.id) }}" class="btn btn-sm btn-warning" title="Archiver">
+                                        <i class="fas fa-archive"></i> Archiver
+                                    </a>
+                                    {% endif %}
+                                    {% if current_user.role in ['admin', 'super_admin', 'commercial'] and prestation.archived %}
+                                    <a href="{{ url_for('prestation_unarchive', id=prestation.id) }}" class="btn btn-sm btn-success" title="Désarchiver">
+                                        <i class="fas fa-box-open"></i> Désarchiver
+                                    </a>
+                                    {% endif %}
+                                    {% if current_user.role == 'super_admin' %}
+                                    <a href="{{ url_for('prestation_delete', id=prestation.id) }}" class="btn btn-sm btn-danger" title="Supprimer">
+                                        <i class="fas fa-trash"></i> Supprimer
+                                    </a>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
@@ -59,6 +122,19 @@
                     </tbody>
                 </table>
             </div>
+            
+            {% if prestations|length == 0 %}
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i>
+                {% if search_query %}
+                Aucune prestation ne correspond à votre recherche.
+                {% elif show_archived %}
+                Aucune prestation archivée trouvée.
+                {% else %}
+                Aucune prestation n'a été ajoutée pour le moment.
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

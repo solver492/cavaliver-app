@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des factures{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gestion des factures</h1>
+        <a href="{{ url_for('facture_add') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Nouvelle facture
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="mb-4">
+                <form class="row g-3" method="GET" action="{{ url_for('factures_list') }}">
+                    <div class="col-md-3">
+                        <label for="client" class="form-label">Client</label>
+                        <select class="form-select" id="client" name="client_id">
+                            <option value="">Tous les clients</option>
+                            {% for client in clients %}
+                            <option value="{{ client.id }}" {% if request.args.get('client_id')|int == client.id %}selected{% endif %}>
+                                {{ client.nom }} {{ client.prenom }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="statut" class="form-label">Statut</label>
+                        <select class="form-select" id="statut" name="statut">
+                            <option value="">Tous les statuts</option>
+                            <option value="en_attente" {% if request.args.get('statut') == 'en_attente' %}selected{% endif %}>En attente</option>
+                            <option value="payee" {% if request.args.get('statut') == 'payee' %}selected{% endif %}>Payée</option>
+                            <option value="retard" {% if request.args.get('statut') == 'retard' %}selected{% endif %}>En retard</option>
+                            <option value="annulee" {% if request.args.get('statut') == 'annulee' %}selected{% endif %}>Annulée</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date_debut" class="form-label">Date début</label>
+                        <input type="date" class="form-control" id="date_debut" name="date_debut" value="{{ request.args.get('date_debut', '') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date_fin" class="form-label">Date fin</label>
+                        <input type="date" class="form-control" id="date_fin" name="date_fin" value="{{ request.args.get('date_fin', '') }}">
+                    </div>
+                    <div class="col-12 d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary me-2">Filtrer</button>
+                        <a href="{{ url_for('factures_list') }}" class="btn btn-secondary">Réinitialiser</a>
+                    </div>
+                </form>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>N° Facture</th>
+                            <th>Client</th>
+                            <th>Prestation</th>
+                            <th>Montant TTC</th>
+                            <th>Date émission</th>
+                            <th>Date échéance</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for facture in factures %}
+                        <tr class="{% if facture.statut == 'retard' %}table-danger{% elif facture.statut == 'payee' %}table-success{% elif facture.statut == 'annulee' %}table-secondary{% endif %}">
+                            <td>{{ facture.numero }}</td>
+                            <td>{{ facture.client.nom }} {{ facture.client.prenom }}</td>
+                            <td>
+                                <a href="{{ url_for('prestation_details', id=facture.prestation.id) }}" class="text-decoration-none">
+                                    {{ facture.prestation.adresse_depart }} → {{ facture.prestation.adresse_arrivee }}
+                                </a>
+                            </td>
+                            <td>{{ "%.2f"|format(facture.montant_ttc) }} €</td>
+                            <td>{{ facture.date_emission.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ facture.date_echeance.strftime('%d/%m/%Y') if facture.date_echeance else '-' }}</td>
+                            <td>
+                                {% if facture.statut == 'en_attente' %}
+                                <span class="badge bg-warning">En attente</span>
+                                {% elif facture.statut == 'payee' %}
+                                <span class="badge bg-success">Payée</span>
+                                {% elif facture.statut == 'retard' %}
+                                <span class="badge bg-danger">En retard</span>
+                                {% elif facture.statut == 'annulee' %}
+                                <span class="badge bg-secondary">Annulée</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('facture_details', id=facture.id) }}" class="btn btn-sm btn-info" title="Détails">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('facture_edit', id=facture.id) }}" class="btn btn-sm btn-primary" title="Modifier">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('facture_pdf', id=facture.id) }}" class="btn btn-sm btn-secondary" title="Télécharger PDF">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                    {% if facture.statut == 'en_attente' %}
+                                    <a href="{{ url_for('facture_marquer_payee', id=facture.id) }}" class="btn btn-sm btn-success" title="Marquer comme payée">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if not factures %}
+            <div class="alert alert-info mt-3">
+                Aucune facture trouvée.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    $(document).ready(function() {
+        // Initialiser les tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>
+{% endblock %}

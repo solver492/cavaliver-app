@@ -31,31 +31,65 @@ class Client(db.Model):
     email = db.Column(db.String(120))
     telephone = db.Column(db.String(20))
     adresse = db.Column(db.Text)
+    client_type = db.Column(db.String(20), default='particulier')  # 'particulier' or 'entreprise'
+    tags = db.Column(db.Text)  # Store tags as comma-separated values
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    archived = db.Column(db.Boolean, default=False)  # Pour indiquer si le client est archivé
     
     created_by = db.relationship('User', backref='clients', foreign_keys=[created_by_id])
 
 class Prestation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
-    date_debut = db.Column(db.DateTime, nullable=False)
-    date_fin = db.Column(db.DateTime, nullable=False)
-    adresse_depart = db.Column(db.Text, nullable=False)
-    adresse_arrivee = db.Column(db.Text, nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'))
+    date_debut = db.Column(db.DateTime)
+    date_fin = db.Column(db.DateTime)
+    adresse_depart = db.Column(db.Text)
+    adresse_arrivee = db.Column(db.Text)
+    trajet_depart = db.Column(db.Text)
+    trajet_destination = db.Column(db.Text)
     observation = db.Column(db.Text)
-    statut = db.Column(db.String(20), default='todo')  # todo, done, mod, canceled
+    statut = db.Column(db.String(20), default='en attente')  # en attente, en cours, todo, done, mod, canceled
+    requires_packaging = db.Column(db.Boolean, default=False)
+    demenagement_type = db.Column(db.String(50))  # furniture, fragile items, etc.
+    camion_type = db.Column(db.String(100))
+    priorite = db.Column(db.Integer, default=0)  # Priorité de la prestation
+    societe = db.Column(db.String(100))  # Nom de la société
+    montant = db.Column(db.Float)  # Montant en euros
+    tags = db.Column(db.Text)  # Store tags as comma-separated values
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    id_user_transporteur = db.Column(db.Integer, db.ForeignKey('user.id'))
     id_user_commercial = db.Column(db.Integer, db.ForeignKey('user.id'))
-    planning_id = db.Column(db.Integer, db.ForeignKey('planning.id'))
+    planning_id = db.Column(db.Integer, db.ForeignKey('planning.id'), nullable=True)
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    archived = db.Column(db.Boolean, default=False)  # Pour indiquer si la prestation est archivée
     
+    # Relations
     client = db.relationship('Client', backref='prestations')
-    created_by = db.relationship('User', backref='created_prestations', foreign_keys=[created_by_id])
+    commercial = db.relationship('User', backref='prestations_commerciales', foreign_keys=[id_user_commercial])
+    created_by = db.relationship('User', backref='prestations_created', foreign_keys=[created_by_id])
     planning = db.relationship('Planning', backref='prestations')
-    transporteur = db.relationship('User', foreign_keys=[id_user_transporteur], backref='prestations_transporteur')
-    commercial = db.relationship('User', foreign_keys=[id_user_commercial], backref='prestations_commercial')
+    
+    # Relation many-to-many avec les transporteurs via la table d'association
+    transporters = db.relationship(
+        'User',
+        secondary='prestation_transporter',
+        backref=db.backref('prestations_transporteur', lazy='dynamic'),
+        lazy='dynamic'
+    )
+
+class PrestationTransporter(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    prestation_id = db.Column(db.Integer, db.ForeignKey('prestation.id'), nullable=False)
+    transporter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    statut = db.Column(db.String(20), default='en_attente')  # en_attente, acceptee, refusee, terminee
+    date_assignation = db.Column(db.DateTime, default=datetime.utcnow)
+    date_acceptation = db.Column(db.DateTime, nullable=True)
+    date_refus = db.Column(db.DateTime, nullable=True)
+    date_finalisation = db.Column(db.DateTime, nullable=True)
+    
+    # Relations
+    prestation = db.relationship('Prestation', backref=db.backref('prestation_transporters', lazy='dynamic'))
+    transporter = db.relationship('User', backref=db.backref('transporter_prestations', lazy='dynamic'))
 
 class CustomField(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -112,8 +146,55 @@ class Document(db.Model):
     filename = db.Column(db.String(255), nullable=False)
     original_filename = db.Column(db.String(255), nullable=False)
     file_type = db.Column(db.String(50))
+    document_type = db.Column(db.String(50), default='autre')  # facture, contrat, devis, autre
+    description = db.Column(db.Text)
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
     
     client = db.relationship('Client', backref='documents')
     created_by = db.relationship('User', backref='uploaded_documents', foreign_keys=[created_by_id])
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    type = db.Column(db.String(20), default='info')  # info, warning, success, error
+    is_read = db.Column(db.Boolean, default=False)
+    related_prestation_id = db.Column(db.Integer, db.ForeignKey('prestation.id'))
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='notifications')
+    related_prestation = db.relationship('Prestation', backref='notifications')
+
+class Facture(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    numero = db.Column(db.String(50), unique=True, nullable=False)
+    prestation_id = db.Column(db.Integer, db.ForeignKey('prestation.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+    montant_ht = db.Column(db.Float, nullable=False)
+    taux_tva = db.Column(db.Float, default=20.0)  # Taux de TVA en pourcentage
+    montant_ttc = db.Column(db.Float, nullable=False)
+    date_emission = db.Column(db.DateTime, default=datetime.utcnow)
+    date_echeance = db.Column(db.DateTime)
+    statut = db.Column(db.String(20), default='en_attente')  # en_attente, payee, annulee, retard
+    mode_paiement = db.Column(db.String(50))  # virement, carte, espèces, chèque
+    date_paiement = db.Column(db.DateTime)
+    notes = db.Column(db.Text)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relations
+    prestation = db.relationship('Prestation', backref='factures')
+    client = db.relationship('Client', backref='factures')
+    created_by = db.relationship('User', backref='factures_created', foreign_keys=[created_by_id])
+
+class LigneFacture(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    facture_id = db.Column(db.Integer, db.ForeignKey('facture.id'), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    quantite = db.Column(db.Float, default=1)
+    prix_unitaire = db.Column(db.Float, nullable=False)
+    montant = db.Column(db.Float, nullable=False)
+    
+    # Relation
+    facture = db.relationship('Facture', backref='lignes')

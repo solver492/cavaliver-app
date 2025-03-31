@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmer l'archivage du client{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-archive me-2"></i>Confirmer l'archivage
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Êtes-vous sûr de vouloir archiver ce client ?</strong>
+            </div>
+            <p>Vous êtes sur le point d'archiver le client : <strong>{{ client.nom }} {{ client.prenom }}</strong></p>
+            <p class="mb-4">Cette action masquera le client de la liste principale, mais il restera accessible via la recherche ou en affichant les clients archivés.</p>
+            
+            <form method="POST">
+                <div class="d-flex justify-content-end">
+                    <a href="{{ url_for('clients_list') }}" class="btn btn-secondary me-2">
+                        <i class="fas fa-times me-1"></i>Annuler
+                    </a>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-archive me-1"></i>Confirmer l'archivage
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

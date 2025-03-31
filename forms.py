@@ -28,10 +28,15 @@ class ClientForm(FlaskForm):
     adresse = TextAreaField('Adresse')
     telephone = StringField('Téléphone')
     email = StringField('Email', validators=[Optional(), Email()])
+    client_type = SelectField('Type de client', choices=[
+        ('particulier', 'Client particulier'),
+        ('entreprise', 'Entreprise')
+    ])
+    tags = StringField('Tags (séparés par des virgules)')
 
 class PrestationForm(FlaskForm):
     client_id = SelectField('Client', coerce=int)
-    transporteur_id = SelectField('Transporteur', coerce=int)
+    transporteur_ids = SelectField('Transporteurs', coerce=int, validators=[Optional()])
     date_debut = DateTimeLocalField('Date et heure de début', format='%Y-%m-%dT%H:%M')
     date_fin = DateTimeLocalField('Date et heure de fin', format='%Y-%m-%dT%H:%M')
     trajet_depart = TextAreaField('Adresse de départ', validators=[DataRequired()])
@@ -39,6 +44,28 @@ class PrestationForm(FlaskForm):
     societe = StringField('Société')
     montant = FloatField('Montant')
     observation = TextAreaField('Observations')
+    requires_packaging = SelectField('Nécessite un emballage', choices=[
+        ('False', 'Non'),
+        ('True', 'Oui')
+    ], coerce=lambda x: x == 'True')
+    demenagement_type = SelectField('Type de déménagement', choices=[
+        ('demenagement_residence', 'Déménagement résidentiel'),
+        ('demenagement_entreprise', 'Déménagement d\'entreprise'),
+        ('transport_equipement_industriel', 'Transport d\'équipements industriels'),
+        ('demenagement_partiel', 'Déménagement partiel'),
+        ('demenagement_total', 'Déménagement total'),
+        ('montage_meubles', 'Avec montage de meubles'),
+        ('stockage', 'Avec stockage temporaire')
+    ])
+    camion_type = SelectField('Type de camion', choices=[
+        ('fourgon_12m3', 'Fourgon 12 m³ (petit déménagement)'),
+        ('camion_20m3', 'Camion spécial 20 m³ avec hayon'),
+        ('petit_camion', 'Petit camion 20-23 m³ (logements < 50 m²)'),
+        ('camion_5t', 'Camion 5 tonnes 30-40 m³ (logements 50-80 m²)'),
+        ('camion_10t', 'Camion 10 tonnes 50 m³ (logements 80-100 m²)'),
+        ('semi_remorque', 'Semi-remorque 80-100 m³ (très grands déménagements)')
+    ])
+    tags = StringField('Tags (séparés par des virgules)')
     priorite = SelectField('Priorité', choices=[
         (1, 'Basse'),
         (2, 'Moyenne-basse'),
@@ -47,6 +74,8 @@ class PrestationForm(FlaskForm):
         (5, 'Haute')
     ], coerce=int)
     statut = SelectField('Statut', choices=[
+        ('en attente', 'En attente'),
+        ('en cours', 'En cours'),
         ('todo', 'À faire'),
         ('mod', 'Modifié'),
         ('done', 'Terminé'),

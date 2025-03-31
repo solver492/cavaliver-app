@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ title }}</h1>
+        <a href="{{ url_for('factures_list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+        </a>
+    </div>
+
+    <form method="POST" class="needs-validation" novalidate>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="client" class="form-label">Client</label>
+                    <select class="form-select" id="client" name="client_id" required>
+                        <option value="">Sélectionnez un client</option>
+                        {% for client in clients %}
+                        <option value="{{ client.id }}">{{ client.nom }} {{ client.prenom }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="invalid-feedback">
+                        Veuillez sélectionner un client.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="prestation" class="form-label">Prestation</label>
+                    <select class="form-select" id="prestation" name="prestation_id" required disabled>
+                        <option value="">Sélectionnez d'abord un client</option>
+                    </select>
+                    <div class="invalid-feedback">
+                        Veuillez sélectionner une prestation.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="numero_facture" class="form-label">Numéro de facture</label>
+                    <input type="text" class="form-control" id="numero_facture" name="numero_facture" value="FAC-{{ current_date.strftime('%Y%m%d') }}-{{ next_invoice_number }}" required readonly>
+                </div>
+
+                <div class="mb-3">
+                    <label for="date_emission" class="form-label">Date d'émission</label>
+                    <input type="date" class="form-control" id="date_emission" name="date_emission" value="{{ current_date.strftime('%Y-%m-%d') }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="date_echeance" class="form-label">Date d'échéance</label>
+                    <input type="date" class="form-control" id="date_echeance" name="date_echeance" value="{{ (current_date + timedelta(days=30)).strftime('%Y-%m-%d') }}" required>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="statut" class="form-label">Statut</label>
+                    <select class="form-select" id="statut" name="statut" required>
+                        <option value="en_attente">En attente</option>
+                        <option value="payee">Payée</option>
+                        <option value="annulee">Annulée</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="mode_paiement" class="form-label">Mode de paiement</label>
+                    <select class="form-select" id="mode_paiement" name="mode_paiement" required>
+                        <option value="especes">Espèces</option>
+                        <option value="cheque">Chèque</option>
+                        <option value="virement">Virement bancaire</option>
+                        <option value="carte">Carte bancaire</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="tva" class="form-label">Taux de TVA (%)</label>
+                    <input type="number" class="form-control" id="tva" name="tva" value="20.0" step="0.1" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="notes" class="form-label">Notes</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="4"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-end mt-4">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>Enregistrer la facture
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const clientSelect = document.getElementById('client');
+    const prestationSelect = document.getElementById('prestation');
+    
+    // Fonction pour charger les prestations d'un client
+    function loadPrestations(clientId) {
+        if (!clientId) {
+            prestationSelect.innerHTML = '<option value="">Sélectionnez d\'abord un client</option>';
+            prestationSelect.disabled = true;
+            return;
+        }
+        
+        fetch(`/api/clients/${clientId}/prestations`)
+            .then(response => response.json())
+            .then(prestations => {
+                prestationSelect.innerHTML = '<option value="">Sélectionnez une prestation</option>';
+                prestations.forEach(prestation => {
+                    const option = document.createElement('option');
+                    option.value = prestation.id;
+                    option.textContent = `Prestation #${prestation.id} - ${new Date(prestation.date_debut).toLocaleDateString()} - ${prestation.adresse_depart.slice(0, 30)}...`;
+                    prestationSelect.appendChild(option);
+                });
+                prestationSelect.disabled = false;
+            })
+            .catch(error => {
+                console.error('Erreur lors du chargement des prestations:', error);
+                prestationSelect.innerHTML = '<option value="">Erreur de chargement</option>';
+                prestationSelect.disabled = true;
+            });
+    }
+    
+    // Écouter les changements sur le select client
+    clientSelect.addEventListener('change', function() {
+        loadPrestations(this.value);
+    });
+});
+</script>
+{% endblock %}

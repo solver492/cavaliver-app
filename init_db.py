@@ -15,7 +15,7 @@ def init_database():
                 username='admin',
                 password_hash=generate_password_hash('admin'),
                 email='admin@example.com',
-                role='superadmin',
+                role='super_admin',
                 nom='Super',
                 prenom='Admin',
                 statut='actif'

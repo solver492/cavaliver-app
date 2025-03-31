@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Détails de la prestation{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">Détails de la prestation</h2>
+                    <div>
+                        {% if current_user.role != 'transporteur' %}
+                        <a href="{{ url_for('prestation_edit', id=prestation.id) }}" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Modifier
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('generate_mission', id=prestation.id) }}" class="btn btn-success" target="_blank">
+                            <i class="fas fa-file-pdf"></i> Fiche de mission
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h4>Client</h4>
+                            <p><strong>Nom:</strong> {{ prestation.client.nom }} {{ prestation.client.prenom }}</p>
+                            <p><strong>Téléphone:</strong> {{ prestation.client.telephone }}</p>
+                            <p><strong>Email:</strong> {{ prestation.client.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>Dates</h4>
+                            <p><strong>Début:</strong> {{ prestation.date_debut.strftime('%d/%m/%Y %H:%M') }}</p>
+                            <p><strong>Fin:</strong> {{ prestation.date_fin.strftime('%d/%m/%Y %H:%M') }}</p>
+                            <p><strong>Statut:</strong> <span class="badge bg-{{ 'success' if prestation.statut == 'done' else 'warning' if prestation.statut == 'en_cours' else 'info' }}">{{ prestation.statut }}</span></p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h4>Adresses</h4>
+                            <p><strong>Départ:</strong> {{ prestation.adresse_depart }}</p>
+                            <p><strong>Destination:</strong> {{ prestation.adresse_arrivee }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>Détails du déménagement</h4>
+                            <p><strong>Type:</strong> {{ prestation.demenagement_type }}</p>
+                            <p><strong>Emballage nécessaire:</strong> {{ 'Oui' if prestation.requires_packaging else 'Non' }}</p>
+                            <p><strong>Type de camion:</strong> {{ prestation.camion_type }}</p>
+                            <p><strong>Priorité:</strong> {{ prestation.priorite }}</p>
+                        </div>
+                    </div>
+
+                    {% if prestation.tags %}
+                    <div class="mb-4">
+                        <h4>Tags</h4>
+                        <div>
+                            {% for tag in prestation.tags.split(',') %}
+                            <span class="badge bg-secondary">{{ tag.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if prestation.observation %}
+                    <div class="mb-4">
+                        <h4>Observations</h4>
+                        <p>{{ prestation.observation }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h4>Commercial</h4>
+                            <p>{{ prestation.commercial.nom }} {{ prestation.commercial.prenom }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>Transporteurs assignés</h4>
+                            <ul class="list-group">
+                                {% for pt in prestation.prestation_transporters %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    {{ pt.transporter.nom }} {{ pt.transporter.prenom }}
+                                    <span class="badge {% if pt.statut == 'acceptee' %}bg-success{% elif pt.statut == 'refusee' %}bg-danger{% else %}bg-warning{% endif %}">
+                                        {{ pt.statut|capitalize }}
+                                    </span>
+                                </li>
+                                {% else %}
+                                <li class="list-group-item">Aucun transporteur assigné</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">Créée le {{ prestation.date_creation.strftime('%d/%m/%Y') }}</small>
+                        {% if current_user.role == 'transporteur' %}
+                            {% set current_assignment = prestation.prestation_transporters.filter_by(transporter_id=current_user.id).first() %}
+                            
+                            {% if current_assignment %}
+                                {% if current_assignment.statut == 'acceptee' %}
+                                    <div>
+                                        <span class="badge bg-success">Prestation acceptée</span>
+                                    </div>
+                                {% elif current_assignment.statut == 'refusee' %}
+                                    <div>
+                                        <span class="badge bg-danger">Prestation refusée</span>
+                                    </div>
+                                {% else %}
+                                    <div>
+                                        <form action="{{ url_for('prestation_accepter', id=prestation.id) }}" method="POST" style="display: inline;">
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                <i class="fas fa-check me-1"></i>Accepter
+                                            </button>
+                                        </form>
+                                        <form action="{{ url_for('prestation_refuser', id=prestation.id) }}" method="POST" style="display: inline; margin-left: 5px;">
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-times me-1"></i>Refuser
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

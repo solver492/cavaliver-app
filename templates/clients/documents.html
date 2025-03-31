@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Documents du client{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Documents de {{ client.nom }} {{ client.prenom }}</h1>
+        <a href="{{ url_for('clients_list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Télécharger un nouveau document</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('client_upload_document', id=client.id) }}" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="document" class="form-label">Sélectionner un fichier</label>
+                            <input type="file" class="form-control" id="document" name="document" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="document_type" class="form-label">Type de document</label>
+                            <select class="form-select" id="document_type" name="document_type">
+                                <option value="facture">Facture</option>
+                                <option value="contrat">Contrat</option>
+                                <option value="devis">Devis</option>
+                                <option value="autre">Autre</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description (optionnel)</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Télécharger</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Documents existants</h5>
+                </div>
+                <div class="card-body">
+                    {% if documents %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nom du fichier</th>
+                                    <th>Type</th>
+                                    <th>Date d'ajout</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in documents %}
+                                <tr>
+                                    <td>{{ doc.original_filename }}</td>
+                                    <td>{{ doc.file_type }}</td>
+                                    <td>{{ doc.date_creation.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('client_download_document', client_id=client.id, document_id=doc.id) }}" class="btn btn-sm btn-success">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <a href="{{ url_for('client_delete_document', client_id=client.id, document_id=doc.id) }}" class="btn btn-sm btn-danger" 
+                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce document?');">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        Aucun document n'a encore été téléchargé pour ce client.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -79,6 +79,16 @@
     color: white;
 }
 
+.stats-card.factures {
+    background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
+    color: white;
+}
+
+.stats-card.ca {
+    background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%);
+    color: white;
+}
+
 .stats-card::before {
     content: '';
     position: absolute;
@@ -244,6 +254,10 @@
     background: var(--gradient-info);
 }
 
+.action-facture {
+    background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
+}
+
 /* Calendrier moderne et impressionnant */
 .calendar-wrapper {
     height: 100%;
@@ -310,6 +324,8 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -588,69 +604,118 @@
     
     <!-- Statistiques en ligne horizontale -->
     <div class="row g-2 mb-3">
-        <div class="col-lg-4 col-md-4 col-sm-4">
+        <div class="col-md-3">
             <div class="stats-card prestations">
-                <div class="icon">
-                    <i class="fas fa-truck"></i>
-                </div>
-                <div class="count">{{ prestations_count }}</div>
+                <div class="icon"><i class="fas fa-truck-moving"></i></div>
+                <div class="count">{{ total_prestations }}</div>
                 <div class="label">Prestations</div>
             </div>
         </div>
-        
-        <div class="col-lg-4 col-md-4 col-sm-4">
+        <div class="col-md-3">
             <div class="stats-card clients">
-                <div class="icon">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="count">{{ clients_count }}</div>
+                <div class="icon"><i class="fas fa-users"></i></div>
+                <div class="count">{{ total_clients }}</div>
                 <div class="label">Clients</div>
             </div>
         </div>
-        
-        <div class="col-lg-4 col-md-4 col-sm-4">
-            <div class="stats-card plannings">
-                <div class="icon">
-                    <i class="fas fa-calendar"></i>
-                </div>
-                <div class="count">{{ plannings_count }}</div>
-                <div class="label">Plannings</div>
+        <div class="col-md-3">
+            <div class="stats-card factures" style="background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%); color: white;">
+                <div class="icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                <div class="count">{{ total_factures }}</div>
+                <div class="label">Factures</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card ca" style="background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%); color: white;">
+                <div class="icon"><i class="fas fa-euro-sign"></i></div>
+                <div class="count">{{ "%.2f"|format(ca_total) }} €</div>
+                <div class="label">Chiffre d'affaires</div>
             </div>
         </div>
     </div>
-
-    <div class="row g-3">
-        <!-- Actions rapides et Dernières prestations côté à côté -->
-        <div class="col-lg-6">
-            <!-- Actions rapides -->
-            <div class="actions-card mb-3">
+    
+    <!-- Actions rapides -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <div class="actions-card">
                 <div class="card-header">
                     <h5><i class="fas fa-bolt"></i> Actions rapides</h5>
                 </div>
                 <div class="card-body">
                     <div class="action-buttons">
-                        <a href="{{ url_for('client_add') }}" class="action-button action-client">
-                            <i class="fas fa-user-plus"></i>
+                        <a href="{{ url_for('client_add') }}" class="action-button" style="background: linear-gradient(135deg, #1cc88a 0%, #169a68 100%);">
+                            <i class="fas fa-user-plus fa-2x mb-2"></i>
                             <span>Nouveau client</span>
                         </a>
-                        <a href="{{ url_for('prestation_add') }}" class="action-button action-prestation">
-                            <i class="fas fa-plus-circle"></i>
+                        <a href="{{ url_for('prestation_add') }}" class="action-button" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);">
+                            <i class="fas fa-truck-loading fa-2x mb-2"></i>
                             <span>Nouvelle prestation</span>
                         </a>
-                        <a href="{{ url_for('planning_add') }}" class="action-button action-planning">
-                            <i class="fas fa-calendar-plus"></i>
-                            <span>Nouveau planning</span>
+                        <a href="{{ url_for('facture_add') }}" class="action-button" style="background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);">
+                            <i class="fas fa-file-invoice fa-2x mb-2"></i>
+                            <span>Nouvelle facture</span>
+                        </a>
+                        <a href="{{ url_for('clients_list') }}?show_archived=true" class="action-button" style="background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%);">
+                            <i class="fas fa-archive fa-2x mb-2"></i>
+                            <span>Clients archivés</span>
                         </a>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="col-lg-6">
-            <!-- Dernières prestations -->
-            <div class="table-card mb-3">
+        
+        <div class="col-md-6">
+            <div class="actions-card">
+                <div class="card-header" style="background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);">
+                    <h5><i class="fas fa-chart-pie"></i> Résumé financier</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="text-muted">Factures en attente</h6>
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-clock fa-2x text-warning"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h5 class="mb-0">{{ factures_en_attente|length }}</h5>
+                                        <small class="text-muted">Montant: {{ "%.2f"|format(montant_impaye) }} €</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="text-muted">Factures en retard</h6>
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-shrink-0">
+                                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h5 class="mb-0">{{ factures_en_retard|length }}</h5>
+                                        <small class="text-muted">Action requise</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="{{ url_for('factures_list') }}" class="btn btn-warning w-100">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>Gérer les factures
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tableaux d'informations -->
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="table-card">
                 <div class="card-header">
-                    <h5><i class="fas fa-list"></i> Dernières prestations</h5>
+                    <h5><i class="fas fa-calendar-day"></i> Prestations à venir</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -659,27 +724,73 @@
                                 <tr>
                                     <th>Client</th>
                                     <th>Date</th>
-                                    <th>Statut</th>
+                                    <th>Adresse</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for prestation in recent_prestations %}
+                                {% for prestation in prestations_a_venir %}
                                 <tr>
                                     <td>{{ prestation.client.nom }} {{ prestation.client.prenom }}</td>
                                     <td>{{ prestation.date_debut.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ prestation.adresse_depart }}</td>
                                     <td>
-                                        <span class="badge bg-{{ 'success' if prestation.statut == 'done' else 'warning' }}">
-                                            {{ prestation.statut }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="{{ url_for('prestation_edit', id=prestation.id) }}" class="action-btn">
+                                        <a href="{{ url_for('prestation_details', id=prestation.id) }}" class="btn btn-sm btn-primary">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     </td>
                                 </tr>
                                 {% endfor %}
+                                {% if not prestations_a_venir %}
+                                <tr>
+                                    <td colspan="4" class="text-center">Aucune prestation à venir</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="table-card">
+                <div class="card-header" style="background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);">
+                    <h5><i class="fas fa-file-invoice-dollar"></i> Factures récentes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>N° Facture</th>
+                                    <th>Client</th>
+                                    <th>Montant</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for facture in factures_en_attente %}
+                                <tr>
+                                    <td>{{ facture.numero }}</td>
+                                    <td>{{ facture.client.nom }} {{ facture.client.prenom }}</td>
+                                    <td>{{ "%.2f"|format(facture.montant_ttc) }} €</td>
+                                    <td>
+                                        <span class="badge bg-warning">En attente</span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('facture_details', id=facture.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if not factures_en_attente %}
+                                <tr>
+                                    <td colspan="5" class="text-center">Aucune facture en attente</td>
+                                </tr>
+                                {% endif %}
                             </tbody>
                         </table>
                     </div>
@@ -687,10 +798,48 @@
             </div>
         </div>
     </div>
-
-    <!-- Calendrier sur toute la largeur -->
-    <div class="row">
-        <div class="col-12">
+    
+    <!-- Notifications et Calendrier -->
+    <div class="row g-3 mt-2">
+        <div class="col-md-4">
+            <div class="table-card">
+                <div class="card-header" style="background: linear-gradient(135deg, #36b9cc 0%, #258391 100%);">
+                    <h5><i class="fas fa-bell"></i> Notifications</h5>
+                </div>
+                <div class="card-body">
+                    <div class="notification-list">
+                        {% if notifications %}
+                            {% for notification in notifications %}
+                                <div class="notification-item {% if not notification.is_read %}unread{% endif %}">
+                                    <div class="notification-icon">
+                                        {% if notification.type == 'info' %}
+                                            <i class="fas fa-info-circle text-info"></i>
+                                        {% elif notification.type == 'warning' %}
+                                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                                        {% elif notification.type == 'success' %}
+                                            <i class="fas fa-check-circle text-success"></i>
+                                        {% elif notification.type == 'error' %}
+                                            <i class="fas fa-times-circle text-danger"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="notification-content">
+                                        <p>{{ notification.message }}</p>
+                                        <small class="text-muted">{{ notification.date_creation.strftime('%d/%m/%Y %H:%M') }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-3">
+                                <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
+                                <p>Aucune notification non lue</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
             <div class="calendar-wrapper">
                 <div class="calendar-header">
                     <h5 class="calendar-title"><i class="fas fa-calendar-alt"></i> Calendrier des prestations</h5>
@@ -782,17 +931,15 @@
         // Initialiser le calendrier avec des options améliorées
         const calendar = new FullCalendar.Calendar(calendarEl, {
             locale: 'fr',
-            initialView: 'dayGridMonth',
+            initialView: 'dayGridMonth', // Démarrer avec la vue mensuelle
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+                right: 'dayGridMonth,listMonth'
             },
             buttonText: {
                 today: "Aujourd'hui",
                 month: 'Mois',
-                week: 'Semaine',
-                day: 'Jour',
                 list: 'Liste'
             },
             events: '/api/calendar-events',
@@ -803,17 +950,41 @@
             },
             eventClick: function(info) {
                 if (info.event.extendedProps.prestation_id) {
-                    window.location.href = '/prestation/' + info.event.extendedProps.prestation_id;
+                    window.location.href = '/prestations/' + info.event.extendedProps.prestation_id;
                 }
             },
+            slotMinTime: '06:00:00', // Commencer à 6h du matin
+            slotMaxTime: '22:00:00', // Terminer à 22h du soir
+            slotDuration: '00:30:00', // Créneaux de 30 minutes
+            allDaySlot: false, // Masquer la section "Toute la journée"
+            nowIndicator: true, // Afficher un indicateur du moment présent
             dayMaxEvents: true,
             height: '100%',
             themeSystem: 'bootstrap',
             eventDidMount: function(info) {
+                // Ajouter une info-bulle pour afficher plus de détails au survol
+                const tooltip = document.createElement('div');
+                tooltip.classList.add('calendar-tooltip');
+                
+                const title = document.createElement('h5');
+                title.textContent = info.event.title;
+                tooltip.appendChild(title);
+                
                 if (info.event.extendedProps.description) {
-                    $(info.el).attr('title', info.event.extendedProps.description);
+                    const description = document.createElement('p');
+                    description.textContent = info.event.extendedProps.description;
+                    tooltip.appendChild(description);
+                    
+                    // Créer une info-bulle Bootstrap
+                    $(info.el).tooltip({
+                        title: info.event.extendedProps.description,
+                        placement: 'top',
+                        trigger: 'hover',
+                        container: 'body'
+                    });
                 }
             },
+            eventDisplay: 'block', // Afficher les événements avec un style 'block'
             eventColor: '#4e73df',
             eventBackgroundColor: '#4e73df',
             eventBorderColor: '#4e73df',
