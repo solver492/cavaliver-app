@@ -1,4 +1,4 @@
-from models import db, User
+from models import db, User, Notification
 from werkzeug.security import generate_password_hash
 from flask import Flask
 import os
@@ -39,6 +39,26 @@ def init_db():
             print('Utilisateur admin créé avec succès!')
         else:
             print('Un utilisateur admin existe déjà.')
+        
+        # Vérifier si un utilisateur boss existe déjà
+        boss = User.query.filter_by(username='boss').first()
+        if not boss:
+            # Créer l'utilisateur boss
+            boss = User(
+                username='boss', 
+                email='boss@example.com',
+                nom='Boss',
+                prenom='Cavalier',
+                role='admin',
+                statut='actif'
+            )
+            boss.set_password('boss')  # Mot de passe simple pour les tests
+            
+            db.session.add(boss)
+            db.session.commit()
+            print('Utilisateur boss créé avec succès!')
+        else:
+            print('Un utilisateur boss existe déjà.')
         
         print("Base de données initialisée avec succès!")
 

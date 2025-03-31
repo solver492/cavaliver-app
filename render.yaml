@@ -3,20 +3,15 @@ services:
     name: cavaliver-app
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: bash render_start.sh
+    startCommand: sh render_start.sh
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.9.0
+      - key: SECRET_KEY
+        generateValue: true
       - key: FLASK_APP
         value: app.py
       - key: FLASK_ENV
-        value: development
-      - key: FLASK_DEBUG
-        value: "1"
-      - key: SECRET_KEY
-        value: "une_cle_secrete_longue_et_complexe_pour_production"
-    autoDeploy: true
+        value: production
     disk:
-      name: database
-      mountPath: /etc/render/database
+      name: data
+      mountPath: /data
       sizeGB: 1
