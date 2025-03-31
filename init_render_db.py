@@ -29,7 +29,7 @@ def init_db():
                 email='admin@example.com',
                 nom='Admin',
                 prenom='Super',
-                role='superadmin',
+                role='super_admin',
                 statut='actif'
             )
             admin.set_password('admin')  # Utilise la méthode set_password du modèle User

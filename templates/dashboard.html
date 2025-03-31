@@ -655,6 +655,12 @@
                             <i class="fas fa-file-invoice fa-2x mb-2"></i>
                             <span>Nouvelle facture</span>
                         </a>
+                        {% if current_user.role in ['admin', 'super_admin'] %}
+                        <a href="{{ url_for('user_add') }}" class="action-button" style="background: linear-gradient(135deg, #6f42c1 0%, #4e2b89 100%);">
+                            <i class="fas fa-user-cog fa-2x mb-2"></i>
+                            <span>Nouvel utilisateur</span>
+                        </a>
+                        {% endif %}
                         <a href="{{ url_for('clients_list') }}?show_archived=true" class="action-button" style="background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%);">
                             <i class="fas fa-archive fa-2x mb-2"></i>
                             <span>Clients archivés</span>
