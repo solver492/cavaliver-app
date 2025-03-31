@@ -76,7 +76,8 @@ class Prestation(db.Model):
         'User',
         secondary='prestation_transporter',
         backref=db.backref('prestations_transporteur', lazy='dynamic'),
-        lazy='dynamic'
+        lazy='dynamic',
+        overlaps="prestation_transporters,transporter_prestations"
     )
 
 class PrestationTransporter(db.Model):
@@ -90,8 +91,8 @@ class PrestationTransporter(db.Model):
     date_finalisation = db.Column(db.DateTime, nullable=True)
     
     # Relations
-    prestation = db.relationship('Prestation', backref=db.backref('prestation_transporters', lazy='dynamic'))
-    transporter = db.relationship('User', backref=db.backref('transporter_prestations', lazy='dynamic'))
+    prestation = db.relationship('Prestation', backref=db.backref('prestation_transporters', lazy='dynamic'), overlaps="transporters,prestations_transporteur")
+    transporter = db.relationship('User', backref=db.backref('transporter_prestations', lazy='dynamic'), overlaps="transporters,prestations_transporteur")
 
 class CustomField(db.Model):
     id = db.Column(db.Integer, primary_key=True)
