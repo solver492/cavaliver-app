@@ -489,7 +489,6 @@ def prestation_edit(id):
         
         prestation.observation = form.observation.data
         prestation.statut = form.statut.data
-        prestation.requires_packaging = bool(form.requires_packaging.data)
         prestation.demenagement_type = form.demenagement_type.data
         prestation.camion_type = form.camion_type.data
         prestation.societe = form.societe.data
@@ -699,7 +698,6 @@ def dashboard():
             Prestation.adresse_arrivee,
             Prestation.observation,
             Prestation.statut,
-            Prestation.requires_packaging,
             Prestation.demenagement_type,
             Prestation.camion_type,
             Prestation.priorite,
@@ -714,8 +712,15 @@ def dashboard():
         ).filter(Prestation.date_debut >= today).order_by(Prestation.date_debut).limit(5).all()
     except Exception as e:
         print(f"Erreur lors de la récupération des prestations: {e}")
-        # En cas d'erreur, utiliser une requête plus simple
-        prestations_a_venir = Prestation.query.filter(Prestation.date_debut >= today).order_by(Prestation.date_debut).limit(5).all()
+        # En cas d'erreur, utiliser une requête plus simple qui ne fait pas référence à des colonnes spécifiques
+        prestations_a_venir = []
+        try:
+            # Tenter avec une requête minimale pour récupérer juste les objets sans filtrer par colonnes
+            prestations_a_venir = db.session.query(Prestation).filter(Prestation.date_debut >= today).order_by(Prestation.date_debut).limit(5).all()
+        except Exception as e2:
+            print(f"Erreur lors de la tentative alternative: {e2}")
+            # En cas d'échec total, renvoyer une liste vide
+            prestations_a_venir = []
     
     # Récupérer les factures en attente
     factures_en_attente = Facture.query.filter_by(statut='en_attente').order_by(Facture.date_emission.desc()).limit(5).all()
@@ -823,7 +828,6 @@ class PrestationForm(FlaskForm):
         ('mod', 'Modifié'),
         ('canceled', 'Annulé')
     ], default='en_attente')
-    requires_packaging = SelectField('Emballage nécessaire', choices=[('0', 'Non'), ('1', 'Oui')], default='0', coerce=int)
     demenagement_type = SelectField('Type de déménagement', choices=[
         ('residence', 'Déménagement Résidentiel'),
         ('entreprise', 'Déménagement d\'Entreprise'),
@@ -925,7 +929,6 @@ def prestation_add():
             'adresse_arrivee': form.adresse_arrivee.data,
             'observation': form.observation.data,
             'statut': form.statut.data,
-            'requires_packaging': bool(form.requires_packaging.data),
             'demenagement_type': form.demenagement_type.data,
             'societe': form.societe.data,
             'montant': form.montant.data,

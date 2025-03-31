@@ -47,10 +47,7 @@ class PrestationForm(FlaskForm):
     societe = StringField('Société')
     montant = FloatField('Montant')
     observation = TextAreaField('Observations')
-    requires_packaging = SelectField('Nécessite un emballage', choices=[
-        ('False', 'Non'),
-        ('True', 'Oui')
-    ], coerce=lambda x: x == 'True')
+    # Le champ requires_packaging est retiré car il n'existe pas dans la base de données sur Render
     demenagement_type = SelectField('Type de déménagement', choices=[
         ('demenagement_residence', 'Déménagement résidentiel'),
         ('demenagement_entreprise', 'Déménagement d\'entreprise'),

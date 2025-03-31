@@ -52,7 +52,7 @@ class Prestation(db.Model):
     # trajet_destination = db.Column(db.Text)
     observation = db.Column(db.Text)
     statut = db.Column(db.String(20), default='en attente')  # en attente, en cours, todo, done, mod, canceled
-    requires_packaging = db.Column(db.Boolean, default=False)
+    # requires_packaging = db.Column(db.Boolean, default=False)
     demenagement_type = db.Column(db.String(50))  # furniture, fragile items, etc.
     camion_type = db.Column(db.String(100))
     priorite = db.Column(db.Integer, default=0)  # Priorité de la prestation
