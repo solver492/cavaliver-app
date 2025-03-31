@@ -6,14 +6,17 @@ echo "[1] Affichage des fichiers dans le répertoire courant :"
 ls -la
 
 echo "\n[2] Installation des dépendances nécessaires"
-pip install flask flask-login flask-sqlalchemy werkzeug gunicorn flask-wtf email_validator pillow weasyprint
+pip install flask flask-login flask-sqlalchemy werkzeug gunicorn flask-wtf email_validator pillow
 
-echo "\n[3] Création du répertoire d'instance si nécessaire"
+echo "\n[3] Création des répertoires nécessaires"
 mkdir -p instance
 mkdir -p uploads
+chmod -R 777 instance
+chmod -R 777 uploads
 
 echo "\n[4] Recréation complète de la base de données"
 python recreate_db.py
+chmod 666 /opt/render/project/src/instance/demenage.db
 
 echo "\n[5] Vérification des utilisateurs créés (debug)"
 python -c "from app import app; from models import User; with app.app_context(): users = User.query.all(); print('Utilisateurs dans la base:'); [print(f'- {u.username} (rôle: {u.role})') for u in users];"
