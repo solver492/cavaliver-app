@@ -357,7 +357,7 @@
                             <i class="fas fa-file-invoice-dollar me-1"></i>Facturation
                         </a>
                     </li>
-                    {% if current_user.role in ['super_admin', 'admin'] %}
+                    {% if current_user.role in ['super_admin', 'admin', 'commercial'] %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('users_list') }}">
                             <i class="fas fa-users-cog me-1"></i>Utilisateurs

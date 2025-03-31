@@ -1,6 +1,7 @@
 from flask import Flask
 from models import db, User, Notification, PrestationTransporter, Prestation
 from datetime import datetime
+from db_config import get_db_uri
 
 def create_missing_notifications():
     """
@@ -9,7 +10,7 @@ def create_missing_notifications():
     """
     # Créer une instance d'application Flask
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///demenage.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = get_db_uri()
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Initialiser la base de données avec l'application

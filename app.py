@@ -17,10 +17,11 @@ import os
 # Importer les formulaires nécessaires
 from forms import LoginForm, UserForm, ClientForm, PrestationForm
 from models import db, User, Client, Prestation, Document, Notification, Facture, LigneFacture, PrestationTransporter
+from db_config import get_db_uri
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'votre_clef_secrete'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///demenage.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = get_db_uri()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
 
@@ -590,7 +591,7 @@ def clients_list():
 @login_required
 def users_list():
     # Vérifier si l'utilisateur est admin ou super_admin
-    if current_user.role not in ['admin', 'super_admin']:
+    if current_user.role not in ['admin', 'super_admin', 'commercial']:
         flash('Vous n\'avez pas les permissions nécessaires pour accéder à cette page.', 'danger')
         return redirect(url_for('dashboard'))
     
@@ -1098,9 +1099,10 @@ def user_add():
             ('transporteur', 'Transporteur')
         ]
     elif current_user.role == 'commercial':
-        # Le commercial ne peut créer que des clients (redirection vers la création de client)
-        flash('Vous devez utiliser la section clients pour ajouter un nouveau client.', 'info')
-        return redirect(url_for('client_add'))
+        # Le commercial peut créer des transporteurs uniquement
+        form.role.choices = [
+            ('transporteur', 'Transporteur')
+        ]
     
     if form.validate_on_submit():
         try:
@@ -1144,13 +1146,17 @@ def user_add():
 @app.route('/users/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
 def user_edit(id):
-    # Récupérer l'utilisateur à modifier
+    # Vérifier les permissions selon le rôle
+    if current_user.role not in ['admin', 'super_admin', 'commercial']:
+        flash('Vous n\'avez pas les permissions nécessaires pour modifier un utilisateur.', 'danger')
+        return redirect(url_for('dashboard'))
+    
     user = User.query.get_or_404(id)
     
-    # Vérifications des permissions selon la hiérarchie des rôles
-    if current_user.role not in ['admin', 'super_admin']:
-        flash('Vous n\'avez pas les permissions nécessaires pour modifier cet utilisateur.', 'danger')
-        return redirect(url_for('dashboard'))
+    # Vérifier que l'utilisateur a le droit de modifier cet utilisateur
+    if current_user.role == 'commercial' and user.role not in ['transporteur']:
+        flash('Vous n\'avez pas les permissions nécessaires pour modifier ce type d\'utilisateur.', 'danger')
+        return redirect(url_for('users_list'))
     
     # Admin ne peut pas modifier un super_admin
     if current_user.role == 'admin' and user.role == 'super_admin':
@@ -1247,156 +1253,25 @@ def is_super_admin():
 def is_admin_or_higher():
     return current_user.role in ['admin', 'super_admin']
 
-@app.route('/clients/<int:id>/delete', methods=['GET', 'POST'])
-@login_required
-def client_delete(id):
-    # Vérifier si l'utilisateur est un super_admin
-    if current_user.role != 'super_admin':
-        flash('Vous n\'avez pas les droits pour supprimer un client. Seul un super administrateur peut effectuer cette action.', 'danger')
-        return redirect(url_for('clients_list'))
-    
-    client = Client.query.get_or_404(id)
-    
-    # Si une demande POST est reçue, on procède à la suppression
-    if request.method == 'POST':
-        # Vérifier s'il y a des prestations liées à ce client
-        prestations = Prestation.query.filter_by(client_id=id).all()
-        if prestations:
-            flash('Impossible de supprimer ce client car il a des prestations associées.', 'danger')
-            return redirect(url_for('clients_list'))
-        
-        # Vérifier s'il y a des factures liées à ce client
-        factures = Facture.query.filter_by(client_id=id).all()
-        if factures:
-            flash('Impossible de supprimer ce client car il a des factures associées.', 'danger')
-            return redirect(url_for('clients_list'))
-        
-        # Supprimer les documents associés
-        documents = Document.query.filter_by(client_id=id).all()
-        for doc in documents:
-            # Supprimer le fichier physique
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], doc.filename)
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            db.session.delete(doc)
-        
-        # Supprimer le client
-        db.session.delete(client)
-        db.session.commit()
-        
-        flash('Client supprimé avec succès.', 'success')
-        return redirect(url_for('clients_list'))
-    
-    # Afficher la page de confirmation
-    return render_template('clients/delete_confirm.html', client=client)
-
-@app.route('/clients/<int:id>/archive', methods=['GET', 'POST'])
-@login_required
-def client_archive(id):
-    # Vérifier si l'utilisateur est au moins un admin ou commercial
-    if current_user.role not in ['admin', 'super_admin', 'commercial']:
-        flash('Vous n\'avez pas les droits pour archiver un client. Cette action est réservée aux administrateurs et commerciaux.', 'danger')
-        return redirect(url_for('clients_list'))
-    
-    client = Client.query.get_or_404(id)
-    
-    # Si une demande POST est reçue, on procède à l'archivage
-    if request.method == 'POST':
-        client.archived = True
-        db.session.commit()
-        
-        flash('Client archivé avec succès.', 'success')
-        return redirect(url_for('clients_list'))
-    
-    # Afficher la page de confirmation
-    return render_template('clients/archive_confirm.html', client=client)
-
-@app.route('/clients/<int:id>/unarchive', methods=['GET'])
-@login_required
-def client_unarchive(id):
-    # Vérifier si l'utilisateur est au moins un admin ou commercial
-    if current_user.role not in ['admin', 'super_admin', 'commercial']:
-        flash('Vous n\'avez pas les droits pour désarchiver un client. Cette action est réservée aux administrateurs et commerciaux.', 'danger')
-        return redirect(url_for('clients_list'))
-    
-    client = Client.query.get_or_404(id)
-    client.archived = False
-    db.session.commit()
-    
-    flash('Client désarchivé avec succès.', 'success')
-    return redirect(url_for('clients_list'))
-
-@app.route('/prestations/<int:id>/archive', methods=['GET', 'POST'])
-@login_required
-def prestation_archive(id):
-    # Vérifier si l'utilisateur est au moins un admin ou commercial
-    if current_user.role not in ['admin', 'super_admin', 'commercial']:
-        flash('Vous n\'avez pas les droits pour archiver une prestation. Cette action est réservée aux administrateurs et commerciaux.', 'danger')
-        return redirect(url_for('prestations_list'))
-    
-    prestation = Prestation.query.get_or_404(id)
-    
-    # Si une demande POST est reçue, on procède à l'archivage
-    if request.method == 'POST':
-        prestation.archived = True
-        db.session.commit()
-        
-        flash('Prestation archivée avec succès.', 'success')
-        return redirect(url_for('prestations_list'))
-    
-    # Afficher la page de confirmation
-    return render_template('prestations/archive_confirm.html', prestation=prestation)
-
-@app.route('/prestations/<int:id>/unarchive', methods=['GET'])
-@login_required
-def prestation_unarchive(id):
-    # Vérifier si l'utilisateur est au moins un admin ou commercial
-    if current_user.role not in ['admin', 'super_admin', 'commercial']:
-        flash('Vous n\'avez pas les droits pour désarchiver une prestation. Cette action est réservée aux administrateurs et commerciaux.', 'danger')
-        return redirect(url_for('prestations_list'))
-    
-    prestation = Prestation.query.get_or_404(id)
-    prestation.archived = False
-    db.session.commit()
-    
-    flash('Prestation désarchivée avec succès.', 'success')
-    return redirect(url_for('prestations_list'))
-
-@app.route('/prestations/<int:id>/delete', methods=['GET', 'POST'])
-@login_required
-def prestation_delete(id):
-    # Vérifier si l'utilisateur est un super admin
-    if current_user.role != 'super_admin':
-        flash('Vous n\'avez pas les droits pour supprimer une prestation. Seul un super administrateur peut effectuer cette action.', 'danger')
-        return redirect(url_for('prestations_list'))
-    
-    prestation = Prestation.query.get_or_404(id)
-    
-    # Si une demande POST est reçue, on procède à la suppression
-    if request.method == 'POST':
-        db.session.delete(prestation)
-        db.session.commit()
-        
-        flash('Prestation supprimée avec succès.', 'success')
-        return redirect(url_for('prestations_list'))
-    
-    # Afficher la page de confirmation
-    return render_template('prestations/delete_confirm.html', prestation=prestation)
-
 @app.route('/users/<int:id>/delete', methods=['GET', 'POST'])
 @login_required
 def user_delete(id):
-    # Vérifier si l'utilisateur est super_admin
-    if current_user.role != 'super_admin':
-        flash('Vous n\'avez pas les permissions nécessaires pour supprimer un utilisateur. Cette action est réservée aux super administrateurs.', 'danger')
+    # Vérifier les permissions
+    if current_user.role not in ['admin', 'super_admin', 'commercial']:
+        flash('Vous n\'avez pas les permissions nécessaires pour supprimer un utilisateur.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    user = User.query.get_or_404(id)
+    
+    # Vérifier que l'utilisateur a le droit de supprimer cet utilisateur
+    if current_user.role == 'commercial' and user.role not in ['transporteur']:
+        flash('Vous n\'avez pas les permissions nécessaires pour supprimer ce type d\'utilisateur.', 'danger')
         return redirect(url_for('users_list'))
     
     # Empêcher la suppression de son propre compte
     if id == current_user.id:
         flash('Vous ne pouvez pas supprimer votre propre compte.', 'danger')
         return redirect(url_for('users_list'))
-    
-    user = User.query.get_or_404(id)
     
     # Si une demande POST est reçue, on procède à la suppression
     if request.method == 'POST':

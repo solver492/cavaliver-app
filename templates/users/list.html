@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Gestion des utilisateurs</h1>
-        {% if current_user.role in ['super_admin', 'admin'] %}
+        {% if current_user.role in ['super_admin', 'admin', 'commercial'] %}
         <a href="{{ url_for('user_add') }}" class="btn btn-primary">
             <i class="fas fa-user-plus me-2"></i>Nouvel utilisateur
         </a>
@@ -94,13 +94,15 @@
                             <td>
                                 <div class="btn-group">
                                     {% if current_user.role == 'super_admin' or 
-                                       (current_user.role == 'admin' and user.role not in ['super_admin', 'admin']) %}
+                                       (current_user.role == 'admin' and user.role not in ['super_admin', 'admin']) or
+                                       (current_user.role == 'commercial' and user.role == 'transporteur') %}
                                     <a href="{{ url_for('user_edit', id=user.id) }}" class="btn btn-sm btn-primary" title="Modifier">
                                         <i class="fas fa-edit"></i> Modifier
                                     </a>
                                     {% endif %}
                                     
-                                    {% if current_user.role == 'super_admin' and user.id != current_user.id %}
+                                    {% if current_user.role == 'super_admin' and user.id != current_user.id or
+                                       (current_user.role == 'commercial' and user.role == 'transporteur' and user.id != current_user.id) %}
                                     <a href="{{ url_for('user_delete', id=user.id) }}" class="btn btn-sm btn-danger" title="Supprimer">
                                         <i class="fas fa-trash"></i> Supprimer
                                     </a>
