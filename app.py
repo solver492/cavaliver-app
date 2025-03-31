@@ -489,8 +489,9 @@ def prestation_edit(id):
         
         prestation.observation = form.observation.data
         prestation.statut = form.statut.data
-        prestation.demenagement_type = form.demenagement_type.data
-        prestation.camion_type = form.camion_type.data
+        # Ne plus utiliser les colonnes manquantes
+        # prestation.demenagement_type = form.demenagement_type.data
+        # prestation.camion_type = form.camion_type.data
         prestation.societe = form.societe.data
         prestation.montant = form.montant.data
         prestation.priorite = form.priorite.data
@@ -687,6 +688,7 @@ def dashboard():
     today = datetime.utcnow().date()
     
     # Récupérer les prestations à venir sans essayer d'accéder aux colonnes problématiques
+    prestations_a_venir = []
     try:
         # Utiliser une sélection explicite de colonnes pour éviter les colonnes inexistantes
         prestations_a_venir = db.session.query(
@@ -698,8 +700,9 @@ def dashboard():
             Prestation.adresse_arrivee,
             Prestation.observation,
             Prestation.statut,
-            Prestation.demenagement_type,
-            Prestation.camion_type,
+            # Ne plus sélectionner les colonnes manquantes
+            # Prestation.demenagement_type,
+            # Prestation.camion_type,
             Prestation.priorite,
             Prestation.societe,
             Prestation.montant,
@@ -722,11 +725,23 @@ def dashboard():
             # En cas d'échec total, renvoyer une liste vide
             prestations_a_venir = []
     
-    # Récupérer les factures en attente
-    factures_en_attente = Facture.query.filter_by(statut='en_attente').order_by(Facture.date_emission.desc()).limit(5).all()
+    # Récupérer les factures en attente - Gérer l'absence de la table facture
+    factures_en_attente = []
+    try:
+        factures_en_attente = Facture.query.filter_by(statut='en_attente').order_by(Facture.date_emission.desc()).limit(5).all()
+    except Exception as e:
+        print(f"Erreur lors de la récupération des factures: {e}")
+        # Si la table n'existe pas, on continue avec une liste vide
+        factures_en_attente = []
     
     # Récupérer les factures en retard
-    factures_en_retard = Facture.query.filter_by(statut='retard').order_by(Facture.date_emission).limit(5).all()
+    factures_en_retard = []
+    try:
+        factures_en_retard = Facture.query.filter_by(statut='retard').order_by(Facture.date_emission).limit(5).all()
+    except Exception as e:
+        print(f"Erreur lors de la récupération des factures en retard: {e}")
+        # Si la table n'existe pas, on continue avec une liste vide
+        factures_en_retard = []
     
     # Calculer les statistiques
     total_clients = Client.query.count()
@@ -828,13 +843,14 @@ class PrestationForm(FlaskForm):
         ('mod', 'Modifié'),
         ('canceled', 'Annulé')
     ], default='en_attente')
-    demenagement_type = SelectField('Type de déménagement', choices=[
-        ('residence', 'Déménagement Résidentiel'),
-        ('entreprise', 'Déménagement d\'Entreprise'),
-        ('industriel', 'Transport d\'Équipements Industriels'),
-        ('partiel', 'Déménagement Partiel'),
-        ('total', 'Déménagement Total')
-    ], validators=[Optional()])
+    # Ne plus utiliser les colonnes manquantes
+    # demenagement_type = SelectField('Type de déménagement', choices=[
+    #     ('residence', 'Déménagement Résidentiel'),
+    #     ('entreprise', 'Déménagement d\'Entreprise'),
+    #     ('industriel', 'Transport d\'Équipements Industriels'),
+    #     ('partiel', 'Déménagement Partiel'),
+    #     ('total', 'Déménagement Total')
+    # ], validators=[Optional()])
     societe = SelectField('Société', choices=[
         ('NASSALI RAFIK', 'NASSALI RAFIK - Déménagement'),
         ('Écuyer', 'Écuyer - Déménagement'),
@@ -850,13 +866,14 @@ class PrestationForm(FlaskForm):
     transporteur_ids = SelectMultipleField('Transporteurs', coerce=int, validators=[Optional()])
     trajet_depart = StringField('Point de départ', validators=[Optional()])
     trajet_destination = StringField('Destination', validators=[Optional()])
-    camion_type = SelectField('Type de camion', choices=[
-        ('fourgon_12', 'Fourgon 12m³'),
-        ('caisse_20', 'Camion Caisse 20m³ avec Hayon'),
-        ('camion_5t', 'Camion 5 Tonnes (30-40m³)'),
-        ('camion_10t', 'Camion 10 Tonnes (50m³)'),
-        ('semi', 'Semi-Remorque (80-100m³)')
-    ], default='fourgon_12', validators=[Optional()])
+    # Ne plus utiliser les colonnes manquantes
+    # camion_type = SelectField('Type de camion', choices=[
+    #     ('fourgon_12', 'Fourgon 12m³'),
+    #     ('caisse_20', 'Camion Caisse 20m³ avec Hayon'),
+    #     ('camion_5t', 'Camion 5 Tonnes (30-40m³)'),
+    #     ('camion_10t', 'Camion 10 Tonnes (50m³)'),
+    #     ('semi', 'Semi-Remorque (80-100m³)')
+    # ], default='fourgon_12', validators=[Optional()])
     tags = StringField('Tags', validators=[Optional()])
 
 @app.route('/prestations/add', methods=['GET', 'POST'])
@@ -929,10 +946,11 @@ def prestation_add():
             'adresse_arrivee': form.adresse_arrivee.data,
             'observation': form.observation.data,
             'statut': form.statut.data,
-            'demenagement_type': form.demenagement_type.data,
+            # Ne plus utiliser les colonnes manquantes
+            # 'demenagement_type': form.demenagement_type.data,
             'societe': form.societe.data,
             'montant': form.montant.data,
-            'camion_type': form.camion_type.data,
+            # 'camion_type': form.camion_type.data,
             'tags': form.tags.data,
             'priorite': form.priorite.data,
             'created_by_id': current_user.id
@@ -1506,21 +1524,26 @@ def prestation_terminer(id):
     flash('Vous avez marqué cette prestation comme terminée. Le commercial en sera notifié.', 'success')
     return redirect(url_for('dashboard'))
 
-@app.route('/api/clients/<int:client_id>/prestations')
+@app.route('/api/prestations-by-client', methods=['GET'])
 @login_required
-def get_client_prestations(client_id):
-    prestations = Prestation.query.filter_by(
-        client_id=client_id,
-        archived=False
-    ).order_by(Prestation.date_debut.desc()).all()
+def get_prestations_by_client():
+    client_id = request.args.get('client_id', type=int)
+    if not client_id:
+        return jsonify({'error': 'Client ID is required'}), 400
     
-    return jsonify([{
-        'id': p.id,
-        'date_debut': p.date_debut.isoformat(),
-        'adresse_depart': p.adresse_depart,
-        'adresse_arrivee': p.adresse_arrivee,
-        'statut': p.statut
-    } for p in prestations])
+    prestations = Prestation.query.filter_by(client_id=client_id).all()
+    prestations_data = [
+        {
+            'id': p.id,
+            'date_debut': p.date_debut.isoformat(),
+            'adresse_depart': p.adresse_depart,
+            'adresse_arrivee': p.adresse_arrivee,
+            'statut': p.statut
+        }
+        for p in prestations
+    ]
+    
+    return jsonify({'prestations': prestations_data})
 
 @app.route('/api/calendar-events')
 @login_required

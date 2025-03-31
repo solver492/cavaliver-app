@@ -53,8 +53,8 @@ class Prestation(db.Model):
     observation = db.Column(db.Text)
     statut = db.Column(db.String(20), default='en attente')  # en attente, en cours, todo, done, mod, canceled
     # requires_packaging = db.Column(db.Boolean, default=False)
-    demenagement_type = db.Column(db.String(50))  # furniture, fragile items, etc.
-    camion_type = db.Column(db.String(100))
+    # demenagement_type = db.Column(db.String(50))  # Colonne manquante sur Render
+    # camion_type = db.Column(db.String(100))  # Colonne manquante sur Render
     priorite = db.Column(db.Integer, default=0)  # Priorité de la prestation
     societe = db.Column(db.String(100))  # Nom de la société
     montant = db.Column(db.Float)  # Montant en euros
