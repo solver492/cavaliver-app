@@ -1,0 +1,103 @@
+### **Prompt pour Windsurf (Codeium) - Déploiement et Accès Client via URL**
+
+---
+
+#### **1. Contexte**  
+Le client souhaite :  
+- **Accéder à une version consultable** de l'application via une URL sécurisée.  
+- **Naviguer dans l'interface** (sans droit de modification, sauf pour les actions autorisées selon son rôle *Admin*).  
+- **Tester les nouvelles fonctionnalités** (plannings, champs dynamiques, documents).  
+
+---
+
+### **2. Exigences Techniques**  
+
+#### **A. Déploiement**  
+- **Environnement** :  
+  - Déployer sur un serveur temporaire (ex: VPS, AWS EC2, ou service comme **Render/Heroku**).  
+  - Utiliser un sous-domaine (ex: `client.nomapp.com`) ou une URL temporaire (ex: `nomapp-render.onrender.com`).  
+- **Configuration minimale** :  
+  - PHP 8.x + MySQL.  
+  - HTTPS obligatoire (certificat Let's Encrypt).  
+
+#### **B. Accès Client**  
+- **URL fournie au client** :  
+  - Lien direct vers la page de connexion (ex: `https://client.nomapp.com/login`).  
+  - Identifiants pré-enregistrés pour son rôle *Admin* (ex: `email: admin@client.com` / `motdepasse: temporaire123`).  
+- **Permissions** :  
+  - Peut tout voir **sauf** :  
+    - Paramètres système (onglet réservé au *SuperAdmin*).  
+    - Journal d’audit (logs des actions sensibles).  
+  - Peut **créer des champs dynamiques**, mais **pas supprimer** ceux marqués comme verrouillés (`is_locked=true`).  
+
+#### **C. Sécurité**  
+- **Compte SuperAdmin caché** :  
+  - Ne pas afficher notre compte dans la liste des utilisateurs.  
+  - Accès limité à l’IP de l’équipe de dev (firewall).  
+- **Session client** :  
+  - Expiration après 1h d’inactivité.  
+  - Pas de droit de déploiement ou d’accès SSH/BDD.  
+
+---
+
+### **3. Étapes de Déploiement (à Automatiser)**  
+
+1. **Backend** :  
+   - Cloner le dépôt Git sur le serveur.  
+   - Exécuter `composer install` + `php artisan migrate --seed` (si Laravel).  
+   - Configurer `.env` avec les accès BDD + `APP_ENV=staging`.  
+
+2. **Frontend** :  
+   - Builder les assets (`npm run build`).  
+   - Configurer le vhost pour pointer vers `/public`.  
+
+3. **Sécurité** :  
+   - Bloquer l’accès à `/admin/database` ou `/phpmyadmin`.  
+   - Activer le pare-feu (`ufw` sur Linux).  
+
+4. **URL temporaire** :  
+   - Si pas de domaine, utiliser **ngrok** pour un tunnel HTTPS :  
+     ```bash
+     ngrok http 80 --region=eu --subdomain=client-nomapp
+     ```  
+   - URL générée : `https://client-nomapp.ngrok.io`.  
+
+---
+
+### **4. Message pour Windsurf (Codeium)**  
+*"Nous avons besoin d’un script de déploiement automatisé qui :  
+1. Crée une instance sécurisée (HTTPS, isolation BDD).  
+2. Génère une URL consultable pour le client.  
+3. Cache les routes/paramètres réservés au SuperAdmin.  
+
+Le client doit pouvoir :  
+- Se connecter avec son compte *Admin*.  
+- Tester les plannings, ajouter des champs dynamiques, uploader des PDF.  
+- **Mais ne pas voir** les logs système ou modifier les permissions."*  
+
+---
+
+### **5. Réponse au Client**  
+*"Voici votre accès à la version de test :  
+🔗 **URL** : [https://client.nomapp.com](https://client.nomapp.com)  
+🔐 **Identifiants** : admin@client.com / temporaire123  
+
+⚠️ **Important** :  
+- Ce lien est temporaire (valable 30 jours).  
+- Vos modifications seront conservées pour la version finale.  
+- Contactez-nous pour toute demande critique (ex: suppression accidentelle)."*  
+
+---
+
+### **6. Bonus : Surveillance**  
+- Ajouter **Sentry** ou **New Relic** pour tracker les erreurs en temps réel.  
+- Envoyer un rapport hebdomadaire au client (ex: "30 nouveaux champs créés cette semaine").  
+
+---
+
+Ce prompt garantit :  
+✅ Un **accès client immédiat et sécurisé**.  
+✅ Une **séparation claire** entre *SuperAdmin* (nous) et *Admin* (client).  
+✅ Un **déploiement réversible** (pas de risque de perte de données).  
+
+Besoin d’ajuster l’URL ou les permissions ? Je peux affiner les détails. 🚀

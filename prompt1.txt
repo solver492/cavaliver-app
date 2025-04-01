@@ -1,0 +1,107 @@
+### **Prompt Détaillé pour Windsurf (Codeium) - Mise à Jour de l'Application**  
+
+**Objet** : Mise à jour de l'application de gestion pour entreprise de transport/déménagement avec nouvelles fonctionnalités et hiérarchie des rôles renforcée.  
+
+---
+
+### **1. Contexte**  
+Le client souhaite des améliorations majeures pour son application, notamment :  
+- **Plusieurs plannings personnalisables** (ex: camions, équipes).  
+- **Champs dynamiques** pour les fiches Clients et Prestations.  
+- **Gestion des documents** (PDF, textes) liés aux clients.  
+- **Hiérarchie stricte des rôles** (SuperAdmin > Admin > Utilisateurs).  
+
+---
+
+### **2. Nouvelle Structure des Rôles**  
+| Rôle          | Permissions |  
+|---------------|------------|  
+| **SuperAdmin** (Nous) | - Accès TOTAL (y compris suppression de comptes Admin).<br>- Configure les permissions des Admins.<br>- Peut verrouiller/modifier tous les champs dynamiques.|  
+| **Admin** (Client) | - CRUD Utilisateurs/Clients/Prestations.<br>- Peut créer des champs dynamiques **mais pas les supprimer**.<br>- Gère les plannings, mais ne peut pas modifier les paramètres système.|  
+| **Commercial** | - CRUD limité à ses propres clients/prestations.<br>- Lecture seule sur les champs sensibles (ex: chiffre d'affaires).|  
+| **Transporteur** | - Voir son planning assigné.<br>- Marquer les prestations comme "terminées".|  
+
+**Contraintes** :  
+- Un Admin **ne peut pas** :  
+  - Supprimer un SuperAdmin.  
+  - Modifier les permissions d’un autre Admin.  
+  - Désactiver des fonctionnalités critiques (ex: gestion des rôles).  
+
+---
+
+### **3. Fonctionnalités à Ajouter/Modifier**  
+
+#### **A. Plannings Multiples**  
+- **Table `plannings`** :  
+  ```sql
+  id (PK), name (ex: "Camions"), created_by (FK users), is_default (bool)  
+  ```  
+- **Interface** :  
+  - Bouton "Créer un planning" (accessible par Admin+).  
+  - Liste déroulante pour switcher entre plannings.  
+  - Clic sur un planning → ouvre en **plein écran** (CSS `width: 100vw; height: 100vh`).  
+
+#### **B. Champs Dynamiques (Clients & Prestations)**  
+- **Table `custom_fields`** :  
+  ```sql
+  id (PK), entity_type ("client" ou "prestation"), name, field_type ("text", "number", "dropdown"), options (JSON pour menus), created_by (FK users), is_locked (bool, modifiable uniquement par SuperAdmin)  
+  ```  
+- **Fonctionnalités** :  
+  - Un Admin peut ajouter un champ (ex: "Chiffre d’affaires"), mais **pas le supprimer** si `is_locked=true`.  
+  - Le SuperAdmin peut **verrouiller/déverrouiller** les champs critiques.  
+
+#### **C. Gestion des Documents**  
+- **Table `client_documents`** :  
+  ```sql
+  id (PK), client_id (FK), file_name, file_path, uploaded_by (FK users), date_uploaded  
+  ```  
+- **Interface** :  
+  - Section "Documents" dans la fiche client.  
+  - Bouton "Upload" (limité à 10MB, formats: PDF/TXT).  
+  - Affichage sous forme de liste (icône PDF + nom du fichier).  
+
+#### **D. Interface d'Impression**  
+- Templates PDF pour :  
+  - **Fiche Client** (tous les champs dynamiques inclus).  
+  - **Prestation** (format devis/facture, avec logo de l’entreprise).  
+
+---
+
+### **4. Exigences Techniques**  
+- **Backend** :  
+  - PHP (Laravel/Symfony) + MySQL.  
+  - Validation stricte des permissions côté serveur.  
+- **Frontend** :  
+  - JavaScript (Vue.js/React) pour les champs dynamiques.  
+  - Bibliothèque **PDFKit** pour la génération de PDF.  
+- **Sécurité** :  
+  - **SuperAdmin** doit s’authentifier avec 2FA.  
+  - Audit log pour toutes les actions Admin/SuperAdmin.  
+
+---
+
+### **5. Livrables Attendus**  
+1. Code source mis à jour avec les nouvelles tables/fonctionnalités.  
+2. Script SQL pour la migration.  
+3. Documentation :  
+   - Comment créer/verrouiller un champ dynamique (pour SuperAdmin).  
+   - Procédure d’upload de documents.  
+
+---
+
+### **6. Message pour Windsurf (Codeium)**  
+*"Voici les demandes prioritaires du client. L’accent est mis sur :  
+- La **hiérarchie des rôles** (SuperAdmin > Admin).  
+- L’**autonomie limitée** du client (il peut ajouter des champs, mais pas supprimer les verrouillés).  
+- Les **plannings multiples** + gestion des documents.  
+
+Merci de fournir un code modulaire pour que nous puissions ajuster les permissions facilement."*  
+
+--- 
+
+Ce prompt garantit que :  
+✅ Le client a des fonctionnalités avancées **sans tout contrôler**.  
+✅ Notre équipe garde le **pouvoir ultime** (SuperAdmin).  
+✅ La base de code reste propre et extensible.  
+
+Besoin d’ajuster des détails ?
