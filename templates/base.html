@@ -323,10 +323,10 @@
         .app-header {
             position: relative;
             background: linear-gradient(to right, #1a1a1a, #333333, #1a1a1a);
-            padding: 1rem 0;
-            overflow: hidden;
+            padding: 1.5rem 0;
+            overflow: visible;
             color: #ffffff;
-            max-height: 120px;
+            min-height: 150px;
             border-bottom: 3px solid var(--honey-gold);
         }
         
@@ -349,10 +349,11 @@
             font-family: 'Montserrat', sans-serif;
             font-weight: 800;
             font-size: 2.2rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
             color: #ffffff;
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
             letter-spacing: 1.5px;
+            display: block;
         }
         
         /* Sous-titre */
@@ -360,16 +361,18 @@
             font-size: 1.1rem;
             font-weight: 500;
             color: var(--honey-gold);
-            margin-bottom: 0;
+            margin-bottom: 0.5rem;
             letter-spacing: 1.2px;
+            display: block;
         }
         
         /* Effet de rotation du texte */
         .text-rotation {
             position: relative;
             display: block;
-            height: 2.5rem;
-            overflow: hidden;
+            height: 3rem;
+            overflow: visible;
+            margin-bottom: 1rem;
         }
         
         .text-rotation span {
@@ -381,6 +384,7 @@
             text-align: center;
             left: 0;
             right: 0;
+            display: block;
         }
         
         .text-rotation span:nth-child(1) {
