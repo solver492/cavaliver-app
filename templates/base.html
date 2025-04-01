@@ -270,16 +270,37 @@
         /* Animation de fondu pour le texte */
         @keyframes fadeInOut {
             0%, 100% { opacity: 0; transform: translateY(10px); }
-            10%, 90% { opacity: 1; transform: translateY(0); }
+            3%, 30% { opacity: 1; transform: translateY(0); }
+            33%, 100% { opacity: 0; transform: translateY(-10px); }
         }
         
         .animated-text {
             display: block;
-            animation: fadeInOut 8s ease-in-out infinite;
+            animation: fadeInOut 12s ease-in-out infinite;
         }
         
         .animated-text:nth-child(2) {
             animation-delay: 4s;
+        }
+        
+        .animated-text:nth-child(3) {
+            animation-delay: 8s;
+        }
+        
+        /* Animation de fondu pour le sous-titre */
+        @keyframes fadeSubtitle {
+            0%, 100% { opacity: 0; }
+            3%, 47% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        
+        .animated-subtitle {
+            display: block;
+            animation: fadeSubtitle 12s ease-in-out infinite;
+        }
+        
+        .animated-subtitle:nth-child(2) {
+            animation-delay: 6s;
         }
         
         /* Styles pour les alertes */
@@ -306,9 +327,11 @@
                 <h1 class="header-title">
                     <span class="animated-text">UNE DEUXIÈME VIE À NOS VALEURS</span>
                     <span class="animated-text" style="opacity: 0;">LA MAITRISE PAR LE SAVOIR-FAIRE</span>
+                    <span class="animated-text" style="opacity: 0;">AU SERVICE DE NOS CONQUERANTS</span>
                 </h1>
                 <p class="header-subtitle">
-                    Déménagement • Transport • Stockage
+                    <span class="animated-subtitle">Déménagement • Transport • Stockage</span>
+                    <span class="animated-subtitle" style="opacity: 0;">Solution logistique sur mesures</span>
                 </p>
             </div>
         </div>
