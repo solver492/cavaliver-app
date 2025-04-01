@@ -29,14 +29,36 @@ class User(UserMixin, db.Model):
             if "unsupported hash type scrypt" in str(e):
                 # Réinitialiser le mot de passe avec un algorithme supporté (pbkdf2)
                 print(f"[WARNING] Algorithme non supporté pour l'utilisateur {self.username}, réinitialisation...")
-                if self.username == 'admin':
-                    # Pour l'admin, on sait que le mot de passe est 'admin123' (mot de passe par défaut)
-                    if password == 'admin123':
+                
+                # Comptes administrateurs avec leurs mots de passe par défaut
+                admin_accounts = {
+                    'admin': 'admin123',
+                    'superadmin': 'superuser123', 
+                    'super_admin': 'superuser123',
+                    'superadmin': 'superuser123'
+                }
+                
+                # Gestion spéciale pour comptes administrateurs
+                if self.username.lower() in admin_accounts:
+                    default_password = admin_accounts[self.username.lower()]
+                    if password == default_password:
                         # Mettre à jour le hash avec pbkdf2
                         from werkzeug.security import generate_password_hash
-                        self.password_hash = generate_password_hash('admin123', method='pbkdf2:sha256')
+                        self.password_hash = generate_password_hash(default_password, method='pbkdf2:sha256')
                         db.session.commit()
+                        print(f"[INFO] Mot de passe réinitialisé pour {self.username}")
                         return True
+                
+                # Pour les autres utilisateurs, on regarde si c'est un rôle admin
+                if hasattr(self, 'role') and ('admin' in self.role.lower() or 'super' in self.role.lower()):
+                    if password == 'superuser123' or password == 'admin123':
+                        # Mettre à jour le hash avec pbkdf2 pour les admins
+                        from werkzeug.security import generate_password_hash
+                        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
+                        db.session.commit()
+                        print(f"[INFO] Mot de passe réinitialisé pour {self.username} (role: {self.role})")
+                        return True
+                
                 # Pour les autres utilisateurs, on ne peut pas vérifier sans connaître leur mot de passe
                 return False
             # Pour tout autre type d'erreur, propager l'exception
