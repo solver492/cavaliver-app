@@ -211,7 +211,7 @@
             margin-top: 3rem;
         }
         
-        /* Header professionnel avec texte vertical */
+        /* Header professionnel avec texte horizontal */
         .app-header {
             position: relative;
             background: linear-gradient(to right, #1a1a1a, #333333, #1a1a1a);
@@ -236,21 +236,25 @@
         /* Contenu du header */
         .header-content {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100px;
+            width: 100%;
+            max-width: 1200px;
         }
         
-        /* Titre principal vertical */
+        /* Texte principal dans le header */
         .header-title {
             font-family: 'Montserrat', sans-serif;
             font-weight: 800;
-            font-size: 2.5rem;
+            font-size: 1.8rem;
             color: #ffffff;
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
             letter-spacing: 1.5px;
             text-align: center;
             margin: 0;
+            line-height: 1.1;
         }
         
         /* Sous-titre */
@@ -260,39 +264,22 @@
             color: var(--honey-gold);
             letter-spacing: 1.2px;
             text-align: center;
-            margin: 0;
-            margin-top: 5px;
+            margin: 5px 0 0 0;
         }
         
-        /* Container pour le texte vertical */
-        .vertical-text-container {
-            display: inline-block;
-            width: auto;
-            margin: 0 3px; /* espacement réduit entre les conteneurs */
-            height: 90px;
+        /* Animation de fondu pour le texte */
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; transform: translateY(10px); }
+            10%, 90% { opacity: 1; transform: translateY(0); }
         }
         
-        /* Texte vertical */
-        .vertical-text {
-            writing-mode: vertical-rl; /* changé de vertical-lr à vertical-rl pour un meilleur rendu */
-            text-orientation: mixed; /* changé de upright à mixed pour un meilleur rendu des accents */
-            white-space: nowrap;
-            font-size: 1.3rem; /* taille réduite pour mieux tenir dans la hauteur */
-            height: 90px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            letter-spacing: 0.1em; /* espacement des lettres ajusté */
-            font-weight: 700; /* police plus grasse pour meilleure lisibilité */
-            line-height: 1; /* ligne condensée */
-            transform: rotate(180deg); /* rotation pour bonne direction de lecture */
+        .animated-text {
+            display: block;
+            animation: fadeInOut 8s ease-in-out infinite;
         }
         
-        /* Animation pour le logo */
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        .animated-text:nth-child(2) {
+            animation-delay: 4s;
         }
         
         /* Styles pour les alertes */
@@ -316,36 +303,13 @@
     <header class="app-header">
         <div class="container-fluid header-container">
             <div class="header-content">
-                <div class="vertical-text-container">
-                    <h1 class="header-title vertical-text animate__animated animate__fadeInDown">
-                        UNE
-                    </h1>
-                </div>
-                <div class="vertical-text-container">
-                    <h1 class="header-title vertical-text animate__animated animate__fadeInDown">
-                        DEUXIÈME
-                    </h1>
-                </div>
-                <div class="vertical-text-container">
-                    <h1 class="header-title vertical-text animate__animated animate__fadeInDown">
-                        VIE
-                    </h1>
-                </div>
-                <div class="vertical-text-container">
-                    <h1 class="header-title vertical-text animate__animated animate__fadeInDown">
-                        À
-                    </h1>
-                </div>
-                <div class="vertical-text-container">
-                    <h1 class="header-title vertical-text animate__animated animate__fadeInDown">
-                        NOS
-                    </h1>
-                </div>
-                <div class="vertical-text-container">
-                    <h1 class="header-title vertical-text animate__animated animate__fadeInDown">
-                        VALEURS
-                    </h1>
-                </div>
+                <h1 class="header-title">
+                    <span class="animated-text">UNE DEUXIÈME VIE À NOS VALEURS</span>
+                    <span class="animated-text" style="opacity: 0;">LA MAITRISE PAR LE SAVOIR-FAIRE</span>
+                </h1>
+                <p class="header-subtitle">
+                    Déménagement • Transport • Stockage
+                </p>
             </div>
         </div>
     </header>
