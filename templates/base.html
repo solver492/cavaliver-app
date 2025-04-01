@@ -216,7 +216,7 @@
             position: relative;
             background: linear-gradient(to right, #1a1a1a, #333333, #1a1a1a);
             padding: 0;
-            height: 100px;
+            height: 110px;
             overflow: visible;
             color: #ffffff;
             border-bottom: 3px solid var(--honey-gold);
@@ -239,9 +239,10 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100px;
+            height: 110px;
             width: 100%;
             max-width: 1200px;
+            padding: 0 15px;
         }
         
         /* Texte principal dans le header */
@@ -254,7 +255,10 @@
             letter-spacing: 1.5px;
             text-align: center;
             margin: 0;
-            line-height: 1.1;
+            line-height: 1.2;
+            height: 2.2rem;
+            overflow: hidden;
+            position: relative;
         }
         
         /* Sous-titre */
@@ -264,43 +268,64 @@
             color: var(--honey-gold);
             letter-spacing: 1.2px;
             text-align: center;
-            margin: 5px 0 0 0;
+            margin: 10px 0 0 0;
+            height: 1.3rem;
+            overflow: hidden;
+            position: relative;
         }
         
         /* Animation de fondu pour le texte */
         @keyframes fadeInOut {
-            0%, 100% { opacity: 0; transform: translateY(10px); }
-            3%, 30% { opacity: 1; transform: translateY(0); }
-            33%, 100% { opacity: 0; transform: translateY(-10px); }
+            0% { opacity: 0; transform: translateY(10px); }
+            3% { opacity: 1; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(0); }
+            33% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 0; transform: translateY(-10px); }
         }
         
         .animated-text {
-            display: block;
-            animation: fadeInOut 12s ease-in-out infinite;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            animation: fadeInOut 15s ease-in-out infinite;
+        }
+        
+        .animated-text:nth-child(1) {
+            animation-delay: 0s;
         }
         
         .animated-text:nth-child(2) {
-            animation-delay: 4s;
+            animation-delay: 5s;
         }
         
         .animated-text:nth-child(3) {
-            animation-delay: 8s;
+            animation-delay: 10s;
         }
         
         /* Animation de fondu pour le sous-titre */
         @keyframes fadeSubtitle {
-            0%, 100% { opacity: 0; }
-            3%, 47% { opacity: 1; }
-            50%, 100% { opacity: 0; }
+            0% { opacity: 0; }
+            3% { opacity: 1; }
+            47% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 0; }
         }
         
         .animated-subtitle {
-            display: block;
-            animation: fadeSubtitle 12s ease-in-out infinite;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            animation: fadeSubtitle 10s ease-in-out infinite;
+        }
+        
+        .animated-subtitle:nth-child(1) {
+            animation-delay: 0s;
         }
         
         .animated-subtitle:nth-child(2) {
-            animation-delay: 6s;
+            animation-delay: 5s;
         }
         
         /* Styles pour les alertes */
@@ -326,12 +351,12 @@
             <div class="header-content">
                 <h1 class="header-title">
                     <span class="animated-text">UNE DEUXIÈME VIE À NOS VALEURS</span>
-                    <span class="animated-text" style="opacity: 0;">LA MAITRISE PAR LE SAVOIR-FAIRE</span>
-                    <span class="animated-text" style="opacity: 0;">AU SERVICE DE NOS CONQUERANTS</span>
+                    <span class="animated-text">LA MAITRISE PAR LE SAVOIR-FAIRE</span>
+                    <span class="animated-text">AU SERVICE DE NOS CONQUERANTS</span>
                 </h1>
                 <p class="header-subtitle">
                     <span class="animated-subtitle">Déménagement • Transport • Stockage</span>
-                    <span class="animated-subtitle" style="opacity: 0;">Solution logistique sur mesures</span>
+                    <span class="animated-subtitle">Solution logistique sur mesures</span>
                 </p>
             </div>
         </div>
