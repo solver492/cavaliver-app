@@ -1524,27 +1524,6 @@ def prestation_terminer(id):
     flash('Vous avez marqué cette prestation comme terminée. Le commercial en sera notifié.', 'success')
     return redirect(url_for('dashboard'))
 
-@app.route('/api/prestations-by-client', methods=['GET'])
-@login_required
-def get_prestations_by_client():
-    client_id = request.args.get('client_id', type=int)
-    if not client_id:
-        return jsonify({'error': 'Client ID is required'}), 400
-    
-    prestations = Prestation.query.filter_by(client_id=client_id).all()
-    prestations_data = [
-        {
-            'id': p.id,
-            'date_debut': p.date_debut.isoformat(),
-            'adresse_depart': p.adresse_depart,
-            'adresse_arrivee': p.adresse_arrivee,
-            'statut': p.statut
-        }
-        for p in prestations
-    ]
-    
-    return jsonify({'prestations': prestations_data})
-
 @app.route('/api/calendar-events')
 @login_required
 def calendar_events():
