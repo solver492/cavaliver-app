@@ -268,19 +268,24 @@
         .vertical-text-container {
             display: inline-block;
             width: auto;
-            margin: 0 10px;
+            margin: 0 3px; /* espacement réduit entre les conteneurs */
+            height: 90px;
         }
         
         /* Texte vertical */
         .vertical-text {
-            writing-mode: vertical-lr;
-            text-orientation: upright;
+            writing-mode: vertical-rl; /* changé de vertical-lr à vertical-rl pour un meilleur rendu */
+            text-orientation: mixed; /* changé de upright à mixed pour un meilleur rendu des accents */
             white-space: nowrap;
-            font-size: 1.5rem;
-            height: 80px;
+            font-size: 1.3rem; /* taille réduite pour mieux tenir dans la hauteur */
+            height: 90px;
             display: flex;
             align-items: center;
             justify-content: center;
+            letter-spacing: 0.1em; /* espacement des lettres ajusté */
+            font-weight: 700; /* police plus grasse pour meilleure lisibilité */
+            line-height: 1; /* ligne condensée */
+            transform: rotate(180deg); /* rotation pour bonne direction de lecture */
         }
         
         /* Animation pour le logo */
