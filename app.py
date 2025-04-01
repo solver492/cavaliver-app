@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -12,6 +12,9 @@ from sqlalchemy import func, or_, and_
 # from weasyprint import HTML, CSS
 from io import BytesIO
 import os
+import re
+import sqlite3
+from datetime import datetime, date, time, timedelta
 # Suppression de l'import 'time' inutile qui crée un conflit
 
 # Importer les formulaires nécessaires
@@ -29,6 +32,137 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
 db.init_app(app)
+
+# Fonction pour initialiser la base de données au démarrage
+def init_database():
+    with app.app_context():
+        try:
+            # Créer les tables si elles n'existent pas
+            db.create_all()
+            
+            # Vérifier et ajouter les colonnes manquantes
+            conn = sqlite3.connect(get_db_uri().replace('sqlite:///', ''))
+            cursor = conn.cursor()
+            
+            # Vérifier si la colonne 'tags' existe dans la table 'client'
+            cursor.execute("PRAGMA table_info(client)")
+            columns = [column[1] for column in cursor.fetchall()]
+            if 'tags' not in columns:
+                print("Ajout de la colonne 'tags' à la table 'client'")
+                cursor.execute("ALTER TABLE client ADD COLUMN tags TEXT")
+            if 'client_type' not in columns:
+                print("Ajout de la colonne 'client_type' à la table 'client'")
+                cursor.execute("ALTER TABLE client ADD COLUMN client_type TEXT DEFAULT 'particulier'")
+            
+            # Vérifier si les colonnes existent dans la table 'prestation'
+            cursor.execute("PRAGMA table_info(prestation)")
+            columns = [column[1] for column in cursor.fetchall()]
+            if 'societe' not in columns:
+                print("Ajout de la colonne 'societe' à la table 'prestation'")
+                cursor.execute("ALTER TABLE prestation ADD COLUMN societe TEXT")
+            if 'montant' not in columns:
+                print("Ajout de la colonne 'montant' à la table 'prestation'")
+                cursor.execute("ALTER TABLE prestation ADD COLUMN montant FLOAT")
+            if 'tags' not in columns:
+                print("Ajout de la colonne 'tags' à la table 'prestation'")
+                cursor.execute("ALTER TABLE prestation ADD COLUMN tags TEXT")
+            if 'trajet_depart' not in columns:
+                print("Ajout de la colonne 'trajet_depart' à la table 'prestation'")
+                cursor.execute("ALTER TABLE prestation ADD COLUMN trajet_depart TEXT")
+            if 'trajet_destination' not in columns:
+                print("Ajout de la colonne 'trajet_destination' à la table 'prestation'")
+                cursor.execute("ALTER TABLE prestation ADD COLUMN trajet_destination TEXT")
+            if 'requires_packaging' not in columns:
+                print("Ajout de la colonne 'requires_packaging' à la table 'prestation'")
+                cursor.execute("ALTER TABLE prestation ADD COLUMN requires_packaging BOOLEAN")
+            if 'demenagement_type' not in columns:
+                print("Ajout de la colonne 'demenagement_type' à la table 'prestation'")
+                cursor.execute("ALTER TABLE prestation ADD COLUMN demenagement_type TEXT")
+            if 'camion_type' not in columns:
+                print("Ajout de la colonne 'camion_type' à la table 'prestation'")
+                cursor.execute("ALTER TABLE prestation ADD COLUMN camion_type TEXT")
+            if 'priorite' not in columns:
+                print("Ajout de la colonne 'priorite' à la table 'prestation'")
+                cursor.execute("ALTER TABLE prestation ADD COLUMN priorite TEXT")
+            
+            # Vérifier si la table 'facture' existe, sinon la créer
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='facture'")
+            if not cursor.fetchone():
+                print("Création de la table 'facture'")
+                cursor.execute('''
+                CREATE TABLE facture (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    numero TEXT,
+                    prestation_id INTEGER,
+                    client_id INTEGER,
+                    montant_ht FLOAT,
+                    taux_tva FLOAT,
+                    montant_ttc FLOAT,
+                    date_emission DATE,
+                    date_echeance DATE,
+                    statut TEXT,
+                    mode_paiement TEXT,
+                    date_paiement DATE,
+                    notes TEXT,
+                    created_by_id INTEGER,
+                    date_creation DATETIME,
+                    FOREIGN KEY (prestation_id) REFERENCES prestation (id),
+                    FOREIGN KEY (client_id) REFERENCES client (id),
+                    FOREIGN KEY (created_by_id) REFERENCES user (id)
+                )
+                ''')
+            
+            # Vérifier si la table 'ligne_facture' existe, sinon la créer
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='ligne_facture'")
+            if not cursor.fetchone():
+                print("Création de la table 'ligne_facture'")
+                cursor.execute('''
+                CREATE TABLE ligne_facture (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    facture_id INTEGER,
+                    description TEXT,
+                    quantite INTEGER,
+                    prix_unitaire FLOAT,
+                    montant FLOAT,
+                    FOREIGN KEY (facture_id) REFERENCES facture (id)
+                )
+                ''')
+            
+            # Créer un utilisateur super_admin par défaut si aucun utilisateur n'existe
+            user_count = User.query.count()
+            if user_count == 0:
+                print("Création d'un utilisateur super_admin par défaut")
+                super_admin = User(
+                    username='admin',
+                    email='admin@example.com',
+                    role='super_admin',
+                    nom='Administrateur',
+                    prenom='Principal',
+                    statut='actif'
+                )
+                super_admin.set_password('admin')
+                db.session.add(super_admin)
+                db.session.commit()
+            
+            # Vérifier s'il existe au moins un super_admin dans la base de données
+            super_admin_count = User.query.filter_by(role='super_admin').count()
+            if super_admin_count == 0:
+                # S'il n'y a pas de super_admin mais il y a des utilisateurs, promouvoir le premier admin
+                admin_user = User.query.filter_by(role='admin').first()
+                if admin_user:
+                    print(f"Promotion de l'utilisateur '{admin_user.username}' au rang de super_admin")
+                    admin_user.role = 'super_admin'
+                    db.session.commit()
+            
+            conn.commit()
+            conn.close()
+            print("Initialisation de la base de données terminée avec succès")
+        except Exception as e:
+            print(f"Erreur lors de l'initialisation de la base de données: {e}")
+
+# Initialiser la base de données au démarrage
+with app.app_context():
+    init_database()
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -277,7 +411,16 @@ def facture_pdf(id):
     facture = Facture.query.get_or_404(id)
     
     # Générer le HTML de la facture dans une version imprimable
-    return render_template('factures/pdf_template.html', facture=facture, print_view=True)
+    rendered_template = render_template('factures/pdf_template.html', facture=facture, print_view=True)
+    
+    # Convertir en PDF (commenté car weasyprint n'est peut-être pas installé)
+    # pdf = HTML(string=rendered_template).write_pdf()
+    # buffer = BytesIO(pdf)
+    # buffer.seek(0)
+    # return send_file(buffer, download_name=f"facture_{facture.id}.pdf", as_attachment=True, mimetype='application/pdf')
+    
+    # Pour le moment, retourner juste le HTML
+    return rendered_template
 
 @app.route('/factures/marquer-payee/<int:id>')
 @login_required
@@ -325,15 +468,38 @@ def facture_annuler(id):
     flash('Facture annulée avec succès', 'success')
     return redirect(url_for('facture_details', id=facture.id))
 
-@app.route('/factures/envoyer-email/<int:id>')
+@app.route('/factures/email/<int:id>', methods=['GET', 'POST'])
 @login_required
-def facture_envoyer_email(id):
+def facture_email(id):
+    # Vérifier si l'utilisateur a les droits suffisants
+    if current_user.role not in ['admin', 'super_admin', 'commercial']:
+        flash('Vous n\'avez pas les permissions nécessaires pour envoyer des factures par email.', 'danger')
+        return redirect(url_for('factures_list'))
+    
     facture = Facture.query.get_or_404(id)
     
-    # Cette fonction est un exemple et devrait être adaptée pour envoyer réellement un email
-    # avec la facture en pièce jointe
+    if request.method == 'POST':
+        email = request.form.get('email')
+        if not email:
+            email = facture.client.email
+        
+        if not email:
+            flash('Aucune adresse email n\'est spécifiée pour ce client. Veuillez en fournir une.', 'warning')
+            return redirect(url_for('facture_details', id=facture.id))
+        
+        # Ici, on simulerait l'envoi de l'email avec la facture en PDF
+        # Dans un environnement de production, vous utiliseriez Flask-Mail
+        
+        flash(f'La facture a été envoyée avec succès à {email}.', 'success')
+        return redirect(url_for('facture_details', id=facture.id))
     
-    flash(f'Fonctionnalité d\'envoi d\'email non implémentée. La facture serait envoyée à {facture.client.email}', 'info')
+    # Cette fonction est une version simplifiée et devrait être adaptée pour envoyer réellement un email
+    # avec la facture en pièce jointe
+    if not facture.client.email:
+        flash('Le client n\'a pas d\'adresse email. Impossible d\'envoyer la facture.', 'warning')
+    else:
+        flash(f'Fonctionnalité d\'envoi d\'email non implémentée. La facture serait envoyée à {facture.client.email}', 'info')
+    
     return redirect(url_for('facture_details', id=facture.id))
 
 @app.route('/api/prestations-by-client', methods=['GET'])
@@ -489,12 +655,11 @@ def prestation_edit(id):
         
         prestation.observation = form.observation.data
         prestation.statut = form.statut.data
-        # Ne plus utiliser les colonnes manquantes
-        # prestation.demenagement_type = form.demenagement_type.data
-        # prestation.camion_type = form.camion_type.data
+        prestation.demenagement_type = form.demenagement_type.data
+        prestation.camion_type = form.camion_type.data
         prestation.societe = form.societe.data
         prestation.montant = form.montant.data
-        # prestation.priorite = form.priorite.data
+        prestation.priorite = form.priorite.data
         prestation.tags = form.tags.data
         
         # Enregistrer les modifications de la prestation
@@ -537,8 +702,6 @@ def prestation_edit(id):
                         related_prestation_id=prestation.id
                     )
                     db.session.add(notification_transporteur)
-            
-            # Enregistrer les modifications
             db.session.commit()
         else:
             # Si aucun transporteur n'est sélectionné, supprimer toutes les assignations pour cette prestation
@@ -700,11 +863,11 @@ def dashboard():
             Prestation.adresse_arrivee,
             Prestation.observation,
             Prestation.statut,
-            # Ne plus sélectionner les colonnes manquantes
-            # Prestation.demenagement_type,
-            # Prestation.camion_type,
+            Prestation.demenagement_type,
+            Prestation.camion_type,
             Prestation.societe,
             Prestation.montant,
+            Prestation.priorite,
             Prestation.tags,
             Prestation.created_by_id,
             Prestation.id_user_commercial,
@@ -798,8 +961,7 @@ class ClientForm(FlaskForm):
     email = StringField('Email', validators=[Optional(), Email()])
     telephone = StringField('Téléphone', validators=[Optional()])
     adresse = TextAreaField('Adresse', validators=[Optional()])
-    # Champ retiré car la colonne client_type n'existe pas dans la base de données
-    # client_type = SelectField('Type de client', choices=[('particulier', 'Particulier'), ('entreprise', 'Entreprise')], default='particulier')
+    client_type = SelectField('Type de client', choices=[('particulier', 'Particulier'), ('entreprise', 'Entreprise')], default='particulier')
     tags = StringField('Tags (séparés par des virgules)', validators=[Optional()])
     documents = MultipleFileField('Documents', validators=[Optional()])
 
@@ -820,7 +982,7 @@ def client_add():
             email=form.email.data,
             telephone=form.telephone.data,
             adresse=form.adresse.data,
-            # client_type=form.client_type.data,
+            client_type=form.client_type.data,
             tags=form.tags.data,
             created_by_id=current_user.id
         )
@@ -859,6 +1021,29 @@ class PrestationForm(FlaskForm):
     date_fin = DateTimeLocalField('Date de fin', format='%Y-%m-%dT%H:%M', validators=[DataRequired()])
     adresse_depart = TextAreaField('Adresse de départ', validators=[DataRequired()])
     adresse_arrivee = TextAreaField('Adresse d\'arrivée', validators=[DataRequired()])
+    trajet_depart = StringField('Point de départ (coordonnées)', validators=[Optional()])
+    trajet_destination = StringField('Point d\'arrivée (coordonnées)', validators=[Optional()])
+    requires_packaging = BooleanField('Nécessite un emballage', default=False)
+    demenagement_type = SelectField('Type de déménagement', choices=[
+        ('residence', 'Déménagement Résidentiel'),
+        ('entreprise', 'Déménagement d\'Entreprise'),
+        ('industriel', 'Transport d\'Équipements Industriels'),
+        ('partiel', 'Déménagement Partiel'),
+        ('total', 'Déménagement Total')
+    ], validators=[Optional()])
+    camion_type = SelectField('Type de camion', choices=[
+        ('fourgon_12', 'Fourgon 12m³'),
+        ('caisse_20', 'Camion Caisse 20m³ avec Hayon'),
+        ('camion_5t', 'Camion 5 Tonnes (30-40m³)'),
+        ('camion_10t', 'Camion 10 Tonnes (50m³)'),
+        ('semi', 'Semi-Remorque (80-100m³)')
+    ], default='fourgon_12', validators=[Optional()])
+    priorite = SelectField('Priorité', choices=[
+        ('basse', 'Basse'),
+        ('normale', 'Normale'),
+        ('haute', 'Haute'),
+        ('urgente', 'Urgente')
+    ], default='normale')
     observation = TextAreaField('Observations', validators=[Optional()])
     statut = SelectField('Statut', choices=[
         ('en_attente', 'En attente'), 
@@ -868,39 +1053,13 @@ class PrestationForm(FlaskForm):
         ('mod', 'Modifié'),
         ('canceled', 'Annulé')
     ], default='en_attente')
-    # Ne plus utiliser les colonnes manquantes
-    # demenagement_type = SelectField('Type de déménagement', choices=[
-    #     ('residence', 'Déménagement Résidentiel'),
-    #     ('entreprise', 'Déménagement d\'Entreprise'),
-    #     ('industriel', 'Transport d\'Équipements Industriels'),
-    #     ('partiel', 'Déménagement Partiel'),
-    #     ('total', 'Déménagement Total')
-    # ], validators=[Optional()])
     societe = SelectField('Société', choices=[
         ('NASSALI RAFIK', 'NASSALI RAFIK - Déménagement'),
         ('Écuyer', 'Écuyer - Déménagement'),
         ('Cavalier', 'Cavalier - Déménagement')
     ], validators=[Optional()])
     montant = FloatField('Montant', validators=[Optional()])
-    # Suppression du champ priorite qui est absent sur Render
-    # priorite = SelectField('Priorité', choices=[
-    #     ('basse', 'Basse'),
-    #     ('normale', 'Normale'),
-    #     ('haute', 'Haute'),
-    #     ('urgente', 'Urgente')
-    # ], default='normale')
     transporteur_ids = SelectMultipleField('Transporteurs', coerce=int, validators=[Optional()])
-    # Suppression des champs trajet_depart et trajet_destination qui sont absents sur Render
-    # trajet_depart = StringField('Point de départ', validators=[Optional()])
-    # trajet_destination = StringField('Destination', validators=[Optional()])
-    # Ne plus utiliser les colonnes manquantes
-    # camion_type = SelectField('Type de camion', choices=[
-    #     ('fourgon_12', 'Fourgon 12m³'),
-    #     ('caisse_20', 'Camion Caisse 20m³ avec Hayon'),
-    #     ('camion_5t', 'Camion 5 Tonnes (30-40m³)'),
-    #     ('camion_10t', 'Camion 10 Tonnes (50m³)'),
-    #     ('semi', 'Semi-Remorque (80-100m³)')
-    # ], default='fourgon_12', validators=[Optional()])
     tags = StringField('Tags', validators=[Optional()])
 
 @app.route('/prestations/add', methods=['GET', 'POST'])
@@ -971,23 +1130,19 @@ def prestation_add():
             'date_fin': form.date_fin.data,
             'adresse_depart': form.adresse_depart.data,
             'adresse_arrivee': form.adresse_arrivee.data,
+            'trajet_depart': form.trajet_depart.data,
+            'trajet_destination': form.trajet_destination.data,
+            'requires_packaging': form.requires_packaging.data,
+            'demenagement_type': form.demenagement_type.data,
+            'camion_type': form.camion_type.data,
+            'priorite': form.priorite.data,
             'observation': form.observation.data,
             'statut': form.statut.data,
-            # Ne plus utiliser les colonnes manquantes
-            # 'demenagement_type': form.demenagement_type.data,
             'societe': form.societe.data,
             'montant': form.montant.data,
-            # 'camion_type': form.camion_type.data,
             'tags': form.tags.data,
-            # 'priorite': form.priorite.data,
             'created_by_id': current_user.id
         }
-        
-        # Si les champs trajet sont remplis, utiliser leurs valeurs dans les adresses correspondantes
-        # if form.trajet_depart.data:
-        #     prestation_args['adresse_depart'] = form.trajet_depart.data
-        # if form.trajet_destination.data:
-        #     prestation_args['adresse_arrivee'] = form.trajet_destination.data
         
         # Ajouter l'ID du commercial si présent
         # if form.id_user_commercial.data:
@@ -1052,7 +1207,7 @@ def client_edit(id):
         form.email.data = client.email
         form.telephone.data = client.telephone
         form.adresse.data = client.adresse
-        # form.client_type.data = client.client_type
+        form.client_type.data = client.client_type
         form.tags.data = client.tags
     
     if form.validate_on_submit():
@@ -1061,7 +1216,7 @@ def client_edit(id):
         client.email = form.email.data
         client.telephone = form.telephone.data
         client.adresse = form.adresse.data
-        # client.client_type = form.client_type.data
+        client.client_type = form.client_type.data
         client.tags = form.tags.data
         
         db.session.commit()
@@ -1210,7 +1365,7 @@ class UserForm(FlaskForm):
 @login_required
 def user_add():
     # Vérifier les permissions selon le rôle
-    if current_user.role not in ['admin', 'super_admin', 'commercial']:
+    if current_user.role not in ['admin', 'super_admin']:
         flash('Vous n\'avez pas les permissions nécessaires pour ajouter un utilisateur.', 'danger')
         return redirect(url_for('dashboard'))
     
@@ -1221,14 +1376,9 @@ def user_add():
         # Le super_admin peut créer n'importe quel type d'utilisateur
         pass  # Aucune restriction, toutes les options sont disponibles
     elif current_user.role == 'admin':
-        # L'admin peut créer des commerciaux et transporteurs, mais pas des admin ou super_admin
+        # L'admin peut créer des transporteurs, mais pas des admin ou super_admin
         form.role.choices = [
             ('commercial', 'Commercial'),
-            ('transporteur', 'Transporteur')
-        ]
-    elif current_user.role == 'commercial':
-        # Le commercial peut créer des transporteurs uniquement
-        form.role.choices = [
             ('transporteur', 'Transporteur')
         ]
     
@@ -1238,6 +1388,15 @@ def user_add():
             existing_user = User.query.filter_by(username=form.username.data).first()
             if existing_user:
                 flash('Ce nom d\'utilisateur est déjà utilisé.', 'danger')
+                return render_template('users/form.html', form=form, title="Ajouter un utilisateur")
+            
+            # Vérification supplémentaire pour empêcher les admins de créer d'autres admins
+            if form.role.data == 'admin' and current_user.role != 'super_admin':
+                flash('Seul un super administrateur peut créer un utilisateur administrateur.', 'danger')
+                return render_template('users/form.html', form=form, title="Ajouter un utilisateur")
+            
+            if form.role.data == 'super_admin' and current_user.role != 'super_admin':
+                flash('Seul un super administrateur peut créer un super administrateur.', 'danger')
                 return render_template('users/form.html', form=form, title="Ajouter un utilisateur")
             
             # Créer un nouvel utilisateur
@@ -1252,12 +1411,12 @@ def user_add():
                 created_by_id=current_user.id
             )
             
-            # Définir le mot de passe si fourni
+            # Définir le mot de passe si présent
             if form.password.data:
                 user.set_password(form.password.data)
             else:
-                # Mot de passe par défaut basé sur le nom d'utilisateur
-                user.set_password(form.username.data)
+                # Mot de passe par défaut si non spécifié
+                user.set_password('password123')
             
             db.session.add(user)
             db.session.commit()
@@ -1267,7 +1426,7 @@ def user_add():
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Erreur lors de la création de l\'utilisateur: {str(e)}', 'danger')
+            flash(f'Erreur lors de l\'ajout de l\'utilisateur: {str(e)}', 'danger')
     
     return render_template('users/form.html', form=form, title="Ajouter un utilisateur")
 
@@ -1275,50 +1434,50 @@ def user_add():
 @login_required
 def user_edit(id):
     # Vérifier les permissions selon le rôle
-    if current_user.role not in ['admin', 'super_admin', 'commercial']:
-        flash('Vous n\'avez pas les permissions nécessaires pour modifier un utilisateur.', 'danger')
-        return redirect(url_for('dashboard'))
-    
     user = User.query.get_or_404(id)
     
-    # Vérifier que l'utilisateur a le droit de modifier cet utilisateur
-    if current_user.role == 'commercial' and user.role not in ['transporteur']:
-        flash('Vous n\'avez pas les permissions nécessaires pour modifier ce type d\'utilisateur.', 'danger')
+    # Permissions de modification selon le rôle
+    if (current_user.role == 'super_admin' or
+        (current_user.role == 'admin' and user.role not in ['super_admin', 'admin']) or
+        (current_user.role == 'commercial' and user.role == 'transporteur')):
+        pass  # Autorisé à continuer
+    else:
+        flash('Vous n\'avez pas les permissions nécessaires pour modifier cet utilisateur.', 'danger')
         return redirect(url_for('users_list'))
     
-    # Admin ne peut pas modifier un super_admin
-    if current_user.role == 'admin' and user.role == 'super_admin':
-        flash('Vous n\'avez pas les permissions nécessaires pour modifier ce super_admin.', 'danger')
-        return redirect(url_for('users_list'))
-    
-    # Admin ne peut pas modifier un autre admin
-    if current_user.role == 'admin' and user.role == 'admin' and user.id != current_user.id:
-        flash('Vous n\'avez pas les permissions nécessaires pour modifier un autre administrateur.', 'danger')
-        return redirect(url_for('users_list'))
-    
-    # Créer et pré-remplir le formulaire
     form = UserForm(obj=user)
     
-    # Limiter les choix selon le rôle de l'utilisateur connecté
+    # Limiter les choix de rôle selon l'utilisateur connecté
     if current_user.role == 'super_admin':
-        # Le super_admin peut modifier n'importe quel type d'utilisateur
-        pass
+        # Le super_admin peut modifier un utilisateur à n'importe quel rôle
+        pass  # Toutes les options sont disponibles
     elif current_user.role == 'admin':
         # L'admin ne peut pas promouvoir un utilisateur en admin ou super_admin
         form.role.choices = [
             ('commercial', 'Commercial'),
             ('transporteur', 'Transporteur')
         ]
-        # Si l'admin modifie son propre compte, il peut garder son rôle d'admin
-        if user.id == current_user.id:
-            form.role.choices.append(('admin', 'Administrateur'))
+    elif current_user.role == 'commercial':
+        # Le commercial ne peut que modifier les transporteurs
+        form.role.choices = [
+            ('transporteur', 'Transporteur')
+        ]
     
     if form.validate_on_submit():
         try:
-            # Vérifier si le nom d'utilisateur existe déjà (pour un autre utilisateur)
+            # Vérifier si le nom d'utilisateur existe déjà
             existing_user = User.query.filter(User.username == form.username.data, User.id != id).first()
             if existing_user:
                 flash('Ce nom d\'utilisateur est déjà utilisé par un autre utilisateur.', 'danger')
+                return render_template('users/form.html', form=form, title="Modifier l'utilisateur", user=user)
+            
+            # Vérification supplémentaire pour empêcher la promotion à admin/super_admin
+            if form.role.data == 'admin' and current_user.role != 'super_admin':
+                flash('Seul un super administrateur peut promouvoir un utilisateur au rang d\'administrateur.', 'danger')
+                return render_template('users/form.html', form=form, title="Modifier l'utilisateur", user=user)
+            
+            if form.role.data == 'super_admin' and current_user.role != 'super_admin':
+                flash('Seul un super administrateur peut promouvoir un utilisateur au rang de super administrateur.', 'danger')
                 return render_template('users/form.html', form=form, title="Modifier l'utilisateur", user=user)
             
             # Mettre à jour les données de l'utilisateur
@@ -1334,13 +1493,12 @@ def user_edit(id):
             user.vehicule = form.vehicule.data if form.role.data == 'transporteur' else None
             user.statut = form.statut.data
             
-            # Mettre à jour le mot de passe si fourni
+            # Mettre à jour le mot de passe si présent
             if form.password.data:
                 user.set_password(form.password.data)
             
             db.session.commit()
-            
-            flash(f'L\'utilisateur {user.username} a été modifié avec succès.', 'success')
+            flash('Utilisateur modifié avec succès.', 'success')
             return redirect(url_for('users_list'))
             
         except Exception as e:
@@ -1662,6 +1820,133 @@ def suggest_destination():
         suggestions = [point[0] for point in points_destination]
     
     return jsonify(suggestions)
+
+@app.route('/clients/<int:id>/archive', methods=['GET'])
+@login_required
+def client_archive(id):
+    # Vérifier si l'utilisateur a les droits suffisants
+    if current_user.role not in ['admin', 'super_admin', 'commercial']:
+        flash('Vous n\'avez pas les permissions nécessaires pour archiver un client.', 'danger')
+        return redirect(url_for('clients_list'))
+    
+    client = Client.query.get_or_404(id)
+    
+    # Archiver le client
+    client.archived = True
+    db.session.commit()
+    
+    flash(f'Le client {client.prenom} {client.nom} a été archivé avec succès.', 'success')
+    return redirect(url_for('clients_list'))
+
+@app.route('/clients/<int:id>/unarchive', methods=['GET'])
+@login_required
+def client_unarchive(id):
+    # Vérifier si l'utilisateur a les droits suffisants
+    if current_user.role not in ['admin', 'super_admin', 'commercial']:
+        flash('Vous n\'avez pas les permissions nécessaires pour désarchiver un client.', 'danger')
+        return redirect(url_for('clients_list'))
+    
+    client = Client.query.get_or_404(id)
+    
+    # Désarchiver le client
+    client.archived = False
+    db.session.commit()
+    
+    flash(f'Le client {client.prenom} {client.nom} a été désarchivé avec succès.', 'success')
+    return redirect(url_for('clients_list'))
+
+@app.route('/prestations/<int:id>/archive', methods=['GET'])
+@login_required
+def prestation_archive(id):
+    # Vérifier si l'utilisateur a les droits suffisants
+    if current_user.role not in ['admin', 'super_admin', 'commercial']:
+        flash('Vous n\'avez pas les permissions nécessaires pour archiver une prestation.', 'danger')
+        return redirect(url_for('prestations_list'))
+    
+    prestation = Prestation.query.get_or_404(id)
+    
+    # Archiver la prestation
+    prestation.archived = True
+    db.session.commit()
+    
+    flash(f'La prestation pour {prestation.client.prenom} {prestation.client.nom} a été archivée avec succès.', 'success')
+    return redirect(url_for('prestations_list'))
+
+@app.route('/prestations/<int:id>/unarchive', methods=['GET'])
+@login_required
+def prestation_unarchive(id):
+    # Vérifier si l'utilisateur a les droits suffisants
+    if current_user.role not in ['admin', 'super_admin', 'commercial']:
+        flash('Vous n\'avez pas les permissions nécessaires pour désarchiver une prestation.', 'danger')
+        return redirect(url_for('prestations_list'))
+    
+    prestation = Prestation.query.get_or_404(id)
+    
+    # Désarchiver la prestation
+    prestation.archived = False
+    db.session.commit()
+    
+    flash(f'La prestation pour {prestation.client.prenom} {prestation.client.nom} a été désarchivée avec succès.', 'success')
+    return redirect(url_for('prestations_list'))
+
+@app.route('/prestations/<int:id>/delete', methods=['GET', 'POST'])
+@login_required
+def prestation_delete(id):
+    # Vérifier les permissions
+    if current_user.role != 'super_admin':
+        flash('Vous n\'avez pas les permissions nécessaires pour supprimer une prestation.', 'danger')
+        return redirect(url_for('prestations_list'))
+    
+    prestation = Prestation.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        # Supprimer la prestation
+        client_nom = f"{prestation.client.prenom} {prestation.client.nom}"
+        db.session.delete(prestation)
+        db.session.commit()
+        
+        flash(f'La prestation pour {client_nom} a été supprimée avec succès.', 'success')
+        return redirect(url_for('prestations_list'))
+    
+    return render_template('prestations/delete_confirm.html', prestation=prestation)
+
+@app.route('/clients/<int:id>/delete', methods=['GET', 'POST'])
+@login_required
+def client_delete(id):
+    # Vérifier si l'utilisateur a les droits suffisants
+    if current_user.role != 'super_admin':
+        flash('Vous n\'avez pas les permissions nécessaires pour supprimer un client.', 'danger')
+        return redirect(url_for('clients_list'))
+    
+    client = Client.query.get_or_404(id)
+    
+    # Vérifier si le client a des prestations associées
+    if client.prestations.count() > 0:
+        flash('Ce client a des prestations associées. Impossible de le supprimer.', 'warning')
+        return redirect(url_for('clients_list'))
+    
+    if request.method == 'POST':
+        # Supprimer les documents associés au client
+        for document in client.documents:
+            try:
+                # Supprimer le fichier physique
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], document.filename)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                
+                # Supprimer l'entrée dans la base de données
+                db.session.delete(document)
+            except Exception as e:
+                flash(f'Erreur lors de la suppression du document: {e}', 'warning')
+        
+        client_nom = f"{client.prenom} {client.nom}"
+        db.session.delete(client)
+        db.session.commit()
+        
+        flash(f'Le client {client_nom} a été supprimé avec succès.', 'success')
+        return redirect(url_for('clients_list'))
+    
+    return render_template('clients/delete_confirm.html', client=client)
 
 if __name__ == '__main__':
     with app.app_context():

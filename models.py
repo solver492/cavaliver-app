@@ -31,7 +31,7 @@ class Client(db.Model):
     email = db.Column(db.String(120))
     telephone = db.Column(db.String(20))
     adresse = db.Column(db.Text)
-    # Colonne manquante sur Render - complètement supprimée pour éviter les erreurs SQL
+    client_type = db.Column(db.String(20), default='particulier')
     tags = db.Column(db.Text)  # Store tags as comma-separated values
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
@@ -46,6 +46,12 @@ class Prestation(db.Model):
     date_fin = db.Column(db.DateTime)
     adresse_depart = db.Column(db.Text)
     adresse_arrivee = db.Column(db.Text)
+    trajet_depart = db.Column(db.Text)
+    trajet_destination = db.Column(db.Text)
+    requires_packaging = db.Column(db.Boolean, default=False)
+    demenagement_type = db.Column(db.String(50))
+    camion_type = db.Column(db.String(50))
+    priorite = db.Column(db.String(20), default='normale')
     observation = db.Column(db.Text)
     statut = db.Column(db.String(20), default='en attente')  # en attente, en cours, todo, done, mod, canceled
     societe = db.Column(db.String(100))  # Nom de la société
