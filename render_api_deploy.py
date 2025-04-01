@@ -3,13 +3,25 @@ import json
 import time
 import sys
 import os
+import argparse
+
+# Configuration du parser d'arguments
+parser = argparse.ArgumentParser(description="Outil d'automatisation pour Render")
+parser.add_argument('--service-id', type=str, help="ID du service Render (format: srv-xxxx)")
+parser.add_argument('--api-key', type=str, help="Clé API Render (optionnel si défini dans le script)")
+args = parser.parse_args()
 
 # Votre clé API Render
-API_KEY = "rnd_OKmqRNnpnZaJE7drwfVQzGk8c5AT"
+API_KEY = args.api_key if args.api_key else "rnd_OKmqRNnpnZaJE7drwfVQzGk8c5AT"
 
-# L'ID de votre service sur Render (à remplacer par votre ID réel)
+# L'ID de votre service sur Render
 # Vous pouvez le trouver dans l'URL de votre service: https://dashboard.render.com/web/srv-xxxx
-SERVICE_ID = "srv-cltlh30gjchc73brpglg"  # Remplacez par votre ID de service
+SERVICE_ID = args.service_id if args.service_id else None
+
+if not SERVICE_ID:
+    print("ERREUR: Vous devez spécifier l'ID du service avec --service-id")
+    print("Exemple: python render_api_deploy.py --service-id srv-abcdef123456")
+    sys.exit(1)
 
 # Configuration des en-têtes pour l'API
 headers = {
