@@ -211,89 +211,76 @@
             margin-top: 3rem;
         }
         
-        /* Header */
+        /* Header professionnel avec texte vertical */
         .app-header {
-            background-color: #343a40;
-            color: white;
-            padding: 1rem 0;
-        }
-        
-        .header-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1rem;
-        }
-        
-        .header-content {
+            position: relative;
+            background: linear-gradient(to right, #1a1a1a, #333333, #1a1a1a);
+            padding: 0;
+            height: 100px;
+            overflow: visible;
+            color: #ffffff;
+            border-bottom: 3px solid var(--honey-gold);
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            text-align: center;
         }
         
-        .header-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-        
-        .header-subtitle {
-            font-size: 1rem;
-            font-weight: 500;
-            opacity: 0.9;
-            letter-spacing: 0.05rem;
-        }
-        
-        /* Footer */
-        .footer {
-            background-color: #343a40;
-            color: white;
-            padding: 2rem 0;
-            position: relative;
-            margin-top: 3rem;
-        }
-        
-        .footer-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .footer-logo {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        
-        .footer-logo img {
-            height: 30px;
-            margin-right: 10px;
-        }
-        
-        .footer-links {
-            display: flex;
-            gap: 1.5rem;
-            margin-bottom: 1rem;
-        }
-        
-        .footer-links a {
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-        
-        .footer-links a:hover {
-            color: white;
-        }
-        
-        .footer-bottom {
-            text-align: center;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        /* Container pour le contenu du header */
+        .header-container {
             width: 100%;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+        }
+        
+        /* Contenu du header */
+        .header-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+        }
+        
+        /* Titre principal vertical */
+        .header-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 2.5rem;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 1.5px;
+            text-align: center;
+            margin: 0;
+        }
+        
+        /* Sous-titre */
+        .header-subtitle {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--honey-gold);
+            letter-spacing: 1.2px;
+            text-align: center;
+            margin: 0;
+            margin-top: 5px;
+        }
+        
+        /* Container pour le texte vertical */
+        .vertical-text-container {
+            display: inline-block;
+            width: auto;
+            margin: 0 10px;
+        }
+        
+        /* Texte vertical */
+        .vertical-text {
+            writing-mode: vertical-lr;
+            text-orientation: upright;
+            white-space: nowrap;
+            font-size: 1.5rem;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         /* Animation pour le logo */
@@ -317,97 +304,6 @@
         }
     </style>
     
-    <!-- Styles pour l'en-tête professionnelle -->
-    <style>
-        /* Header professionnel */
-        .app-header {
-            position: relative;
-            background: linear-gradient(to right, #1a1a1a, #333333, #1a1a1a);
-            padding: 1.5rem 0;
-            overflow: visible;
-            color: #ffffff;
-            min-height: 150px;
-            border-bottom: 3px solid var(--honey-gold);
-        }
-        
-        /* Container pour le contenu du header */
-        .header-container {
-            position: relative;
-            z-index: 5;
-        }
-        
-        /* Contenu du header */
-        .header-content {
-            text-align: center;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 0.5rem;
-        }
-        
-        /* Titre principal avec effet professionnel */
-        .header-title {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 800;
-            font-size: 2.2rem;
-            margin-bottom: 1.5rem;
-            color: #ffffff;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            letter-spacing: 1.5px;
-            display: block;
-        }
-        
-        /* Sous-titre */
-        .header-subtitle {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: var(--honey-gold);
-            margin-bottom: 0.5rem;
-            letter-spacing: 1.2px;
-            display: block;
-        }
-        
-        /* Effet de rotation du texte */
-        .text-rotation {
-            position: relative;
-            display: block;
-            height: 3rem;
-            overflow: visible;
-            margin-bottom: 1rem;
-        }
-        
-        .text-rotation span {
-            position: absolute;
-            width: 100%;
-            animation: textRotate 9s cubic-bezier(0.6, -0.28, 0.735, 0.045) infinite;
-            opacity: 0;
-            transform: translateY(100%);
-            text-align: center;
-            left: 0;
-            right: 0;
-            display: block;
-        }
-        
-        .text-rotation span:nth-child(1) {
-            animation-delay: 0s;
-        }
-        
-        .text-rotation span:nth-child(2) {
-            animation-delay: 3s;
-        }
-        
-        .text-rotation span:nth-child(3) {
-            animation-delay: 6s;
-        }
-        
-        @keyframes textRotate {
-            0% { opacity: 0; transform: translateY(100%); }
-            5% { opacity: 1; transform: translateY(0); }
-            33% { opacity: 1; transform: translateY(0); }
-            38% { opacity: 0; transform: translateY(-100%); }
-            100% { opacity: 0; transform: translateY(-100%); }
-        }
-    </style>
-    
     {% block styles %}{% endblock %}
 </head>
 <body>
@@ -415,20 +311,36 @@
     <header class="app-header">
         <div class="container-fluid header-container">
             <div class="header-content">
-                <h1 class="header-title animate__animated animate__fadeInDown">
-                    <div class="text-rotation">
-                        <span>LA MAITRISE PAR LE SAVOIR-FAIRE</span>
-                        <span>AU SERVICE DES CONQUERANTS</span>
-                        <span>UNE DEUXIÈME VIE À NOS VALEURS</span>
-                    </div>
-                </h1>
-                <p class="header-subtitle animate__animated animate__fadeInUp">
-                    <div class="text-rotation">
-                        <span>Déménagement • Transport • Stockage</span>
-                        <span>Qualité • Sécurité • Efficacité</span>
-                        <span>Service • Expertise • Fiabilité</span>
-                    </div>
-                </p>
+                <div class="vertical-text-container">
+                    <h1 class="header-title vertical-text animate__animated animate__fadeInDown">
+                        UNE
+                    </h1>
+                </div>
+                <div class="vertical-text-container">
+                    <h1 class="header-title vertical-text animate__animated animate__fadeInDown">
+                        DEUXIÈME
+                    </h1>
+                </div>
+                <div class="vertical-text-container">
+                    <h1 class="header-title vertical-text animate__animated animate__fadeInDown">
+                        VIE
+                    </h1>
+                </div>
+                <div class="vertical-text-container">
+                    <h1 class="header-title vertical-text animate__animated animate__fadeInDown">
+                        À
+                    </h1>
+                </div>
+                <div class="vertical-text-container">
+                    <h1 class="header-title vertical-text animate__animated animate__fadeInDown">
+                        NOS
+                    </h1>
+                </div>
+                <div class="vertical-text-container">
+                    <h1 class="header-title vertical-text animate__animated animate__fadeInDown">
+                        VALEURS
+                    </h1>
+                </div>
             </div>
         </div>
     </header>
