@@ -17,7 +17,10 @@
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Animation CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
     <!-- Styles globaux -->
     <style>
@@ -38,6 +41,9 @@
             --gradient-danger: linear-gradient(135deg, #e74a3b 0%, #be2617 100%);
             --chocolate-gold: #8B4513;
             --chocolate-gold-hover: #A0522D;
+            --honey-gold: #d4af37;
+            --honey-light: #f8d860;
+            --honey-dark: #b48608;
         }
         
         body {
@@ -310,15 +316,199 @@
             overflow: hidden;
         }
     </style>
+    
+    <!-- Styles pour l'en-tête modifié avec effet ruche et 3D -->
+    <style>
+        /* Header modifié avec effet de ruche */
+        .app-header {
+            position: relative;
+            background-color: #1a1a1a;
+            padding: 2rem 0;
+            overflow: hidden;
+            color: var(--honey-gold);
+        }
+        
+        /* Effet de ruche en arrière-plan */
+        .honeycomb-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(var(--honey-light) 3px, transparent 3px),
+                radial-gradient(var(--honey-dark) 3px, transparent 3px);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            opacity: 0.1;
+            z-index: 1;
+        }
+        
+        /* Container pour l'effet lumineux suivant la souris */
+        .light-effect-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 2;
+        }
+        
+        /* Lumière qui suit le curseur */
+        .light-effect {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--honey-light) 0%, transparent 70%);
+            pointer-events: none;
+            opacity: 0.3;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+        
+        /* Container pour le contenu du header */
+        .header-container {
+            position: relative;
+            z-index: 3;
+        }
+        
+        /* Contenu du header */
+        .header-content {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        /* Titre principal avec effet 3D */
+        .header-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-size: 2.8rem;
+            margin-bottom: 0.5rem;
+            color: var(--honey-gold);
+            text-shadow: 
+                0 1px 0 #ccc,
+                0 2px 0 #c9c9c9,
+                0 3px 0 #bbb,
+                0 4px 0 #b9b9b9,
+                0 5px 0 #aaa,
+                0 6px 1px rgba(0,0,0,.1),
+                0 0 5px rgba(0,0,0,.1),
+                0 1px 3px rgba(0,0,0,.3),
+                0 3px 5px rgba(0,0,0,.2),
+                0 5px 10px rgba(0,0,0,.25),
+                0 10px 10px rgba(0,0,0,.2),
+                0 20px 20px rgba(0,0,0,.15);
+            letter-spacing: 1.5px;
+            transform: perspective(500px) rotateX(5deg);
+            transition: all 0.3s ease;
+        }
+        
+        /* Sous-titre avec effet de brillance */
+        .header-subtitle {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--honey-light);
+            margin-bottom: 0;
+            letter-spacing: 1.2px;
+            text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+            animation: shimmer 3s infinite;
+        }
+        
+        /* Animation de brillance pour le sous-titre */
+        @keyframes shimmer {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+        
+        /* Rotation douce du titre au hover */
+        .header-title:hover {
+            transform: perspective(500px) rotateX(0deg);
+            cursor: pointer;
+        }
+        
+        /* Rotation supplémentaire du sous-titre au hover du header */
+        .header-content:hover .header-subtitle {
+            animation: shimmer 1.5s infinite;
+        }
+        
+        /* Adaptation mobile */
+        @media (max-width: 768px) {
+            .header-title {
+                font-size: 2rem;
+            }
+            .header-subtitle {
+                font-size: 1rem;
+            }
+        }
+        
+        /* Animation de changement de texte */
+        .text-rotation {
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+            height: 1.25em;
+            vertical-align: middle;
+        }
+        
+        .text-rotation span {
+            display: block;
+            position: absolute;
+            width: 100%;
+            animation: textRotate 9s cubic-bezier(0.6, -0.28, 0.735, 0.045) infinite;
+            opacity: 0;
+        }
+        
+        .text-rotation span:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .text-rotation span:nth-child(2) {
+            animation-delay: 3s;
+        }
+        
+        .text-rotation span:nth-child(3) {
+            animation-delay: 6s;
+        }
+        
+        @keyframes textRotate {
+            0% { opacity: 0; transform: translateY(100%); }
+            5% { opacity: 1; transform: translateY(0); }
+            33% { opacity: 1; transform: translateY(0); }
+            38% { opacity: 0; transform: translateY(-100%); }
+            100% { opacity: 0; transform: translateY(-100%); }
+        }
+    </style>
+    
     {% block styles %}{% endblock %}
 </head>
 <body>
     <!-- Header -->
     <header class="app-header">
+        <div class="honeycomb-bg"></div>
+        <div class="light-effect-container">
+            <div class="light-effect"></div>
+        </div>
         <div class="container-fluid header-container">
             <div class="header-content">
-                <h1 class="header-title">Cavalier Déménagement</h1>
-                <p class="header-subtitle">Solution professionnelle pour vos déménagements</p>
+                <h1 class="header-title animate__animated animate__fadeInDown">
+                    <div class="text-rotation">
+                        <span>LA MAITRISE PAR LE SAVOIR-FAIRE</span>
+                        <span>AU SERVICE DES CONQUERANTS</span>
+                        <span>UNE DEUXIÈME VIE À NOS VALEURS</span>
+                    </div>
+                </h1>
+                <p class="header-subtitle animate__animated animate__fadeInUp">
+                    <div class="text-rotation">
+                        <span>Déménagement • Transport • Stockage</span>
+                        <span>Solutions logistiques sur mesures</span>
+                        <span>Excellence et tradition depuis 1985</span>
+                    </div>
+                </p>
             </div>
         </div>
     </header>
@@ -425,6 +615,61 @@
         // Gérer la fermeture des alertes
         $('.alert').alert();
     });
+    </script>
+
+    <script>
+        // Effet de lumière suivant le curseur
+        $(document).ready(function() {
+            const lightEffect = $('.light-effect');
+            const header = $('.app-header');
+            
+            // Suivre le mouvement de la souris
+            header.on('mousemove', function(e) {
+                const headerOffset = header.offset();
+                const relX = e.pageX - headerOffset.left;
+                const relY = e.pageY - headerOffset.top;
+                
+                lightEffect.css({
+                    left: relX,
+                    top: relY
+                });
+            });
+            
+            // Animation de base quand la souris n'est pas sur le header
+            function animateLightEffectAuto() {
+                const headerWidth = header.width();
+                const headerHeight = header.height();
+                
+                // Animation automatique de la lumière
+                const randomX = Math.random() * headerWidth;
+                const randomY = Math.random() * headerHeight;
+                
+                lightEffect.animate({
+                    left: randomX,
+                    top: randomY
+                }, 3000, 'linear', animateLightEffectAuto);
+            }
+            
+            // Démarrer l'animation automatique
+            header.on('mouseleave', function() {
+                lightEffect.stop();
+                animateLightEffectAuto();
+            });
+            
+            // Arrêter l'animation automatique quand la souris entre
+            header.on('mouseenter', function() {
+                lightEffect.stop();
+            });
+            
+            // Démarrer l'animation automatique au chargement
+            animateLightEffectAuto();
+            
+            // Initialiser tous les tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
     </script>
 
     <!-- Footer -->
