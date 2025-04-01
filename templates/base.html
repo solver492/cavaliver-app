@@ -323,10 +323,10 @@
         .app-header {
             position: relative;
             background-color: #111111;
-            padding: 1.5rem 0;
+            padding: 0.8rem 0;
             overflow: hidden;
             color: var(--honey-gold);
-            max-height: 200px; /* Réduire la hauteur */
+            max-height: 120px; /* Hauteur réduite comme demandé */
         }
         
         /* Effet d'hexagones en arrière-plan (vraie ruche) */
@@ -339,7 +339,19 @@
             background-color: #111111;
             opacity: 1;
             z-index: 1;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100' viewBox='0 0 56 100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%23d4af37' stroke-opacity='0.15' stroke-width='1'/%3E%3Cpath d='M28 0L28 34L0 50L0 84L28 100L56 84L56 50L28 34' fill='none' stroke='%23d4af37' stroke-opacity='0.15' stroke-width='1'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='75' viewBox='0 0 42 75'%3E%3Cpath d='M21 49.5L0 37.5L0 12L21 0L42 12L42 37.5L21 49.5L21 75' fill='none' stroke='%23d4af37' stroke-opacity='0.3' stroke-width='2.5'/%3E%3Cpath d='M21 0L21 25.5L0 37.5L0 63L21 75L42 63L42 37.5L21 25.5' fill='none' stroke='%23d4af37' stroke-opacity='0.3' stroke-width='2.5'/%3E%3C/svg%3E");
+            background-size: 42px 75px;
+        }
+        
+        /* Lignes de la ruche pour l'effet électrique */
+        .honeycomb-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 3;
         }
         
         /* Container pour l'effet lumineux suivant la souris */
@@ -357,34 +369,36 @@
         /* Lumière électrique qui suit le curseur */
         .light-effect {
             position: absolute;
-            width: 180px;
-            height: 180px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(255, 215, 0, 0.8) 0%, rgba(255, 215, 0, 0.4) 30%, transparent 70%);
-            box-shadow: 0 0 30px 10px rgba(255, 215, 0, 0.5);
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.7) 0%, rgba(255, 215, 0, 0.3) 30%, transparent 70%);
+            box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.5);
             pointer-events: none;
-            opacity: 0.8;
+            opacity: 0.7;
             transform: translate(-50%, -50%);
             z-index: 2;
-            filter: blur(3px);
+            filter: blur(2px);
         }
         
-        /* Effet électrique supplémentaire */
-        .electric-spark {
+        /* Effet électrique sur les lignes */
+        .line-effect {
             position: absolute;
-            background: linear-gradient(to right, transparent, #fff, transparent);
-            height: 1px;
-            width: 50px;
+            width: 40px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.8), transparent);
             opacity: 0;
+            border-radius: 3px;
             filter: blur(1px);
-            box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.8);
-            z-index: 3;
+            box-shadow: 0 0 8px 2px rgba(255, 215, 0, 0.7);
+            z-index: 4;
+            pointer-events: none;
         }
         
         /* Container pour le contenu du header */
         .header-container {
             position: relative;
-            z-index: 3;
+            z-index: 5;
         }
         
         /* Contenu du header */
@@ -392,15 +406,15 @@
             text-align: center;
             max-width: 800px;
             margin: 0 auto;
-            padding: 1rem;
+            padding: 0.5rem;
         }
         
         /* Titre principal avec effet 3D amélioré pour visibilité */
         .header-title {
             font-family: 'Montserrat', sans-serif;
             font-weight: 900;
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
             color: #ffdc73;
             text-shadow: 
                 0 1px 0 #ccc,
@@ -427,7 +441,7 @@
         
         /* Sous-titre avec effet de brillance amélioré */
         .header-subtitle {
-            font-size: 1.2rem;
+            font-size: 1rem;
             font-weight: 600;
             color: #fff;
             margin-bottom: 0;
@@ -522,6 +536,7 @@
         <div class="light-effect-container">
             <div class="light-effect"></div>
         </div>
+        <div class="honeycomb-lines"></div>
         <div class="container-fluid header-container">
             <div class="header-content">
                 <h1 class="header-title animate__animated animate__fadeInDown">
@@ -647,19 +662,123 @@
     </script>
 
     <script>
-        // Effet de lumière électrique suivant le curseur
+        // Effet de lumière électrique suivant les lignes d'hexagones
         $(document).ready(function() {
             const lightEffect = $('.light-effect');
             const header = $('.app-header');
             const headerContent = $('.header-content');
-            let sparkCount = 10;
-            let sparks = [];
+            const lineCount = 30; // Nombre de lignes électriques
+            let lines = [];
             
-            // Créer les étincelles électriques
-            for (let i = 0; i < sparkCount; i++) {
-                const spark = $('<div class="electric-spark"></div>');
-                header.append(spark);
-                sparks.push(spark);
+            // Créer les effets de lignes électriques
+            for (let i = 0; i < lineCount; i++) {
+                const line = $('<div class="line-effect"></div>');
+                header.append(line);
+                lines.push(line);
+            }
+            
+            // Liste des points pour simuler les lignes d'hexagones
+            function generateHexagonGrid(width, height, size) {
+                const points = [];
+                const horizontalSpacing = size * 3/2;
+                const verticalSpacing = size * Math.sqrt(3);
+                const columns = Math.ceil(width / horizontalSpacing) + 1;
+                const rows = Math.ceil(height / verticalSpacing) + 1;
+                
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < columns; col++) {
+                        const x = col * horizontalSpacing;
+                        const y = row * verticalSpacing;
+                        const offset = (row % 2) * (horizontalSpacing / 2);
+                        
+                        // Lignes horizontales
+                        if (col < columns - 1) {
+                            points.push({
+                                x1: x + offset,
+                                y1: y,
+                                x2: x + offset + size,
+                                y2: y,
+                                angle: 0
+                            });
+                        }
+                        
+                        // Lignes à 60 degrés
+                        if (row < rows - 1 && col < columns) {
+                            points.push({
+                                x1: x + offset,
+                                y1: y,
+                                x2: x + offset - size/2,
+                                y2: y + (verticalSpacing/2),
+                                angle: -60
+                            });
+                        }
+                        
+                        // Lignes à 120 degrés
+                        if (row < rows - 1 && col < columns - 1) {
+                            points.push({
+                                x1: x + offset + size,
+                                y1: y,
+                                x2: x + offset + size/2,
+                                y2: y + (verticalSpacing/2),
+                                angle: 60
+                            });
+                        }
+                    }
+                }
+                
+                return points;
+            }
+            
+            const hexGrid = generateHexagonGrid(header.width(), header.height(), 40);
+            
+            // Fonction pour trouver la ligne la plus proche
+            function findClosestLine(x, y) {
+                let closest = null;
+                let minDist = Number.MAX_VALUE;
+                
+                hexGrid.forEach(line => {
+                    // Distance du point (x,y) au segment de ligne
+                    const A = x - line.x1;
+                    const B = y - line.y1;
+                    const C = line.x2 - line.x1;
+                    const D = line.y2 - line.y1;
+                    
+                    const dot = A * C + B * D;
+                    const len_sq = C * C + D * D;
+                    let param = -1;
+                    if (len_sq !== 0) param = dot / len_sq;
+                    
+                    let xx, yy;
+                    
+                    if (param < 0) {
+                        xx = line.x1;
+                        yy = line.y1;
+                    } else if (param > 1) {
+                        xx = line.x2;
+                        yy = line.y2;
+                    } else {
+                        xx = line.x1 + param * C;
+                        yy = line.y1 + param * D;
+                    }
+                    
+                    const dist = Math.sqrt((x - xx) * (x - xx) + (y - yy) * (y - yy));
+                    
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closest = {
+                            x1: line.x1,
+                            y1: line.y1,
+                            x2: line.x2,
+                            y2: line.y2,
+                            dist: dist,
+                            angle: line.angle,
+                            paramX: xx,
+                            paramY: yy
+                        };
+                    }
+                });
+                
+                return minDist < 20 ? closest : null;
             }
             
             // Suivre le mouvement de la souris avec effet électrique amélioré
@@ -672,29 +791,41 @@
                 lightEffect.css({
                     left: relX,
                     top: relY,
-                    opacity: 0.8
+                    opacity: 0.7
                 });
                 
-                // Animer les étincelles électriques
-                sparks.forEach((spark, index) => {
-                    const angle = Math.random() * Math.PI * 2;
-                    const distance = 20 + Math.random() * 60;
-                    const sparkX = relX + Math.cos(angle) * distance;
-                    const sparkY = relY + Math.sin(angle) * distance;
-                    const width = 20 + Math.random() * 30;
+                // Trouver la ligne la plus proche et animer l'effet électrique
+                const closestLine = findClosestLine(relX, relY);
+                
+                // Animer les lignes électriques
+                if (closestLine) {
+                    const lineLength = Math.sqrt(
+                        Math.pow(closestLine.x2 - closestLine.x1, 2) + 
+                        Math.pow(closestLine.y2 - closestLine.y1, 2)
+                    );
                     
-                    spark.css({
-                        left: sparkX,
-                        top: sparkY,
-                        width: width,
-                        transform: `rotate(${Math.random() * 360}deg)`,
-                        opacity: 0.6 + Math.random() * 0.4
-                    });
-                    
-                    setTimeout(() => {
-                        spark.css('opacity', 0);
-                    }, 100 + Math.random() * 200);
-                });
+                    // Utiliser plusieurs lignes pour créer un effet plus riche
+                    for (let i = 0; i < 5; i++) {
+                        const randomLine = lines[Math.floor(Math.random() * lines.length)];
+                        const randomOffset = Math.random() * lineLength;
+                        const percentage = randomOffset / lineLength;
+                        
+                        const posX = closestLine.x1 + (closestLine.x2 - closestLine.x1) * percentage;
+                        const posY = closestLine.y1 + (closestLine.y2 - closestLine.y1) * percentage;
+                        
+                        randomLine.css({
+                            left: posX,
+                            top: posY,
+                            width: 30 + Math.random() * 20,
+                            transform: `rotate(${closestLine.angle}deg)`,
+                            opacity: 0.8 - (closestLine.dist / 20) * 0.5
+                        });
+                        
+                        setTimeout(() => {
+                            randomLine.css('opacity', 0);
+                        }, 100 + Math.random() * 150);
+                    }
+                }
                 
                 // Éclairer le texte à l'approche du curseur
                 const titleDistance = Math.sqrt(
@@ -705,11 +836,11 @@
                 if (titleDistance < 200) {
                     $('.header-title').css({
                         'text-shadow': `0 0 ${20 - titleDistance/20}px rgba(255, 215, 0, 0.8)`,
-                        'letter-spacing': `${1.5 + (200 - titleDistance)/200}px`
+                        'letter-spacing': `${1.5 + (200 - titleDistance)/300}px`
                     });
                     $('.header-subtitle').css({
                         'text-shadow': `0 0 ${15 - titleDistance/20}px rgba(255, 255, 255, 0.8)`,
-                        'letter-spacing': `${1.2 + (200 - titleDistance)/300}px`
+                        'letter-spacing': `${1.2 + (200 - titleDistance)/400}px`
                     });
                 } else {
                     $('.header-title').css({
@@ -737,27 +868,36 @@
                     top: randomY,
                     opacity: 0.5
                 }, 2000, 'linear', function() {
-                    // Ajouter quelques étincelles aléatoires
-                    sparks.forEach((spark, index) => {
-                        if (Math.random() > 0.7) {
-                            const angle = Math.random() * Math.PI * 2;
-                            const distance = Math.random() * 80;
-                            const sparkX = randomX + Math.cos(angle) * distance;
-                            const sparkY = randomY + Math.sin(angle) * distance;
+                    // Animer quelques lignes aléatoirement
+                    const closestLine = findClosestLine(randomX, randomY);
+                    
+                    if (closestLine) {
+                        const lineLength = Math.sqrt(
+                            Math.pow(closestLine.x2 - closestLine.x1, 2) + 
+                            Math.pow(closestLine.y2 - closestLine.y1, 2)
+                        );
+                        
+                        for (let i = 0; i < 3; i++) {
+                            const randomLine = lines[Math.floor(Math.random() * lines.length)];
+                            const randomOffset = Math.random() * lineLength;
+                            const percentage = randomOffset / lineLength;
                             
-                            spark.css({
-                                left: sparkX,
-                                top: sparkY,
-                                width: 20 + Math.random() * 30,
-                                transform: `rotate(${Math.random() * 360}deg)`,
-                                opacity: 0.4 + Math.random() * 0.3
+                            const posX = closestLine.x1 + (closestLine.x2 - closestLine.x1) * percentage;
+                            const posY = closestLine.y1 + (closestLine.y2 - closestLine.y1) * percentage;
+                            
+                            randomLine.css({
+                                left: posX,
+                                top: posY,
+                                width: 30 + Math.random() * 20,
+                                transform: `rotate(${closestLine.angle}deg)`,
+                                opacity: 0.6
                             });
                             
                             setTimeout(() => {
-                                spark.css('opacity', 0);
-                            }, 100 + Math.random() * 200);
+                                randomLine.css('opacity', 0);
+                            }, 100 + Math.random() * 150);
                         }
-                    });
+                    }
                     
                     animateLightEffectAuto();
                 });
