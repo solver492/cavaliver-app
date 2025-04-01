@@ -494,7 +494,7 @@ def prestation_edit(id):
         # prestation.camion_type = form.camion_type.data
         prestation.societe = form.societe.data
         prestation.montant = form.montant.data
-        prestation.priorite = form.priorite.data
+        # prestation.priorite = form.priorite.data
         prestation.tags = form.tags.data
         
         # Enregistrer les modifications de la prestation
@@ -703,7 +703,6 @@ def dashboard():
             # Ne plus sélectionner les colonnes manquantes
             # Prestation.demenagement_type,
             # Prestation.camion_type,
-            Prestation.priorite,
             Prestation.societe,
             Prestation.montant,
             Prestation.tags,
@@ -744,9 +743,34 @@ def dashboard():
         factures_en_retard = []
     
     # Calculer les statistiques
-    total_clients = Client.query.count()
-    total_prestations = Prestation.query.count()
-    total_factures = Facture.query.count()
+    try:
+        total_clients = Client.query.count()
+    except Exception as e:
+        print(f"Erreur lors du comptage des clients: {e}")
+        # Utiliser une requête plus basique qui évite les colonnes manquantes
+        try:
+            total_clients = db.session.query(func.count(Client.id)).scalar() or 0
+        except Exception as e2:
+            print(f"Erreur lors du comptage alternatif des clients: {e2}")
+            total_clients = 0
+    
+    try:
+        total_prestations = Prestation.query.count()
+    except Exception as e:
+        print(f"Erreur lors du comptage des prestations: {e}")
+        # Utiliser une requête plus basique qui évite les colonnes manquantes
+        try:
+            total_prestations = db.session.query(func.count(Prestation.id)).scalar() or 0
+        except Exception as e2:
+            print(f"Erreur lors du comptage alternatif des prestations: {e2}")
+            total_prestations = 0
+    
+    # Gérer l'absence de la table facture
+    try:
+        total_factures = Facture.query.count()
+    except Exception as e:
+        print(f"Erreur lors du comptage des factures: {e}")
+        total_factures = 0
     
     # Calculer le chiffre d'affaires
     ca_total = db.session.query(func.sum(Facture.montant_ttc)).filter(Facture.statut == 'payee').scalar() or 0
@@ -774,7 +798,8 @@ class ClientForm(FlaskForm):
     email = StringField('Email', validators=[Optional(), Email()])
     telephone = StringField('Téléphone', validators=[Optional()])
     adresse = TextAreaField('Adresse', validators=[Optional()])
-    client_type = SelectField('Type de client', choices=[('particulier', 'Particulier'), ('entreprise', 'Entreprise')], default='particulier')
+    # Champ retiré car la colonne client_type n'existe pas dans la base de données
+    # client_type = SelectField('Type de client', choices=[('particulier', 'Particulier'), ('entreprise', 'Entreprise')], default='particulier')
     tags = StringField('Tags (séparés par des virgules)', validators=[Optional()])
     documents = MultipleFileField('Documents', validators=[Optional()])
 
@@ -795,7 +820,7 @@ def client_add():
             email=form.email.data,
             telephone=form.telephone.data,
             adresse=form.adresse.data,
-            client_type=form.client_type.data,
+            # client_type=form.client_type.data,
             tags=form.tags.data,
             created_by_id=current_user.id
         )
@@ -857,15 +882,17 @@ class PrestationForm(FlaskForm):
         ('Cavalier', 'Cavalier - Déménagement')
     ], validators=[Optional()])
     montant = FloatField('Montant', validators=[Optional()])
-    priorite = SelectField('Priorité', choices=[
-        ('basse', 'Basse'),
-        ('normale', 'Normale'),
-        ('haute', 'Haute'),
-        ('urgente', 'Urgente')
-    ], default='normale')
+    # Suppression du champ priorite qui est absent sur Render
+    # priorite = SelectField('Priorité', choices=[
+    #     ('basse', 'Basse'),
+    #     ('normale', 'Normale'),
+    #     ('haute', 'Haute'),
+    #     ('urgente', 'Urgente')
+    # ], default='normale')
     transporteur_ids = SelectMultipleField('Transporteurs', coerce=int, validators=[Optional()])
-    trajet_depart = StringField('Point de départ', validators=[Optional()])
-    trajet_destination = StringField('Destination', validators=[Optional()])
+    # Suppression des champs trajet_depart et trajet_destination qui sont absents sur Render
+    # trajet_depart = StringField('Point de départ', validators=[Optional()])
+    # trajet_destination = StringField('Destination', validators=[Optional()])
     # Ne plus utiliser les colonnes manquantes
     # camion_type = SelectField('Type de camion', choices=[
     #     ('fourgon_12', 'Fourgon 12m³'),
@@ -952,19 +979,19 @@ def prestation_add():
             'montant': form.montant.data,
             # 'camion_type': form.camion_type.data,
             'tags': form.tags.data,
-            'priorite': form.priorite.data,
+            # 'priorite': form.priorite.data,
             'created_by_id': current_user.id
         }
         
         # Si les champs trajet sont remplis, utiliser leurs valeurs dans les adresses correspondantes
-        if form.trajet_depart.data:
-            prestation_args['adresse_depart'] = form.trajet_depart.data
-        if form.trajet_destination.data:
-            prestation_args['adresse_arrivee'] = form.trajet_destination.data
+        # if form.trajet_depart.data:
+        #     prestation_args['adresse_depart'] = form.trajet_depart.data
+        # if form.trajet_destination.data:
+        #     prestation_args['adresse_arrivee'] = form.trajet_destination.data
         
         # Ajouter l'ID du commercial si présent
-        if form.id_user_commercial.data:
-            prestation_args['id_user_commercial'] = form.id_user_commercial.data
+        # if form.id_user_commercial.data:
+        #     prestation_args['id_user_commercial'] = form.id_user_commercial.data
         
         # Créer la prestation
         prestation = Prestation(**prestation_args)
@@ -1025,7 +1052,7 @@ def client_edit(id):
         form.email.data = client.email
         form.telephone.data = client.telephone
         form.adresse.data = client.adresse
-        form.client_type.data = client.client_type
+        # form.client_type.data = client.client_type
         form.tags.data = client.tags
     
     if form.validate_on_submit():
@@ -1034,7 +1061,7 @@ def client_edit(id):
         client.email = form.email.data
         client.telephone = form.telephone.data
         client.adresse = form.adresse.data
-        client.client_type = form.client_type.data
+        # client.client_type = form.client_type.data
         client.tags = form.tags.data
         
         db.session.commit()

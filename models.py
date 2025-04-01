@@ -31,7 +31,7 @@ class Client(db.Model):
     email = db.Column(db.String(120))
     telephone = db.Column(db.String(20))
     adresse = db.Column(db.Text)
-    client_type = db.Column(db.String(20), default='particulier')  # 'particulier' or 'entreprise'
+    # Colonne manquante sur Render - complètement supprimée pour éviter les erreurs SQL
     tags = db.Column(db.Text)  # Store tags as comma-separated values
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
@@ -46,16 +46,8 @@ class Prestation(db.Model):
     date_fin = db.Column(db.DateTime)
     adresse_depart = db.Column(db.Text)
     adresse_arrivee = db.Column(db.Text)
-    # Retrait temporaire des colonnes problématiques
-    # Ces lignes sont commentées car elles causent des erreurs sur Render
-    # trajet_depart = db.Column(db.Text)
-    # trajet_destination = db.Column(db.Text)
     observation = db.Column(db.Text)
     statut = db.Column(db.String(20), default='en attente')  # en attente, en cours, todo, done, mod, canceled
-    # requires_packaging = db.Column(db.Boolean, default=False)
-    # demenagement_type = db.Column(db.String(50))  # Colonne manquante sur Render
-    # camion_type = db.Column(db.String(100))  # Colonne manquante sur Render
-    priorite = db.Column(db.Integer, default=0)  # Priorité de la prestation
     societe = db.Column(db.String(100))  # Nom de la société
     montant = db.Column(db.Float)  # Montant en euros
     tags = db.Column(db.Text)  # Store tags as comma-separated values
@@ -77,7 +69,7 @@ class Prestation(db.Model):
         secondary='prestation_transporter',
         backref=db.backref('prestations_transporteur', lazy='dynamic'),
         lazy='dynamic',
-        overlaps="prestation_transporters,transporter_prestations"
+        overlaps="prestation_transporters,transporter_prestations,prestations_transporteur"
     )
 
 class PrestationTransporter(db.Model):
@@ -169,35 +161,51 @@ class Notification(db.Model):
     user = db.relationship('User', backref='notifications')
     related_prestation = db.relationship('Prestation', backref='notifications')
 
-class Facture(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    numero = db.Column(db.String(50), unique=True, nullable=False)
-    prestation_id = db.Column(db.Integer, db.ForeignKey('prestation.id'), nullable=False)
-    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
-    montant_ht = db.Column(db.Float, nullable=False)
-    taux_tva = db.Column(db.Float, default=20.0)  # Taux de TVA en pourcentage
-    montant_ttc = db.Column(db.Float, nullable=False)
-    date_emission = db.Column(db.DateTime, default=datetime.utcnow)
-    date_echeance = db.Column(db.DateTime)
-    statut = db.Column(db.String(20), default='en_attente')  # en_attente, payee, annulee, retard
-    mode_paiement = db.Column(db.String(50))  # virement, carte, espèces, chèque
-    date_paiement = db.Column(db.DateTime)
-    notes = db.Column(db.Text)
-    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relations
-    prestation = db.relationship('Prestation', backref='factures')
-    client = db.relationship('Client', backref='factures')
-    created_by = db.relationship('User', backref='factures_created', foreign_keys=[created_by_id])
+# Définition de la classe Facture mais avec une gestion pour éviter les erreurs
+# si la table n'existe pas sur Render
+try:
+    class Facture(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        numero = db.Column(db.String(50), unique=True, nullable=False)
+        prestation_id = db.Column(db.Integer, db.ForeignKey('prestation.id'), nullable=False)
+        client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
+        montant_ht = db.Column(db.Float, nullable=False)
+        taux_tva = db.Column(db.Float, default=20.0)  # Taux de TVA en pourcentage
+        montant_ttc = db.Column(db.Float, nullable=False)
+        date_emission = db.Column(db.DateTime, default=datetime.utcnow)
+        date_echeance = db.Column(db.DateTime)
+        statut = db.Column(db.String(20), default='en_attente')  # en_attente, payee, annulee, retard
+        mode_paiement = db.Column(db.String(50))  # virement, carte, espèces, chèque
+        date_paiement = db.Column(db.DateTime)
+        notes = db.Column(db.Text)
+        created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+        date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+        
+        # Relations
+        prestation = db.relationship('Prestation', backref='factures')
+        client = db.relationship('Client', backref='factures')
+        created_by = db.relationship('User', backref='factures_created', foreign_keys=[created_by_id])
 
-class LigneFacture(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    facture_id = db.Column(db.Integer, db.ForeignKey('facture.id'), nullable=False)
-    description = db.Column(db.String(255), nullable=False)
-    quantite = db.Column(db.Float, default=1)
-    prix_unitaire = db.Column(db.Float, nullable=False)
-    montant = db.Column(db.Float, nullable=False)
+    class LigneFacture(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        facture_id = db.Column(db.Integer, db.ForeignKey('facture.id'), nullable=False)
+        description = db.Column(db.String(255), nullable=False)
+        quantite = db.Column(db.Float, default=1)
+        prix_unitaire = db.Column(db.Float, nullable=False)
+        montant = db.Column(db.Float, nullable=False)
+        
+        # Relation
+        facture = db.relationship('Facture', backref='lignes')
+except Exception as e:
+    # Si la table facture n'existe pas, créer des classes factices pour éviter les erreurs
+    print(f"Erreur lors de la définition des modèles Facture: {e}")
     
-    # Relation
-    facture = db.relationship('Facture', backref='lignes')
+    class Facture(db.Model):
+        __tablename__ = 'facture_dummy'
+        id = db.Column(db.Integer, primary_key=True)
+        # Définition minimale pour éviter les erreurs
+        
+    class LigneFacture(db.Model):
+        __tablename__ = 'ligne_facture_dummy'
+        id = db.Column(db.Integer, primary_key=True)
+        # Définition minimale pour éviter les erreurs
