@@ -8,6 +8,7 @@
 5. [Migration de la Base de Données](#migration-de-la-base-de-données)
 6. [Déploiement](#déploiement)
 7. [Maintenance](#maintenance)
+8. [Correction de la Base de Données sur Render](#correction-de-la-base-de-données-sur-render)
 
 ## Prérequis
 
@@ -286,5 +287,70 @@ pip install newrelic
 # Configuration
 newrelic-admin generate-config YOUR_LICENSE_KEY newrelic.ini
 ```
+
+## Correction de la Base de Données sur Render
+
+L'application peut rencontrer des problèmes sur Render en raison de colonnes ou tables manquantes dans la base de données. Deux scripts ont été créés pour résoudre ces problèmes :
+
+### Option 1 : Correction manuelle via le Shell Render (nécessite un abonnement)
+
+Si vous avez accès au shell Render (fonctionnalité payante), vous pouvez exécuter directement :
+
+```bash
+cd /opt/render/project/src/
+python fix_render_db.py
+```
+
+Ce script va :
+- Vérifier les tables existantes
+- Ajouter les colonnes manquantes (societe, montant, tags dans la table prestation et tags dans la table client)
+- Créer la table facture si elle n'existe pas
+- Initialiser un utilisateur admin si nécessaire
+
+### Option 2 : Utilisation de l'API Render (gratuit)
+
+Si vous n'avez pas d'abonnement Render avec accès au shell, vous pouvez utiliser l'API Render pour exécuter le script de correction :
+
+1. Assurez-vous d'avoir une clé API Render (créée dans les paramètres de votre compte)
+2. Exécutez le script d'automatisation localement :
+
+```bash
+# Installez d'abord les dépendances
+pip install requests
+
+# Exécutez le script (assurez-vous de mettre à jour l'ID de service dans le script)
+python render_api_deploy.py
+```
+
+Le script `render_api_deploy.py` va :
+- Se connecter à l'API Render avec votre clé
+- Exécuter le script de correction de base de données sur votre service
+- Déclencher un redéploiement de l'application
+- Suivre le statut du déploiement
+
+### Colonnes et tables manquantes connues
+
+Les problèmes suivants ont été identifiés et sont gérés par les scripts de correction :
+
+1. Colonnes manquantes dans la table prestation :
+   - societe
+   - montant
+   - tags
+   - trajet_depart
+   - trajet_destination
+   - requires_packaging
+   - demenagement_type
+   - camion_type
+   - priorite
+
+2. Colonnes manquantes dans la table client :
+   - tags
+   - client_type
+
+3. Tables manquantes :
+   - facture
+   - ligne_facture
+
+Le code de l'application a été adapté pour gérer ces absences, mais les scripts de correction permettent de rétablir la structure complète de la base de données.
 
 Pour toute question ou assistance supplémentaire, veuillez contacter l'équipe de support.
