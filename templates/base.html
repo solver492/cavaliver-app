@@ -288,6 +288,10 @@
     </style>
     
     {% block styles %}{% endblock %}
+    
+    <!-- Scripts JavaScript -->
+    <script src="{{ url_for('static', filename='js/slider.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </head>
 <body>
     <!-- Header -->
@@ -306,27 +310,6 @@
         </div>
     </header>
     
-    <!-- Script simple pour le défilement des titres -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const slides = document.querySelectorAll('.slide');
-            let currentSlide = 0;
-            
-            // Afficher le premier slide au chargement
-            slides[0].classList.add('active');
-            
-            // Fonction pour passer au slide suivant
-            function nextSlide() {
-                slides[currentSlide].classList.remove('active');
-                currentSlide = (currentSlide + 1) % slides.length;
-                slides[currentSlide].classList.add('active');
-            }
-            
-            // Changer de slide toutes les 4 secondes
-            setInterval(nextSlide, 4000);
-        });
-    </script>
-
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg mb-4">
         <div class="container">
@@ -410,46 +393,18 @@
 
     <!-- Main content -->
     {% block content %}{% endblock %}
-
-    <!-- Bootstrap Bundle with Popper -->
-    {% block scripts %}
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    {% endblock %}
-
-    <!-- Global script -->
-    <script>
-    $(document).ready(function() {
-        // Initialiser tous les tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-
-        // Gérer la fermeture des alertes
-        $('.alert').alert();
-    });
-    </script>
-
+    
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <div class="footer-content">
-                <div class="footer-logo">
-                    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Cavalier Logo">
-                    <span>Cavalier</span>
+            <div class="row">
+                <div class="col-md-12 text-center">
+                    <p>&copy; {{ current_year }} Cavalier Déménagement. Tous droits réservés.</p>
                 </div>
-                <div class="footer-links">
-                    <a href="#"><i class="fas fa-home"></i> Accueil</a>
-                    <a href="#"><i class="fas fa-info-circle"></i> À propos</a>
-                    <a href="#"><i class="fas fa-envelope"></i> Contact</a>
-                    <a href="#"><i class="fas fa-shield-alt"></i> Confidentialité</a>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p class="mb-0">&copy; 2025 Cavalier - LA MAITRISE PAR LE SAVOIR-FAIRE</p>
             </div>
         </div>
     </footer>
+    
+    {% block scripts %}{% endblock %}
 </body>
 </html>
