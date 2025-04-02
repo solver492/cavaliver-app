@@ -211,7 +211,7 @@
             margin-top: 3rem;
         }
         
-        /* Header simple et fiable */
+        /* Header avec défilement de titres */
         .app-header {
             position: relative;
             background: linear-gradient(to right, #1a1a1a, #333333, #1a1a1a);
@@ -234,6 +234,9 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            height: 80px;
+            position: relative;
+            overflow: hidden;
         }
         
         .header-title {
@@ -244,6 +247,10 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
             letter-spacing: 1.5px;
             margin-bottom: 10px;
+            width: 100%;
+            position: relative;
+            height: 2.5rem;
+            overflow: hidden;
         }
         
         .header-subtitle {
@@ -253,17 +260,24 @@
             letter-spacing: 1.2px;
         }
         
-        /* Styles pour les alertes */
-        .alert {
-            border: none;
-            border-radius: 0.5rem;
-            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+        /* Animation de défilement simple pour les titres */
+        .slider {
+            position: relative;
+            overflow: hidden;
+            height: 2.5rem;
+            width: 100%;
         }
         
-        /* Styles pour les tableaux */
-        .table {
-            border-radius: 0.5rem;
-            overflow: hidden;
+        .slide {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+        
+        .slide.active {
+            opacity: 1;
         }
     </style>
     
@@ -274,11 +288,38 @@
     <header class="app-header">
         <div class="container-fluid header-container">
             <div class="header-content">
-                <h1 class="header-title">UNE DEUXIÈME VIE À NOS VALEURS</h1>
+                <h1 class="header-title">
+                    <div class="slider">
+                        <div class="slide" id="slide1">UNE DEUXIÈME VIE À NOS VALEURS</div>
+                        <div class="slide" id="slide2">LA MAITRISE PAR LE SAVOIR-FAIRE</div>
+                        <div class="slide" id="slide3">AU SERVICE DE NOS CONQUERANTS</div>
+                    </div>
+                </h1>
                 <p class="header-subtitle">Déménagement • Transport • Stockage</p>
             </div>
         </div>
     </header>
+    
+    <!-- Script simple pour le défilement des titres -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const slides = document.querySelectorAll('.slide');
+            let currentSlide = 0;
+            
+            // Afficher le premier slide au chargement
+            slides[0].classList.add('active');
+            
+            // Fonction pour passer au slide suivant
+            function nextSlide() {
+                slides[currentSlide].classList.remove('active');
+                currentSlide = (currentSlide + 1) % slides.length;
+                slides[currentSlide].classList.add('active');
+            }
+            
+            // Changer de slide toutes les 4 secondes
+            setInterval(nextSlide, 4000);
+        });
+    </script>
 
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg mb-4">
