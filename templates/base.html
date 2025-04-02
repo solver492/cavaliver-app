@@ -211,121 +211,46 @@
             margin-top: 3rem;
         }
         
-        /* Header professionnel avec texte horizontal */
+        /* Header simple et fiable */
         .app-header {
             position: relative;
             background: linear-gradient(to right, #1a1a1a, #333333, #1a1a1a);
-            padding: 0;
-            height: 110px;
-            overflow: visible;
+            padding: 15px 0;
+            min-height: 110px;
             color: #ffffff;
             border-bottom: 3px solid var(--honey-gold);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            text-align: center;
         }
         
-        /* Container pour le contenu du header */
         .header-container {
             width: 100%;
-            z-index: 5;
-            display: flex;
-            justify-content: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
         }
         
-        /* Contenu du header */
         .header-content {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 110px;
-            width: 100%;
-            max-width: 1200px;
-            padding: 0 15px;
         }
         
-        /* Texte principal dans le header */
         .header-title {
             font-family: 'Montserrat', sans-serif;
             font-weight: 800;
-            font-size: 1.8rem;
+            font-size: 2rem;
             color: #ffffff;
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
             letter-spacing: 1.5px;
-            text-align: center;
-            margin: 0;
-            line-height: 1.2;
-            height: 2.2rem;
-            overflow: hidden;
-            position: relative;
+            margin-bottom: 10px;
         }
         
-        /* Sous-titre */
         .header-subtitle {
             font-size: 1.1rem;
             font-weight: 500;
             color: var(--honey-gold);
             letter-spacing: 1.2px;
-            text-align: center;
-            margin: 10px 0 0 0;
-            height: 1.3rem;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        /* Animation de fondu pour le texte */
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateY(10px); }
-            3% { opacity: 1; transform: translateY(0); }
-            30% { opacity: 1; transform: translateY(0); }
-            33% { opacity: 0; transform: translateY(-10px); }
-            100% { opacity: 0; transform: translateY(-10px); }
-        }
-        
-        .animated-text {
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 0;
-            animation: fadeInOut 15s ease-in-out infinite;
-        }
-        
-        .animated-text:nth-child(1) {
-            animation-delay: 0s;
-        }
-        
-        .animated-text:nth-child(2) {
-            animation-delay: 5s;
-        }
-        
-        .animated-text:nth-child(3) {
-            animation-delay: 10s;
-        }
-        
-        /* Animation de fondu pour le sous-titre */
-        @keyframes fadeSubtitle {
-            0% { opacity: 0; }
-            3% { opacity: 1; }
-            47% { opacity: 1; }
-            50% { opacity: 0; }
-            100% { opacity: 0; }
-        }
-        
-        .animated-subtitle {
-            position: absolute;
-            left: 0;
-            right: 0;
-            top: 0;
-            animation: fadeSubtitle 10s ease-in-out infinite;
-        }
-        
-        .animated-subtitle:nth-child(1) {
-            animation-delay: 0s;
-        }
-        
-        .animated-subtitle:nth-child(2) {
-            animation-delay: 5s;
         }
         
         /* Styles pour les alertes */
@@ -349,15 +274,8 @@
     <header class="app-header">
         <div class="container-fluid header-container">
             <div class="header-content">
-                <h1 class="header-title">
-                    <span class="animated-text">UNE DEUXIÈME VIE À NOS VALEURS</span>
-                    <span class="animated-text">LA MAITRISE PAR LE SAVOIR-FAIRE</span>
-                    <span class="animated-text">AU SERVICE DE NOS CONQUERANTS</span>
-                </h1>
-                <p class="header-subtitle">
-                    <span class="animated-subtitle">Déménagement • Transport • Stockage</span>
-                    <span class="animated-subtitle">Solution logistique sur mesures</span>
-                </p>
+                <h1 class="header-title">UNE DEUXIÈME VIE À NOS VALEURS</h1>
+                <p class="header-subtitle">Déménagement • Transport • Stockage</p>
             </div>
         </div>
     </header>
