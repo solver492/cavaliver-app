@@ -1,0 +1,173 @@
+# Schéma de la Base de Données - Application Cavalier Déménagement
+
+## 1. Introduction
+Ce document décrit le schéma de la base de données pour l'application Cavalier Déménagement. Il inclut les tables, les champs, les relations et les contraintes nécessaires pour garantir l'intégrité des données et le bon fonctionnement de l'application.
+
+## 2. Tables Principales
+
+### 2.1 Table `roles`
+- **Description** : Définit les différents rôles dans l'application.
+- **Champs** :
+  - `id` (clé primaire, entier)
+  - `nom` (chaîne de caractères, unique)
+  - `permissions` (JSON, contenant les droits de l'utilisateur)
+
+### 2.2 Table `users`
+- **Description** : Stocke les informations des utilisateurs.
+- **Champs** :
+  - `id` (clé primaire, entier)
+  - `nom` (chaîne de caractères)
+  - `prenom` (chaîne de caractères)
+  - `email` (chaîne de caractères, unique)
+  - `role_id` (clé étrangère vers `roles.id`)
+  - `password` (chaîne de caractères, hachée)
+  - `created_at` (date et heure)
+  - `updated_at` (date et heure)
+
+### 2.3 Table `clients`
+- **Description** : Stocke les informations des clients.
+- **Champs** :
+  - `id` (clé primaire, entier)
+  - `nom` (chaîne de caractères)
+  - `prenom` (chaîne de caractères)
+  - `email` (chaîne de caractères, unique)
+  - `telephone` (chaîne de caractères)
+  - `adresse` (chaîne de caractères)
+  - `created_at` (date et heure)
+  - `updated_at` (date et heure)
+
+### 2.4 Table `prestations`
+- **Description** : Stocke les informations des prestations.
+- **Champs** :
+  - `id` (clé primaire, entier)
+  - `client_id` (clé étrangère vers `clients.id`)
+  - `commercial_id` (clé étrangère vers `users.id`)
+  - `transporteur_id` (clé étrangère vers `users.id`, nullable)
+  - `type_prestation_id` (clé étrangère vers `types_prestation.id`)
+  - `date` (date)
+  - `status` (chaîne de caractères, par exemple : "en attente", "en cours", "terminée")
+  - `created_at` (date et heure)
+  - `updated_at` (date et heure)
+
+### 2.5 Table `types_prestation`
+- **Description** : Définit les types de prestations disponibles.
+- **Champs** :
+  - `id` (clé primaire, entier)
+  - `nom` (chaîne de caractères, unique)
+  - `description` (chaîne de caractères)
+  - `created_at` (date et heure)
+  - `updated_at` (date et heure)
+
+### 2.6 Table `disponibilites`
+- **Description** : Stocke les disponibilités des transporteurs.
+- **Champs** :
+  - `id` (clé primaire, entier)
+  - `transporteur_id` (clé étrangère vers `users.id`)
+  - `date_debut` (date et heure)
+  - `date_fin` (date et heure)
+  - `created_at` (date et heure)
+  - `updated_at` (date et heure)
+
+### 2.7 Table `notifications`
+- **Description** : Stocke les notifications pour les utilisateurs.
+- **Champs** :
+  - `id` (clé primaire, entier)
+  - `utilisateur_id` (clé étrangère vers `users.id`)
+  - `message` (chaîne de caractères)
+  - `type` (chaîne de caractères, par exemple : "info", "success", "warning", "danger")
+  - `lu` (booléen, par défaut : false)
+  - `date_creation` (date et heure)
+  - `date_mise_a_jour` (date et heure)
+
+### 2.8 Table `vehicules`
+- **Description** : Stocke les informations des véhicules utilisés pour les déménagements.
+- **Champs** :
+  - `id` (clé primaire, entier)
+  - `type_vehicule_id` (clé étrangère vers `types_vehicules.id`)
+  - `matricule` (chaîne de caractères, unique)
+  - `marque` (chaîne de caractères)
+  - `modele` (chaîne de caractères)
+  - `annee` (entier)
+  - `created_at` (date et heure)
+  - `updated_at` (date et heure)
+
+### 2.9 Table `types_vehicules`
+- **Description** : Définit les types de véhicules disponibles.
+- **Champs** :
+  - `id` (clé primaire, entier)
+  - `nom` (chaîne de caractères, unique)
+  - `description` (chaîne de caractères)
+  - `created_at` (date et heure)
+  - `updated_at` (date et heure)
+
+## 3. Relations Entre les Tables
+
+### 3.1 `users` et `roles`
+- **Type de relation** : Un à un
+- **Description** : Un utilisateur a un seul rôle, et un rôle peut être assigné à plusieurs utilisateurs.
+
+### 3.2 `prestations` et `clients`
+- **Type de relation** : Un à plusieurs
+- **Description** : Un client peut avoir plusieurs prestations, mais une prestation appartient à un seul client.
+
+### 3.3 `prestations` et `users` (Commercial)
+- **Type de relation** : Un à plusieurs
+- **Description** : Un Commercial peut créer plusieurs prestations, mais une prestation est créée par un seul Commercial.
+
+### 3.4 `prestations` et `users` (Transporteur)
+- **Type de relation** : Un à plusieurs
+- **Description** : Un Transporteur peut être assigné à plusieurs prestations, mais une prestation peut être assignée à plusieurs Transporteurs.
+
+### 3.5 `prestations` et `types_prestation`
+- **Type de relation** : Un à plusieurs
+- **Description** : Un type de prestation peut être utilisé dans plusieurs prestations, mais une prestation a un seul type.
+
+### 3.6 `disponibilites` et `users` (Transporteur)
+- **Type de relation** : Un à plusieurs
+- **Description** : Un Transporteur peut avoir plusieurs disponibilités, mais une disponibilité appartient à un seul Transporteur.
+
+### 3.7 `notifications` et `users`
+- **Type de relation** : Un à plusieurs
+- **Description** : Un utilisateur peut recevoir plusieurs notifications, mais une notification est envoyée à un seul utilisateur.
+
+### 3.8 `vehicules` et `types_vehicules`
+- **Type de relation** : Un à plusieurs
+- **Description** : Un type de véhicule peut être utilisé pour plusieurs véhicules, mais un véhicule appartient à un seul type.
+
+## 4. Contraintes et Index
+
+### 4.1 Contraintes de Clé Étrangère
+- Toutes les clés étrangères doivent être correctement définies pour garantir l'intégrité des données.
+
+### 4.2 Index
+- Créer des index sur les champs souvent utilisés dans les requêtes (par exemple : `users.email`, `prestations.date`, `disponibilites.date_debut`).
+
+### 4.3 Contraintes de Non Nullité
+- Les champs importants comme `users.email`, `prestations.date`, et `prestations.status` ne doivent pas être null.
+
+### 4.4 Contraintes d'Unicité
+- Les champs comme `users.email`, `types_prestation.nom`, et `types_vehicules.nom` doivent être uniques pour éviter les doublons.
+
+## 5. Exemples de Requêtes
+
+### 5.1 Récupération des Prestations d'un Commercial
+```sql
+SELECT * FROM prestations WHERE commercial_id = 1;
+```
+
+### 5.2 Récupération des Disponibilités d'un Transporteur
+```sql
+SELECT * FROM disponibilites WHERE transporteur_id = 2 AND date_debut >= CURRENT_DATE;
+```
+
+### 5.3 Récupération des Notifications Non Lues
+```sql
+SELECT * FROM notifications WHERE utilisateur_id = 3 AND lu = false;
+```
+
+## 6. Conclusion
+Ce schéma de base de données est conçu pour supporter les fonctionnalités de l'application Cavalier Déménagement tout en garantissant l'intégrité et la cohérence des données. Il est important de respecter ces structures et relations lors de l'implémentation pour éviter les erreurs et les incohérences.
+
+---
+
+Si vous avez des questions ou si某些 modifications sont nécessaires, n'hésitez pas à me le faire savoir !

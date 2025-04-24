@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier un type de véhicule{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Modifier un type de véhicule</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Tableau de bord</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('vehicule.types_vehicules') }}">Types de véhicules</a></li>
+        <li class="breadcrumb-item active">Modifier {{ type_vehicule.nom }}</li>
+    </ol>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-truck me-1"></i>
+            Formulaire de modification d'un type de véhicule
+        </div>
+        <div class="card-body">
+            {% include 'includes/messages.html' %}
+            
+            <form method="POST" novalidate>
+                {{ form.hidden_tag() }}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.nom.label(class="form-label") }}
+                            {{ form.nom(class="form-control" + (" is-invalid" if form.nom.errors else "")) }}
+                            {% for error in form.nom.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.capacite.label(class="form-label") }}
+                            {{ form.capacite(class="form-control" + (" is-invalid" if form.capacite.errors else "")) }}
+                            {% for error in form.capacite.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <small class="form-text text-muted">Ex: 12 m³, 20 m³, etc.</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group mb-3">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=3) }}
+                    {% for error in form.description.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                
+                <div class="form-group mb-3">
+                    {{ form.types_demenagement.label(class="form-label") }}
+                    {{ form.types_demenagement(class="form-select" + (" is-invalid" if form.types_demenagement.errors else ""), multiple=true, size=5) }}
+                    {% for error in form.types_demenagement.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                    <small class="form-text text-muted">Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs types.</small>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> {{ form.submit.label.text }}
+                    </button>
+                    <a href="{{ url_for('vehicule.types_vehicules') }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i> Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

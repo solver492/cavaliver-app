@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">Confirmer la suppression</h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Êtes-vous sûr de vouloir supprimer la prestation suivante ?</p>
+                    
+                    <div class="alert alert-warning">
+                        <strong>Attention :</strong> Cette action est irréversible. Toutes les données associées à cette prestation seront définitivement supprimées.
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Détails de la prestation</h5>
+                            <p class="card-text">
+                                <strong>Client :</strong> {{ prestation.client_principal.nom }} {{ prestation.client_principal.prenom }}<br>
+                                <strong>Type :</strong> {{ prestation.type_demenagement }}<br>
+                                <strong>Dates :</strong> Du {{ prestation.date_debut.strftime('%d/%m/%Y') }} au {{ prestation.date_fin.strftime('%d/%m/%Y') }}<br>
+                                <strong>Statut :</strong> {{ prestation.statut }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <form action="{{ url_for('prestation.delete', id=prestation.id) }}" method="POST" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Confirmer la suppression
+                        </button>
+                        <a href="{{ url_for('prestation.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Annuler
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

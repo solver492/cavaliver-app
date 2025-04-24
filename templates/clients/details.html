@@ -1,0 +1,516 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="client-details-page">
+    <div class="page-title">
+        <h1><i class="fas fa-id-card"></i> Fiche client</h1>
+        <a href="{{ url_for('client.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-user"></i> Informations générales</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th style="width: 30%">Nom:</th>
+                            <td>{{ client.nom }}</td>
+                        </tr>
+                        <tr>
+                            <th>Prénom:</th>
+                            <td>{{ client.prenom }}</td>
+                        </tr>
+                        <tr>
+                            <th>Type de client:</th>
+                            <td>{{ client.type_client }}</td>
+                        </tr>
+                        <tr>
+                            <th>Téléphone:</th>
+                            <td>{{ client.telephone }}</td>
+                        </tr>
+                        <tr>
+                            <th>Email:</th>
+                            <td>{{ client.email }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th style="width: 30%">Adresse:</th>
+                            <td>{{ client.adresse }}</td>
+                        </tr>
+                        <tr>
+                            <th>Code postal:</th>
+                            <td>{{ client.code_postal }}</td>
+                        </tr>
+                        <tr>
+                            <th>Ville:</th>
+                            <td>{{ client.ville }}</td>
+                        </tr>
+                        <tr>
+                            <th>Pays:</th>
+                            <td>{{ client.pays }}</td>
+                        </tr>
+                        <tr>
+                            <th>Étiquettes:</th>
+                            <td>
+                                {% if client.tags %}
+                                    {% for tag in client.tags.split(',') %}
+                                        <span class="badge bg-info">{{ tag.strip() }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">Aucune étiquette</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="client-status mt-3">
+                <p>
+                    <strong>Statut:</strong>
+                    {% if client.archive %}
+                        <span class="badge bg-secondary">Archivé</span>
+                    {% else %}
+                        <span class="badge bg-success">Actif</span>
+                    {% endif %}
+                </p>
+                <p><strong>Date de création:</strong> {{ client.date_creation.strftime('%d/%m/%Y') }}</p>
+            </div>
+            
+            {% if client.observations %}
+            <div class="client-observations mt-3">
+                <h5><i class="fas fa-sticky-note"></i> Observations</h5>
+                <div class="card bg-light">
+                    <div class="card-body">
+                        {{ client.observations|nl2br|safe }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="client-actions mt-4">
+                <a href="{{ url_for('client.edit', id=client.id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Modifier
+                </a>
+                <a href="{{ url_for('client.toggle_archive', id=client.id) }}" 
+                   class="btn btn-{{ 'success' if client.archive else 'warning' }}">
+                    <i class="fas fa-{{ 'box-open' if client.archive else 'archive' }}"></i>
+                    {{ 'Désarchiver' if client.archive else 'Archiver' }}
+                </a>
+                {% if current_user.is_admin() and not client.prestations and not client.factures %}
+                    <a href="{{ url_for('client.delete', id=client.id) }}" 
+                       class="btn btn-danger delete-client" 
+                       data-client-name="{{ client.nom }} {{ client.prenom }}">
+                        <i class="fas fa-trash-alt"></i> Supprimer
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Section documents -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-file-alt"></i> Documents</h5>
+            <a href="{{ url_for('documents.client_documents', client_id=client.id) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-folder-open"></i> Gérer les documents
+            </a>
+        </div>
+        <div class="card-body">
+            {% if client.documents|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for document in client.documents|sort(attribute='date_upload', reverse=true) %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-file-{{ 'pdf' if document.format == 'pdf' else 'alt' }} text-{{ 'danger' if document.format == 'pdf' else 'primary' }}"></i>
+                                        {{ document.nom }}
+                                    </td>
+                                    <td>{{ document.type|capitalize if document.type else '-' }}</td>
+                                    <td>{{ document.date_upload.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        {% if document.notes %}
+                                            <span data-toggle="tooltip" title="{{ document.notes }}">
+                                                <i class="fas fa-sticky-note text-warning"></i> 
+                                                {{ document.notes|truncate(30, true) }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('documents.download_document', document_id=document.id) }}" class="btn btn-info" title="Télécharger">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <a href="{{ url_for('documents.view_document', document_id=document.id) }}" class="btn btn-primary" title="Voir">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Aucun document n'est associé à ce client.
+                    <a href="{{ url_for('documents.client_documents', client_id=client.id) }}" class="alert-link">Ajouter des documents</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Section prestations si elles existent -->
+    {% if client.prestations %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-tasks"></i> Prestations</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Référence</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Statut</th>
+                            <th>Montant</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prestation in client.prestations %}
+                            <tr>
+                                <td>{{ prestation.id }}</td>
+                                <td>{{ prestation.date_debut.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ prestation.type_demenagement }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if prestation.statut == 'Terminée' else 'warning' if prestation.statut == 'En attente' else 'danger' if prestation.statut == 'Annulée' else 'info' }}">
+                                        {{ prestation.statut }}
+                                    </span>
+                                </td>
+                                <td>{{ "%.2f"|format(prestation.montant or 0) }} €</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('prestation.view', id=prestation.id) }}" class="btn btn-outline-primary" title="Voir">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Section factures si elles existent -->
+    {% if client.factures %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-file-invoice"></i> Factures</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Numéro</th>
+                            <th>Date</th>
+                            <th>Montant</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for facture in client.factures %}
+                            <tr>
+                                <td>{{ facture.numero }}</td>
+                                <td>{{ facture.date_emission.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ "%.2f"|format(facture.montant_ttc) }} €</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if facture.statut == 'Payée' else 'warning' if facture.statut == 'En attente' else 'danger' if facture.statut == 'Annulée' else 'info' }}">
+                                        {{ facture.statut }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('facture.view', id=facture.id) }}" class="btn btn-outline-primary" title="Voir">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Désactiver l'intégration WhatsApp globale sur cette page
+        document.body.classList.add('disable-global-whatsapp');
+        
+        // Supprimer tous les boutons WhatsApp existants
+        document.querySelectorAll('.whatsapp-btn').forEach(btn => {
+            if (!btn.classList.contains('client-phone-whatsapp')) {
+                btn.remove();
+            }
+        });
+        
+        // Variable pour suivre si le bouton a été ajouté avec succès
+        let boutonAjoute = false;
+        
+        // Fonction pour ajouter un seul bouton WhatsApp à côté du numéro de téléphone
+        function ajouterBoutonWhatsApp() {
+            console.log("Ajout du bouton WhatsApp...");
+            
+            // Si le bouton a déjà été ajouté avec succès, ne rien faire
+            if (boutonAjoute && document.querySelector('.client-phone-whatsapp')) {
+                console.log("Bouton WhatsApp déjà ajouté avec succès");
+                return;
+            }
+            
+            // Trouver la cellule contenant le numéro de téléphone
+            const thTelephone = Array.from(document.querySelectorAll('th')).find(th => 
+                th.textContent.trim() === 'Téléphone:');
+                
+            if (thTelephone) {
+                console.log("Cellule téléphone trouvée:", thTelephone);
+                const tdTelephone = thTelephone.nextElementSibling;
+                
+                if (tdTelephone) {
+                    console.log("Cellule de valeur trouvée:", tdTelephone.textContent);
+                    
+                    // Vérifier si le bouton existe déjà
+                    if (tdTelephone.querySelector('.client-phone-whatsapp')) {
+                        console.log("Bouton WhatsApp déjà présent, pas besoin de l'ajouter à nouveau");
+                        boutonAjoute = true;
+                        return;
+                    }
+                    
+                    // Récupérer le numéro de téléphone original
+                    const numeroText = tdTelephone.textContent.trim();
+                    console.log("Texte trouvé:", numeroText);
+                    
+                    // Extraire le numéro avec une regex
+                    const numeroMatch = numeroText.match(/(\d[\d\s\-\+\.]+\d)/);
+                    const numero = numeroMatch ? numeroMatch[1] : numeroText;
+                    
+                    console.log("Numéro extrait:", numero);
+                    
+                    // Vérifier si le numéro est valide
+                    if (numero && numero.length > 5) {
+                        // Formater le numéro pour WhatsApp
+                        let numeroWhatsApp = numero.replace(/\D/g, '');
+                        
+                        // Si le numéro commence par un 0, le remplacer par 33
+                        if (numeroWhatsApp.startsWith('0')) {
+                            numeroWhatsApp = '33' + numeroWhatsApp.substring(1);
+                        }
+                        
+                        console.log("Numéro formaté pour WhatsApp:", numeroWhatsApp);
+                        
+                        // Créer le bouton WhatsApp
+                        const whatsappBtn = document.createElement('a');
+                        whatsappBtn.href = 'https://wa.me/' + numeroWhatsApp;
+                        whatsappBtn.className = 'whatsapp-btn client-phone-whatsapp';
+                        whatsappBtn.setAttribute('data-permanent', 'true');
+                        whatsappBtn.target = '_blank';
+                        whatsappBtn.innerHTML = '<i class="fab fa-whatsapp"></i>';
+                        whatsappBtn.title = 'Contacter par WhatsApp';
+                        
+                        // Styles directement appliqués
+                        whatsappBtn.style.display = 'inline-flex';
+                        whatsappBtn.style.alignItems = 'center';
+                        whatsappBtn.style.justifyContent = 'center';
+                        whatsappBtn.style.width = '32px';
+                        whatsappBtn.style.height = '32px';
+                        whatsappBtn.style.borderRadius = '50%';
+                        whatsappBtn.style.backgroundColor = '#25D366';
+                        whatsappBtn.style.color = 'white';
+                        whatsappBtn.style.margin = '0 0 0 10px';
+                        whatsappBtn.style.textDecoration = 'none';
+                        whatsappBtn.style.boxShadow = '0 2px 5px rgba(0,0,0,0.1)';
+                        whatsappBtn.style.transition = 'transform 0.3s ease';
+                        whatsappBtn.style.zIndex = '1000';
+                        whatsappBtn.style.position = 'relative';
+                        
+                        // Effet de survol
+                        whatsappBtn.onmouseover = function() {
+                            this.style.backgroundColor = '#128C7E';
+                            this.style.transform = 'translateY(-2px)';
+                        };
+                        whatsappBtn.onmouseout = function() {
+                            this.style.backgroundColor = '#25D366';
+                            this.style.transform = 'translateY(0)';
+                        };
+                        
+                        // Créer un conteneur pour le numéro et le bouton
+                        const container = document.createElement('div');
+                        container.style.display = 'flex';
+                        container.style.alignItems = 'center';
+                        container.className = 'telephone-container';
+                        container.style.position = 'relative';
+                        container.style.zIndex = '999';
+                        
+                        // Ajouter le numéro original et le bouton au conteneur
+                        container.appendChild(document.createTextNode(numero));
+                        container.appendChild(whatsappBtn);
+                        
+                        // Remplacer le contenu de la cellule
+                        tdTelephone.innerHTML = '';
+                        tdTelephone.appendChild(container);
+                        
+                        console.log('Bouton WhatsApp ajouté avec succès!');
+                        boutonAjoute = true;
+                    } else {
+                        console.log("Numéro de téléphone non valide ou trop court");
+                    }
+                } else {
+                    console.log("Cellule de valeur non trouvée");
+                }
+            } else {
+                console.log("Cellule téléphone non trouvée");
+            }
+        }
+        
+        // Exécuter immédiatement
+        ajouterBoutonWhatsApp();
+        
+        // Exécuter après un court délai pour s'assurer que le DOM est complètement chargé
+        setTimeout(ajouterBoutonWhatsApp, 500);
+        
+        // Exécuter après un délai plus long au cas où
+        setTimeout(ajouterBoutonWhatsApp, 1500);
+        
+        // Réessayer après un délai plus long au cas où
+        setTimeout(ajouterBoutonWhatsApp, 2500);
+        
+        // Réessayer toutes les 2 secondes pendant 10 secondes
+        for (let i = 1; i <= 5; i++) {
+            setTimeout(ajouterBoutonWhatsApp, i * 2000);
+        }
+        
+        // Configurer un MutationObserver pour surveiller les changements dans le DOM
+        const observer = new MutationObserver(function(mutations) {
+            // Si le bouton a été supprimé, le réajouter
+            if (!document.querySelector('.client-phone-whatsapp')) {
+                console.log("Bouton WhatsApp supprimé, réapplication...");
+                ajouterBoutonWhatsApp();
+            }
+        });
+        
+        // Observer le corps du document pour détecter les changements
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: false,
+            characterData: false
+        });
+        
+        // Ajouter un gestionnaire d'événements pour la confirmation de suppression
+        const deleteButtons = document.querySelectorAll('.delete-client');
+        deleteButtons.forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const clientName = this.getAttribute('data-client-name');
+                
+                if(confirm(`Êtes-vous sûr de vouloir supprimer le client "${clientName}" ? Cette action est irréversible.`)) {
+                    window.location.href = this.getAttribute('href');
+                }
+            });
+        });
+    });
+</script>
+
+<style>
+    /* Désactiver l'intégration WhatsApp globale sur cette page */
+    .disable-global-whatsapp .whatsapp-btn:not(.client-phone-whatsapp) {
+        display: none !important;
+    }
+    
+    /* S'assurer que le bouton WhatsApp du client est toujours visible */
+    .client-phone-whatsapp {
+        display: inline-flex !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        position: relative !important;
+        z-index: 1000 !important;
+    }
+    
+    /* Empêcher les autres scripts de masquer le bouton */
+    .client-phone-whatsapp[data-permanent="true"] {
+        opacity: 1 !important;
+        visibility: visible !important;
+        position: relative !important;
+        z-index: 1000 !important;
+        pointer-events: auto !important;
+    }
+    
+    /* Conteneur du téléphone et du bouton */
+    .telephone-container {
+        display: flex !important;
+        align-items: center !important;
+        position: relative !important;
+        z-index: 999 !important;
+    }
+    
+    .document-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .document-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .document-list li:last-child {
+        border-bottom: none;
+    }
+    
+    .document-name {
+        display: flex;
+        align-items: center;
+    }
+    
+    .document-name i {
+        color: #dc3545;
+        margin-right: 8px;
+    }
+</style>
+{% endblock %}

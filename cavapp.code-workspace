@@ -1,0 +1,62 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "python.defaultInterpreterPath": "python",
+        "python.analysis.typeCheckingMode": "basic",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "files.associations": {
+            "*.html": "jinja-html"
+        },
+        "editor.formatOnSave": true,
+        "editor.rulers": [80, 100],
+        "files.exclude": {
+            "**/__pycache__": true,
+            "**/*.pyc": true,
+            ".pytest_cache": true,
+            ".coverage": true
+        },
+        "search.exclude": {
+            "**/node_modules": true,
+            "**/bower_components": true,
+            "**/*.code-workspace": true,
+            "**/.git": true
+        }
+    },
+    "extensions": {
+        "recommendations": [
+            "ms-python.python",
+            "ms-python.vscode-pylance",
+            "wholroyd.jinja",
+            "samuelcolvin.jinjahtml",
+            "dbaeumer.vscode-eslint",
+            "esbenp.prettier-vscode"
+        ]
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Python: Flask",
+                "type": "python",
+                "request": "launch",
+                "module": "flask",
+                "env": {
+                    "FLASK_APP": "app.py",
+                    "FLASK_ENV": "development"
+                },
+                "args": [
+                    "run",
+                    "--no-debugger",
+                    "--port",
+                    "5001"
+                ],
+                "jinja": true
+            }
+        ]
+    }
+}

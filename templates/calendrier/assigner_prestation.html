@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Assigner une prestation{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Assigner une prestation à l'événement</h5>
+        </div>
+        <div class="card-body">
+            <form id="assignerPrestationForm" method="post">
+                <input type="hidden" id="evenementId" name="evenementId" value="{{ evenement_id }}">
+                
+                <div class="mb-3">
+                    <label for="prestationSelect" class="form-label fw-bold">Sélectionner une prestation ({{ prestations|length }} disponibles)</label>
+                    {% if prestations|length > 0 %}
+                    <div class="list-group">
+                        {% for p in prestations %}
+                        <a href="#" class="list-group-item list-group-item-action prestation-item" data-id="{{ p.id }}">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ p.client.nom }} {{ p.client.prenom }}</h6>
+                                <small>{{ p.date_debut.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i> Aucune prestation disponible. Veuillez d'abord créer une prestation.
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn btn-secondary" onclick="window.close()">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="btnAssigner" disabled>Assigner</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let selectedPrestationId = null;
+    const prestationItems = document.querySelectorAll('.prestation-item');
+    const btnAssigner = document.getElementById('btnAssigner');
+    
+    // Gestion de la sélection des prestations
+    prestationItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Supprimer la sélection précédente
+            prestationItems.forEach(i => i.classList.remove('active'));
+            
+            // Sélectionner l'élément cliqué
+            this.classList.add('active');
+            selectedPrestationId = this.dataset.id;
+            
+            // Activer le bouton d'assignation
+            btnAssigner.disabled = false;
+        });
+    });
+    
+    // Gestion du bouton d'assignation
+    btnAssigner.addEventListener('click', function() {
+        if (!selectedPrestationId) return;
+        
+        const evenementId = document.getElementById('evenementId').value;
+        
+        // Envoyer la requête d'assignation
+        fetch(`/api/evenements/${evenementId}/assigner-prestation`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrf_token')
+            },
+            body: JSON.stringify({
+                prestation_id: selectedPrestationId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Fermer la fenêtre et rafraîchir la page parente
+                window.opener.location.reload();
+                window.close();
+            } else {
+                alert('Erreur: ' + (data.error || 'Une erreur est survenue'));
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur lors de l\'assignation de la prestation');
+        });
+    });
+    
+    // Fonction pour récupérer un cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

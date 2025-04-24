@@ -1,17 +1,32 @@
 services:
+  # Service web principal
   - type: web
-    name: cavaliver-app
+    name: r-cavalier-app
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: sh render_start.sh
+    buildCommand: ./build.sh
+    startCommand: gunicorn main:app --workers 4 --worker-class=gthread --threads 2 --timeout 120 --access-logfile - --error-logfile -
+    plan: free
+    healthCheckPath: /healthz
+    autoDeploy: true
     envVars:
-      - key: SECRET_KEY
-        generateValue: true
-      - key: FLASK_APP
-        value: app.py
       - key: FLASK_ENV
         value: production
-    disk:
-      name: data
-      mountPath: /data
-      sizeGB: 1
+      - key: FLASK_APP
+        value: main.py
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: r-cavalier-db
+          property: connectionString
+
+  # Base de données PostgreSQL
+databases:
+  - name: r-cavalier-db
+    plan: free
+    databaseName: r_cavalier
+    user: r_cavalier_user

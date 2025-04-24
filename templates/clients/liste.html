@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Liste des Clients{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1><i class="fas fa-users"></i> Liste des Clients</h1>
+                <div>
+                    <a href="{{ url_for('client.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-table"></i> Vue Standard
+                    </a>
+                    <a href="{{ url_for('client.add') }}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Nouveau Client
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barre de recherche intelligente -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Rechercher un client (nom, prénom, email, téléphone, ville...)">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            Filtres
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item filter-option" data-filter="all" href="#">Tous les clients</a></li>
+                            <li><a class="dropdown-item filter-option" data-filter="particulier" href="#">Particuliers</a></li>
+                            <li><a class="dropdown-item filter-option" data-filter="professionnel" href="#">Professionnels</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item filter-option" data-filter="active" href="#">Clients actifs</a></li>
+                            <li><a class="dropdown-item filter-option" data-filter="archived" href="#">Clients archivés</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des clients -->
+    <div class="row" id="clientsList">
+        {% for client in clients %}
+        <div class="col-md-6 col-lg-4 mb-4 client-card" 
+             data-name="{{ client.nom }} {{ client.prenom }}"
+             data-email="{{ client.email }}"
+             data-phone="{{ client.telephone }}"
+             data-city="{{ client.ville }}"
+             data-type="{{ client.type_client }}"
+             data-archived="{{ client.archive }}">
+            <div class="card h-100 {% if client.archive %}bg-light{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="card-title mb-3">
+                            {{ client.nom }} {{ client.prenom }}
+                            {% if client.archive %}
+                            <span class="badge bg-secondary">Archivé</span>
+                            {% endif %}
+                        </h5>
+                        <div class="dropdown">
+                            <button class="btn btn-link text-dark" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('client.details', id=client.id) }}">
+                                        <i class="fas fa-eye"></i> Voir détails
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('client.edit', id=client.id) }}">
+                                        <i class="fas fa-edit"></i> Modifier
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('client.toggle_archive', id=client.id) }}">
+                                        {% if client.archive %}
+                                        <i class="fas fa-box-open"></i> Désarchiver
+                                        {% else %}
+                                        <i class="fas fa-archive"></i> Archiver
+                                        {% endif %}
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="#" 
+                                       onclick="confirmDelete('{{ url_for('client.delete', id=client.id) }}')">
+                                        <i class="fas fa-trash"></i> Supprimer
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="client-info">
+                        {% if client.email %}
+                        <p class="mb-2">
+                            <i class="fas fa-envelope text-muted"></i>
+                            <a href="mailto:{{ client.email }}">{{ client.email }}</a>
+                        </p>
+                        {% endif %}
+                        {% if client.telephone %}
+                        <p class="mb-2">
+                            <i class="fas fa-phone text-muted"></i>
+                            <a href="tel:{{ client.telephone }}">{{ client.telephone }}</a>
+                        </p>
+                        {% endif %}
+                        {% if client.ville %}
+                        <p class="mb-2">
+                            <i class="fas fa-map-marker-alt text-muted"></i>
+                            {{ client.ville }}
+                        </p>
+                        {% endif %}
+                        <p class="mb-0">
+                            <i class="fas fa-user text-muted"></i>
+                            {{ client.type_client }}
+                        </p>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <small class="text-muted">
+                        <i class="fas fa-calendar"></i>
+                        Client depuis le {{ client.date_creation.strftime('%d/%m/%Y') }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">Supprimer</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const clientCards = document.querySelectorAll('.client-card');
+    let currentFilter = 'all';
+    let searchTimeout = null;
+
+    // Fonction de recherche intelligente optimisée
+    function searchClients() {
+        const searchTerms = searchInput.value.toLowerCase().split(' ').filter(term => term.length > 0);
+        
+        clientCards.forEach(card => {
+            const cardData = {
+                name: card.dataset.name.toLowerCase(),
+                email: card.dataset.email.toLowerCase(),
+                phone: card.dataset.phone.toLowerCase(),
+                city: card.dataset.city.toLowerCase(),
+                type: card.dataset.type.toLowerCase(),
+                archived: card.dataset.archived === 'True',
+            };
+
+            let shouldShow = true;
+
+            // Appliquer le filtre actif
+            if (currentFilter !== 'all') {
+                switch (currentFilter) {
+                    case 'archived':
+                        shouldShow = cardData.archived;
+                        break;
+                    case 'active':
+                        shouldShow = !cardData.archived;
+                        break;
+                    case 'particulier':
+                        shouldShow = cardData.type === 'particulier';
+                        break;
+                    case 'professionnel':
+                        shouldShow = cardData.type === 'professionnel';
+                        break;
+                }
+            }
+
+            // Appliquer la recherche avec correspondance partielle
+            if (searchTerms.length > 0 && shouldShow) {
+                const searchString = Object.values(cardData).join(' ').toLowerCase();
+                shouldShow = searchTerms.every(term => {
+                    // Recherche avec tolérance aux fautes de frappe légères
+                    return searchString.includes(term) || 
+                           Object.values(cardData).some(value => 
+                               String(value).toLowerCase().includes(term) ||
+                               levenshteinDistance(String(value).toLowerCase(), term) <= 2
+                           );
+                });
+            }
+
+            // Animation fluide pour l'affichage/masquage
+            if (shouldShow) {
+                card.style.display = '';
+                setTimeout(() => card.style.opacity = '1', 10);
+            } else {
+                card.style.opacity = '0';
+                setTimeout(() => card.style.display = 'none', 200);
+            }
+        });
+
+        // Mettre à jour le compteur de résultats
+        updateResultCount();
+    }
+
+    // Fonction pour calculer la distance de Levenshtein (tolérance aux fautes de frappe)
+    function levenshteinDistance(a, b) {
+        if (a.length === 0) return b.length;
+        if (b.length === 0) return a.length;
+
+        const matrix = Array(b.length + 1).fill().map(() => Array(a.length + 1).fill(0));
+
+        for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
+        for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
+
+        for (let j = 1; j <= b.length; j++) {
+            for (let i = 1; i <= a.length; i++) {
+                const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                matrix[j][i] = Math.min(
+                    matrix[j][i - 1] + 1,
+                    matrix[j - 1][i] + 1,
+                    matrix[j - 1][i - 1] + cost
+                );
+            }
+        }
+
+        return matrix[b.length][a.length];
+    }
+
+    // Fonction pour mettre à jour le compteur de résultats
+    function updateResultCount() {
+        const visibleCards = Array.from(clientCards).filter(card => card.style.display !== 'none').length;
+        const totalCards = clientCards.length;
+        
+        // Créer ou mettre à jour l'élément de compteur
+        let counter = document.getElementById('results-counter');
+        if (!counter) {
+            counter = document.createElement('div');
+            counter.id = 'results-counter';
+            counter.className = 'text-muted mt-2';
+            searchInput.parentNode.appendChild(counter);
+        }
+        
+        counter.textContent = `${visibleCards} client${visibleCards > 1 ? 's' : ''} trouvé${visibleCards > 1 ? 's' : ''} sur ${totalCards}`;
+    }
+
+    // Écouteur pour la recherche avec debounce
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(searchClients, 200); // Délai de 200ms pour optimiser les performances
+    });
+
+    // Écouteurs pour les filtres
+    document.querySelectorAll('.filter-option').forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Mettre à jour le bouton de filtre
+            const filterBtn = document.querySelector('.dropdown-toggle');
+            filterBtn.textContent = this.textContent;
+            
+            // Appliquer le filtre
+            currentFilter = this.dataset.filter;
+            searchClients();
+            
+            // Fermer le dropdown
+            const dropdownMenu = this.closest('.dropdown-menu');
+            if (dropdownMenu) {
+                const dropdown = bootstrap.Dropdown.getInstance(dropdownMenu.previousElementSibling);
+                if (dropdown) dropdown.hide();
+            }
+        });
+    });
+
+    // Style pour les animations
+    const style = document.createElement('style');
+    style.textContent = `
+        .client-card {
+            transition: opacity 0.2s ease-in-out;
+            opacity: 1;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Initialiser le compteur
+    updateResultCount();
+});
+
+// Fonction de confirmation de suppression
+function confirmDelete(deleteUrl) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    document.getElementById('confirmDeleteBtn').href = deleteUrl;
+    modal.show();
+}
+</script>
+{% endblock %}

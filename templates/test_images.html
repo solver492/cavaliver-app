@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test des images</title>
+    <style>
+        .img-container {
+            margin: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            display: inline-block;
+        }
+        img {
+            max-width: 200px;
+            max-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test d'affichage des images de logos</h1>
+    
+    <div class="img-container">
+        <h3>Logo 1</h3>
+        <img src="{{ url_for('static', filename='img/logos/1.png') }}" alt="Logo 1">
+    </div>
+    
+    <div class="img-container">
+        <h3>Logo 2</h3>
+        <img src="{{ url_for('static', filename='img/logos/2.png') }}" alt="Logo 2">
+    </div>
+    
+    <div class="img-container">
+        <h3>Logo 3</h3>
+        <img src="{{ url_for('static', filename='img/logos/3.png') }}" alt="Logo 3">
+    </div>
+    
+    <div class="img-container">
+        <h3>Logo 4</h3>
+        <img src="{{ url_for('static', filename='img/logos/4.png') }}" alt="Logo 4">
+    </div>
+    
+    <div class="img-container">
+        <h3>Logo 1(1)</h3>
+        <img src="{{ url_for('static', filename='img/logos/1(1).png') }}" alt="Logo 1(1)">
+    </div>
+    
+    <div class="img-container">
+        <h3>Logo 2(1)</h3>
+        <img src="{{ url_for('static', filename='img/logos/2(1).png') }}" alt="Logo 2(1)">
+    </div>
+    
+    <div class="img-container">
+        <h3>Logo 3(1)</h3>
+        <img src="{{ url_for('static', filename='img/logos/3(1).png') }}" alt="Logo 3(1)">
+    </div>
+    
+    <div class="img-container">
+        <h3>Logo 4(1)</h3>
+        <img src="{{ url_for('static', filename='img/logos/4(1).png') }}" alt="Logo 4(1)">
+    </div>
+</body>
+</html>

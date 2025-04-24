@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier utilisateur - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="user-page">
+    <div class="page-title">
+        <h1><i class="fas fa-user-edit"></i> Modifier utilisateur</h1>
+        <a href="{{ url_for('user.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="nom" class="form-label">{{ form.nom.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.nom(class="form-control" + (" is-invalid" if form.nom.errors else ""), id="nom") }}
+                        {% for error in form.nom.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="prenom" class="form-label">{{ form.prenom.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.prenom(class="form-control" + (" is-invalid" if form.prenom.errors else ""), id="prenom") }}
+                        {% for error in form.prenom.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="username" class="form-label">{{ form.username.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), id="username", data_current_username=user.username) }}
+                        {% for error in form.username.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div id="username-feedback" class="form-text"></div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">{{ form.email.label.text }}</label>
+                        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), id="email", type="email") }}
+                        {% for error in form.email.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="password" class="form-label">{{ form.password.label.text }}</label>
+                        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), id="password") }}
+                        {% for error in form.password.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Laissez vide pour conserver le mot de passe actuel.</div>
+                        <div id="password-strength" class="mt-2"></div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="confirm_password" class="form-label">{{ form.confirm_password.label.text }}</label>
+                        {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), id="confirm_password") }}
+                        {% for error in form.confirm_password.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div id="password-match-feedback" class="form-text"></div>
+                    </div>
+                </div>
+                
+                {% if current_user.is_admin() %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="role" class="form-label">{{ form.role.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.role(class="form-control" + (" is-invalid" if form.role.errors else ""), id="role") }}
+                        {% for error in form.role.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="statut" class="form-label">{{ form.statut.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.statut(class="form-control" + (" is-invalid" if form.statut.errors else ""), id="statut") }}
+                        {% for error in form.statut.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div id="vehicle-group" class="mb-4 {% if user.role != 'transporteur' %}d-none{% endif %}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="permis_conduire" class="form-label">{{ form.permis_conduire.label.text }}</label>
+                            {{ form.permis_conduire(class="form-control" + (" is-invalid" if form.permis_conduire.errors else ""), id="permis_conduire") }}
+                            {% for error in form.permis_conduire.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text">Numéro du permis de conduire du transporteur</div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="type_vehicule_id" class="form-label">{{ form.type_vehicule_id.label.text }}</label>
+                            {{ form.type_vehicule_id(class="form-control" + (" is-invalid" if form.type_vehicule_id.errors else ""), id="type_vehicule_id") }}
+                            {% for error in form.type_vehicule_id.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="vehicule" class="form-label">{{ form.vehicule.label.text }}</label>
+                            {{ form.vehicule(class="form-control" + (" is-invalid" if form.vehicule.errors else ""), id="vehicule") }}
+                            {% for error in form.vehicule.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text">Ex: Immatriculation, détails spécifiques, etc.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label for="notes" class="form-label">{{ form.notes.label.text }}</label>
+                            {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), id="notes", rows="3") }}
+                            {% for error in form.notes.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text">Informations supplémentaires sur le transporteur</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                    <div class="mb-4">
+                        <p class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Seuls les administrateurs peuvent modifier les rôles et statuts des utilisateurs.
+                        </p>
+                    </div>
+                {% endif %}
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('user.index') }}" class="btn btn-secondary">Annuler</a>
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/users.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Visuel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        /* Style agenda réaliste */
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .agenda-realiste {
+            width: 100%;
+            max-width: 350px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin: 20px auto;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .agenda-couverture {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            height: 120px;
+        }
+        
+        .agenda-titre {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-top: 15px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+        
+        .agenda-type {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.2);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .agenda-pages {
+            padding: 20px;
+            background: repeating-linear-gradient(
+                #f9f9f9,
+                #f9f9f9 24px,
+                #e0e0e0 25px,
+                #e0e0e0 26px
+            );
+            min-height: 300px;
+            position: relative;
+        }
+        
+        .agenda-date {
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .agenda-date:before {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        
+        .agenda-date:after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        
+        .evenement {
+            background: white;
+            margin-bottom: 10px;
+            padding: 12px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 3px solid #3498db;
+            position: relative;
+        }
+        
+        .evenement-titre {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .evenement-heure {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .evenement-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-agenda {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border-radius: 50%;
+        }
+        
+        .nouvel-evenement {
+            background: rgba(52, 152, 219, 0.1);
+            border: 1px dashed #3498db;
+            color: #3498db;
+            text-align: center;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .nouvel-evenement:hover {
+            background: rgba(52, 152, 219, 0.2);
+        }
+        
+        /* Variantes de couleurs */
+        .agenda-vehicule .agenda-couverture {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+        
+        .agenda-stockage .agenda-couverture {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .agenda-client .agenda-couverture {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="text-center mb-5"><i class="bi bi-journal-bookmark"></i> Mes Agendas</h1>
+        
+        <div class="row">
+            <!-- Agenda Véhicule -->
+            <div class="col-md-4 mb-4">
+                <div class="agenda-realiste agenda-vehicule">
+                    <div class="agenda-couverture">
+                        <div class="agenda-type">
+                            <i class="bi bi-truck"></i>
+                        </div>
+                        <div class="agenda-titre">Mercedes</div>
+                    </div>
+                    <div class="agenda-pages">
+                        <div class="agenda-date">15 SEPTEMBRE 2024</div>
+                        
+                        <div class="evenement">
+                            <div class="evenement-actions">
+                                <button class="btn btn-sm btn-outline-secondary btn-agenda">
+                                    <i class="bi bi-paperclip"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger btn-agenda">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            <div class="evenement-titre">Déménagement Martin</div>
+                            <div class="evenement-heure">
+                                <i class="bi bi-clock"></i> 08:00 - 12:00
+                            </div>
+                            <div class="badge bg-primary mt-2">Prestation</div>
+                        </div>
+                        
+                        <div class="evenement">
+                            <div class="evenement-titre">Livraison Gamma</div>
+                            <div class="evenement-heure">
+                                <i class="bi bi-clock"></i> 14:00 - 16:30
+                            </div>
+                            <div class="badge bg-warning text-dark mt-2">Stockage</div>
+                        </div>
+                        
+                        <div class="nouvel-evenement">
+                            <i class="bi bi-plus-lg"></i> Nouvel événement
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Agenda Stockage -->
+            <div class="col-md-4 mb-4">
+                <div class="agenda-realiste agenda-stockage">
+                    <div class="agenda-couverture">
+                        <div class="agenda-type">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div class="agenda-titre">Entrepôt B</div>
+                    </div>
+                    <div class="agenda-pages">
+                        <div class="agenda-date">16 SEPTEMBRE 2024</div>
+                        
+                        <div class="evenement">
+                            <div class="evenement-titre">Stockage Dupont</div>
+                            <div class="evenement-heure">
+                                <i class="bi bi-calendar"></i> 16 Sep - 20 Oct
+                            </div>
+                            <div class="mt-2">
+                                <span class="badge bg-info">Contrat: DUP-2024-09</span>
+                            </div>
+                        </div>
+                        
+                        <div class="nouvel-evenement">
+                            <i class="bi bi-plus-lg"></i> Nouvel événement
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Agenda Client -->
+            <div class="col-md-4 mb-4">
+                <div class="agenda-realiste agenda-client">
+                    <div class="agenda-couverture">
+                        <div class="agenda-type">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <div class="agenda-titre">Landa</div>
+                    </div>
+                    <div class="agenda-pages">
+                        <div class="agenda-date">À VENIR</div>
+                        
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-calendar-plus" style="font-size: 2rem;"></i>
+                            <p class="mt-2">Aucun événement programmé</p>
+                        </div>
+                        
+                        <div class="nouvel-evenement">
+                            <i class="bi bi-plus-lg"></i> Nouvel événement
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

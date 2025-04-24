@@ -1,0 +1,21 @@
+[build]
+  command = "pip install -r requirements.txt"
+  publish = "static"
+
+[build.environment]
+  PYTHON_VERSION = "3.12.0"
+
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/app"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    Content-Security-Policy = "default-src 'self'"

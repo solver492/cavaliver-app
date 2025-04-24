@@ -1,0 +1,425 @@
+{% extends 'base.html' %}
+
+{% block title %}Documents de la prestation - {{ config.APP_NAME }}{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <!-- Inclure les styles pour la gestion des documents -->
+    <link href="https://cdn.jsdelivr.net/npm/dropzone@5.9.3/dist/min/dropzone.min.css" rel="stylesheet">
+    <style>
+        .document-card {
+            transition: all 0.3s ease;
+        }
+        .document-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .dropzone {
+            border: 2px dashed #0087F7;
+            border-radius: 5px;
+            background: #F9F9F9;
+            min-height: 150px;
+            padding: 20px;
+            text-align: center;
+        }
+        .dropzone .dz-message {
+            font-weight: 400;
+        }
+        .dropzone .dz-message .note {
+            font-size: 0.8em;
+            font-weight: 200;
+            display: block;
+            margin-top: 1.4rem;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1><i class="fas fa-file-alt"></i> Documents de la prestation</h1>
+            <p class="text-muted">
+                Client: <strong>{{ prestation.client_principal.nom }} {{ prestation.client_principal.prenom }}</strong> |
+                Date: <strong>{{ prestation.date_debut.strftime('%d/%m/%Y') }}</strong> |
+                Type: <strong>{{ prestation.type_demenagement }}</strong>
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('prestation.edit', prestation_id=prestation.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour à la prestation
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Liste des documents -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-folder-open"></i> Documents existants</h5>
+                </div>
+                <div class="card-body">
+                    {% if documents %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Type</th>
+                                    <th>Taille</th>
+                                    <th>Date d'ajout</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in documents %}
+                                <tr>
+                                    <td>{{ doc.nom }}</td>
+                                    <td><span class="badge bg-secondary">{{ doc.type }}</span></td>
+                                    <td>{{ (doc.taille / 1024)|round(1) }} KB</td>
+                                    <td>{{ doc.date_upload.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('document.download_document', document_id=doc.id) }}" class="btn btn-outline-primary" title="Télécharger">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <a href="{{ url_for('document.edit_document_prestation', document_id=doc.id) }}" class="btn btn-outline-secondary" title="Modifier">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger delete-document" data-document-id="{{ doc.id }}" title="Supprimer">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Aucun document associé à cette prestation.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulaire d'ajout de document -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-cloud-upload-alt"></i> Ajouter un document</h5>
+                </div>
+                <div class="card-body">
+                    <form id="document-form" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="nom" class="form-label">Nom du document</label>
+                            <input type="text" class="form-control" id="nom" name="nom" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="type" class="form-label">Type de document</label>
+                            <select class="form-select" id="type" name="type" required>
+                                <option value="">Sélectionnez un type...</option>
+                                <option value="contrat">Contrat</option>
+                                <option value="facture">Facture</option>
+                                <option value="devis">Devis</option>
+                                <option value="photo">Photo</option>
+                                <option value="note">Note</option>
+                                <option value="autre">Autre</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fichier" class="form-label">Fichier</label>
+                            <input type="file" class="form-control" id="fichier" name="fichier" required>
+                            <small class="form-text text-muted">Formats acceptés: PDF, images, documents Office, texte (max 10MB)</small>
+                        </div>
+                        <input type="hidden" name="prestation_id" value="{{ prestation.id }}">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-plus-circle"></i> Ajouter le document
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-cloud-upload-alt"></i> Glisser-déposer</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Zone de glisser-déposer améliorée -->
+                    <div class="document-drop-zone border border-dashed rounded p-4 text-center position-relative">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                        <h5>Glissez et déposez vos fichiers ici</h5>
+                        <p class="text-muted">ou cliquez pour sélectionner des fichiers</p>
+                        <small class="d-block mt-2">Formats acceptés: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, TXT</small>
+                        <small class="d-block">Taille maximale: 10 MB par fichier</small>
+                    </div>
+                    
+                    <!-- Barre de progression -->
+                    <div id="upload-progress" class="progress mt-3 d-none">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    
+                    <!-- Messages de statut -->
+                    <div id="upload-error" class="alert alert-danger mt-3 d-none" role="alert"></div>
+                    <div id="upload-success" class="alert alert-success mt-3 d-none" role="alert"></div>
+                </div>
+            </div>
+            
+            <!-- Gestionnaire de fichiers amélioré -->
+            <div class="card mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-folder"></i> Fichiers en attente</h5>
+                    <div id="batch-actions" class="d-none">
+                        <button type="button" class="btn btn-sm btn-primary" id="upload-all-files">
+                            <i class="fas fa-upload me-1"></i> Tout uploader
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="clear-all-files">
+                            <i class="fas fa-trash me-1"></i> Tout effacer
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush file-manager-list">
+                        <!-- Les fichiers seront ajoutés ici dynamiquement -->
+                    </div>
+                    <div id="empty-file-list" class="p-4 text-center text-muted">
+                        <p>Aucun fichier en attente. Glissez-déposez des fichiers ou cliquez sur la zone ci-dessus pour en ajouter.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Êtes-vous sûr de vouloir supprimer ce document ? Cette action est irréversible.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Supprimer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- Inclure Dropzone.js pour le glisser-déposer -->
+<script src="https://cdn.jsdelivr.net/npm/dropzone@5.9.3/dist/min/dropzone.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialisation de Dropzone
+        Dropzone.autoDiscover = false;
+        
+        const myDropzone = new Dropzone("#dropzone-upload", {
+            url: "{{ url_for('documents.upload_document_ajax') }}",
+            paramName: "fichier",
+            maxFilesize: 10, // MB
+            acceptedFiles: ".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.txt",
+            addRemoveLinks: true,
+            dictDefaultMessage: "Déposez vos fichiers ici ou cliquez pour sélectionner",
+            dictFallbackMessage: "Votre navigateur ne supporte pas le glisser-déposer.",
+            dictFileTooBig: "Le fichier est trop volumineux ({{filesize}}MB). Taille maximale: {{maxFilesize}}MB.",
+            dictInvalidFileType: "Type de fichier non valide.",
+            dictResponseError: "Erreur {{statusCode}}.",
+            dictCancelUpload: "Annuler",
+            dictUploadCanceled: "Upload annulé.",
+            dictRemoveFile: "Supprimer",
+            dictMaxFilesExceeded: "Vous ne pouvez pas uploader plus de fichiers.",
+            init: function() {
+                this.on("sending", function(file, xhr, formData) {
+                    formData.append("prestation_id", "{{ prestation.id }}");
+                    formData.append("nom", file.name.split('.').slice(0, -1).join('.'));
+                    formData.append("type", "autre");
+                });
+                
+                this.on("success", function(file, response) {
+                    if (response.success) {
+                        showAlert('Document ajouté avec succès', 'success');
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        showAlert(response.message || 'Erreur lors de l\'ajout du document', 'danger');
+                    }
+                });
+                
+                this.on("error", function(file, errorMessage) {
+                    showAlert('Erreur: ' + errorMessage, 'danger');
+                });
+            }
+        });
+        
+        // Gestion du formulaire d'ajout de document
+        const documentForm = document.getElementById('document-form');
+        if (documentForm) {
+            documentForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                
+                // Vérifications basiques
+                if (!formData.get('nom')) {
+                    showAlert('Veuillez saisir un nom pour le document', 'danger');
+                    return;
+                }
+                
+                if (!formData.get('type')) {
+                    showAlert('Veuillez sélectionner un type de document', 'danger');
+                    return;
+                }
+                
+                const fichier = formData.get('fichier');
+                if (!fichier || fichier.size === 0) {
+                    showAlert('Veuillez sélectionner un fichier', 'danger');
+                    return;
+                }
+                
+                // Vérification de la taille du fichier (max 10MB)
+                if (fichier.size > 10 * 1024 * 1024) {
+                    showAlert('Le fichier est trop volumineux. Taille maximale: 10MB', 'danger');
+                    return;
+                }
+                
+                // Afficher un indicateur de chargement
+                showLoading();
+                
+                // Envoi de la requête AJAX
+                fetch('{{ url_for("documents.upload_document_ajax") }}', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    hideLoading();
+                    if (!response.ok) {
+                        throw new Error('Erreur lors du téléchargement du document');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Document ajouté avec succès', 'success');
+                        documentForm.reset();
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        showAlert(data.message || 'Erreur lors de l\'ajout du document', 'danger');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error('Erreur:', error);
+                    showAlert('Erreur lors de l\'ajout du document: ' + error.message, 'danger');
+                });
+            });
+        }
+        
+        // Gestion de la suppression de documents
+        let documentIdToDelete = null;
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        
+        // Ouvrir la modal de confirmation
+        document.querySelectorAll('.delete-document').forEach(button => {
+            button.addEventListener('click', function() {
+                documentIdToDelete = this.getAttribute('data-document-id');
+                deleteModal.show();
+            });
+        });
+        
+        // Confirmer la suppression
+        document.getElementById('confirmDelete').addEventListener('click', function() {
+            if (!documentIdToDelete) return;
+            
+            showLoading();
+            
+            fetch(`{{ url_for('documents.delete_document_ajax', document_id=0) }}`.replace('0', documentIdToDelete), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                hideLoading();
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la suppression du document');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showAlert('Document supprimé avec succès', 'success');
+                    deleteModal.hide();
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showAlert(data.message || 'Erreur lors de la suppression du document', 'danger');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Erreur:', error);
+                showAlert('Erreur lors de la suppression du document: ' + error.message, 'danger');
+            });
+        });
+        
+        // Fonctions utilitaires
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-4`;
+            alertDiv.style.zIndex = '9999';
+            alertDiv.role = 'alert';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+        
+        function showLoading() {
+            if (!document.getElementById('loading-indicator')) {
+                const loadingDiv = document.createElement('div');
+                loadingDiv.id = 'loading-indicator';
+                loadingDiv.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-50';
+                loadingDiv.style.zIndex = '9999';
+                loadingDiv.innerHTML = `
+                    <div class="spinner-border text-light" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                `;
+                document.body.appendChild(loadingDiv);
+            } else {
+                document.getElementById('loading-indicator').style.display = 'flex';
+            }
+        }
+        
+        function hideLoading() {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+    });
+</script>
+{% endblock %}

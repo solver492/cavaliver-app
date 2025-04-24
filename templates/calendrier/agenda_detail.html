@@ -1,0 +1,1310 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>
+                <span style="color: {% if agenda.couleur %}{{ agenda.couleur }}{% else %}#000000{% endif %}">
+                    {% if agenda.type_agenda == 'vehicule' %}
+                        <i class="bi bi-truck"></i>
+                    {% elif agenda.type_agenda == 'entreprise' %}
+                        <i class="bi bi-building"></i>
+                    {% elif agenda.type_agenda == 'equipe' %}
+                        <i class="bi bi-people"></i>
+                    {% elif agenda.type_agenda == 'partenaire' %}
+                        <i class="bi bi-person-check"></i>
+                    {% elif agenda.type_agenda == 'client-vip' %}
+                        <i class="bi bi-star"></i>
+                    {% elif agenda.type_agenda == 'maintenance' %}
+                        <i class="bi bi-tools"></i>
+                    {% elif agenda.type_agenda == 'formation' %}
+                        <i class="bi bi-book"></i>
+                    {% elif agenda.type_agenda == 'juridique' %}
+                        <i class="bi bi-file-earmark-text"></i>
+                    {% else %}
+                        <i class="bi bi-calendar"></i>
+                    {% endif %}
+                    {{ agenda.nom }}
+                </span>
+            </h1>
+            <p class="text-muted">{{ agenda.description or 'Aucune description' }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nouvelEvenementModal">
+                <i class="bi bi-plus-lg"></i> Nouvel événement
+            </button>
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-calendar-range"></i> Vue
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="changerVue('mois')"><i class="bi bi-calendar-month"></i> Mois</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="changerVue('semaine')"><i class="bi bi-calendar-week"></i> Semaine</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="changerVue('jour')"><i class="bi bi-calendar-day"></i> Jour</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="changerVue('liste')"><i class="bi bi-list-ul"></i> Liste</a></li>
+                </ul>
+            </div>
+            <a href="{{ url_for('calendrier.liste_agendas') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header" style="background-color: {% if agenda.couleur %}{{ agenda.couleur }}{% else %}#000000{% endif %}; color: white;">
+                    <h5 class="card-title mb-0">Informations</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Type:</strong> 
+                        {% if agenda.type_agenda == 'vehicule' %}
+                            <i class="bi bi-truck"></i> Véhicule
+                        {% elif agenda.type_agenda == 'entreprise' %}
+                            <i class="bi bi-building"></i> Entreprise
+                        {% elif agenda.type_agenda == 'equipe' %}
+                            <i class="bi bi-people"></i> Équipe
+                        {% elif agenda.type_agenda == 'partenaire' %}
+                            <i class="bi bi-person-check"></i> Partenaire
+                        {% elif agenda.type_agenda == 'client-vip' %}
+                            <i class="bi bi-star"></i> Client VIP
+                        {% elif agenda.type_agenda == 'maintenance' %}
+                            <i class="bi bi-tools"></i> Maintenance
+                        {% elif agenda.type_agenda == 'formation' %}
+                            <i class="bi bi-book"></i> Formation
+                        {% elif agenda.type_agenda == 'juridique' %}
+                            <i class="bi bi-file-earmark-text"></i> Juridique
+                        {% else %}
+                            <i class="bi bi-calendar"></i> {{ agenda.type_agenda|capitalize }}
+                        {% endif %}
+                    </p>
+                    <p><strong>Événements:</strong> {{ evenements|length }}</p>
+                    <p><strong>Créé le:</strong> {{ agenda.date_creation|format_date }}</p>
+                    {% if agenda.observations %}
+                    <div class="mt-3">
+                        <strong>Observations:</strong>
+                        <ul class="list-unstyled mt-2">
+                            {% for observation in agenda.observations %}
+                            <li><i class="bi bi-dot"></i> {{ observation }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    {% if agenda.documents %}
+                    <div class="mt-3">
+                        <strong>Documents:</strong>
+                        <ul class="list-unstyled mt-2">
+                            {% for document in agenda.documents %}
+                            <li class="mb-2">
+                                <i class="bi bi-file-earmark"></i> 
+                                <a href="{{ url_for('calendrier.telecharger_document', doc_id=document.id) }}">
+                                    {{ document.nom }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Filtres</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Type d'événement</label>
+                        <select class="form-select" id="filterType" onchange="filtrerEvenements()">
+                            <option value="">Tous</option>
+                            <option value="prestation">Prestation</option>
+                            <option value="stockage">Stockage</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Période</label>
+                        <select class="form-select" id="filterPeriod" onchange="filtrerEvenements()">
+                            <option value="all">Toutes les dates</option>
+                            <option value="today">Aujourd'hui</option>
+                            <option value="week">Cette semaine</option>
+                            <option value="month">Ce mois</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<!-- Modal Nouvel Événement -->
+<div class="modal fade" id="nouvelEvenementModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nouvel Événement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="evenementForm">
+                    <input type="hidden" name="agenda_id" value="{{ agenda.id }}">
+                    <div class="mb-3">
+                        <label class="form-label">Type d'événement</label>
+                        <select class="form-select" name="type_evenement" required>
+                            <option value="">Sélectionnez un type...</option>
+                            <option value="prestation">Prestation</option>
+                            <option value="stockage">Stockage</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Titre</label>
+                        <input type="text" class="form-control" name="titre" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Date de début</label>
+                                <input type="datetime-local" class="form-control" name="date_debut" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Date de fin</label>
+                                <input type="datetime-local" class="form-control" name="date_fin">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observations</label>
+                        <textarea class="form-control" name="observations" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" onclick="soumettreEvenement()">Créer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Modifier Événement -->
+<div class="modal fade" id="modifierEvenementModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Modifier l'événement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="modifierEvenementForm">
+                    <input type="hidden" id="edit_event_id" name="event_id">
+                    <div class="mb-3">
+                        <label class="form-label">Titre</label>
+                        <input type="text" class="form-control" id="edit_titre" name="titre" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Date de début</label>
+                                <input type="datetime-local" class="form-control" id="edit_date_debut" name="date_debut" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Date de fin</label>
+                                <input type="datetime-local" class="form-control" id="edit_date_fin" name="date_fin">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Type d'événement</label>
+                        <select class="form-control" id="edit_type" name="type_evenement" required>
+                            <option value="">Sélectionnez un type...</option>
+                            <option value="prestation">Prestation</option>
+                            <option value="stockage">Stockage</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observations</label>
+                        <textarea class="form-control" id="edit_observations" name="observations" rows="3"></textarea>
+                    </div>
+                    <div id="edit_version" class="text-muted mb-3">
+                        Version: <span id="version_number">1</span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="sauvegarderModifications()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Assigner Prestation (Simplifié) -->
+<div class="modal fade" id="assignerPrestationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assigner une prestation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAssignerPrestation" action="{{ url_for('calendrier.assigner_prestation_direct') }}" method="POST">
+                    <input type="hidden" name="evenement_id" id="evenement_id_assigner">
+                    <input type="hidden" name="agenda_id" value="{{ agenda.id }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="list-group mb-3">
+                        {% for prestation in prestations %}
+                        <div class="list-group-item">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="prestation_id" 
+                                       id="prestation_{{ prestation.id }}" value="{{ prestation.id }}">
+                                <label class="form-check-label w-100" for="prestation_{{ prestation.id }}">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">{{ prestation.type_demenagement }}</h5>
+                                        <small>{{ prestation.date_debut|format_date }}</small>
+                                    </div>
+                                    <p class="mb-1">
+                                        {% if prestation.client %}
+                                            Client: {{ prestation.client.nom }} {{ prestation.client.prenom }}
+                                        {% else %}
+                                            Client: Non défini
+                                        {% endif %}
+                                    </p>
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if not prestations %}
+                    <div class="alert alert-info">
+                        Aucune prestation disponible. <a href="/prestations/nouvelle">Créer une prestation</a>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Assigner la prestation sélectionnée</button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Détails de l'événement -->
+<div class="modal fade" id="detailsEvenementModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="event-info mb-4">
+                            <p class="mb-2">
+                                <i class="bi bi-calendar"></i> 
+                                <span id="eventDates"></span>
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-tag"></i> 
+                                <span id="eventType"></span>
+                            </p>
+                            <div id="eventPrestation" class="mb-2 d-none">
+                                <i class="bi bi-link"></i> 
+                                <span class="badge bg-info">Prestation assignée:</span>
+                                <span id="prestationInfo"></span>
+                                <button class="btn btn-sm btn-outline-primary ms-2" onclick="voirPrestation()">
+                                    <i class="bi bi-eye"></i> Voir la prestation
+                                </button>
+                            </div>
+                            <div id="prestationActions" class="mb-2"></div>
+                        </div>
+
+                        <div class="observations-section mb-4">
+                            <h5>
+                                Observations
+                                <button class="btn btn-sm btn-outline-primary" onclick="ajouterObservation()">
+                                    <i class="bi bi-plus"></i> Ajouter
+                                </button>
+                            </h5>
+                            <textarea id="eventObservations" class="form-control mb-2" rows="3" readonly></textarea>
+                            <div id="observationsList">
+                                <!-- Les observations seront ajoutées ici -->
+                            </div>
+                        </div>
+
+                        <div class="documents-section mb-4">
+                            <div id="documentsList" class="list-group mb-3">
+                                <!-- Les documents seront ajoutés ici -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="action-buttons d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="ouvrirModification()">
+                                <i class="bi bi-pencil"></i> Modifier
+                            </button>
+
+                            <button class="btn btn-outline-info" onclick="ouvrirAssignation()">
+                                <i class="bi bi-link"></i> Assigner une prestation
+                            </button>
+
+                            <button id="archiveButton" class="btn btn-outline-warning" onclick="toggleArchive()">
+                                <i class="bi bi-archive"></i> <span id="archiveButtonText">Archiver</span>
+                            </button>
+
+                            <button class="btn btn-outline-danger" onclick="confirmerSuppression()">
+                                <i class="bi bi-trash"></i> Supprimer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmation Suppression -->
+<div class="modal fade" id="confirmationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Êtes-vous sûr de vouloir supprimer cet événement ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" onclick="supprimerEvenement()">Supprimer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Variables globales pour stocker l'ID et les détails de l'événement actuel
+let currentEventId = null;
+let currentEvent = null;
+
+// Fonction pour formater les dates
+function formatDates(start, end) {
+    try {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        let formatted = start.toLocaleDateString('fr-FR', options);
+        if (end) {
+            formatted += ' - ' + end.toLocaleDateString('fr-FR', options);
+        }
+        return formatted;
+    } catch (error) {
+        console.error('Erreur dans formatDates:', error);
+        return 'Date non disponible';
+    }
+}
+
+// Fonction pour soumettre un nouvel événement
+function soumettreEvenement() {
+    try {
+        console.log('Début de la soumission de l\'événement');
+        const form = document.getElementById('evenementForm');
+        if (!form) {
+            console.error('Formulaire non trouvé');
+            alert('Erreur: Formulaire non trouvé');
+            return;
+        }
+
+        const formData = new FormData(form);
+        const agendaId = formData.get('agenda_id');
+
+        if (!agendaId) {
+            console.error('ID d\'agenda manquant');
+            alert('Erreur: ID d\'agenda manquant');
+            return;
+        }
+
+        console.log('Envoi de la requête pour créer l\'événement');
+        fetch(`/calendrier/agendas/${agendaId}/evenements/creer`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            console.log('Réponse reçue:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Données reçues:', data);
+            if (data.success) {
+                // Fermer le modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('nouvelEvenementModal'));
+                if (modal) modal.hide();
+
+                // Rafraîchir le calendrier
+                if (window.calendar) {
+                    console.log('Rafraîchissement du calendrier');
+                    window.calendar.refetchEvents();
+                } else {
+                    console.log('Rechargement de la page');
+                    window.location.reload();
+                }
+
+                // Notification de succès
+                alert('Événement créé avec succès');
+            } else {
+                console.error('Erreur lors de la création:', data.error);
+                alert('Erreur lors de la création: ' + (data.error || 'Erreur inconnue'));
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur lors de la création de l\'événement');
+        });
+    } catch (error) {
+        console.error('Erreur dans soumettreEvenement:', error);
+        alert('Une erreur est survenue lors de la création de l\'événement');
+    }
+}
+
+// Fonction pour afficher les détails d'un événement
+function voirDetails(eventId) {
+    try {
+        console.log('Affichage des détails pour l\'événement ID:', eventId);
+        currentEventId = eventId;
+
+        // Récupérer l'événement depuis le calendrier
+        const event = window.calendar.getEventById(eventId);
+        if (!event) {
+            console.error('Événement non trouvé:', eventId);
+            alert('Erreur: Événement non trouvé');
+            return;
+        }
+
+        console.log('Événement trouvé:', event);
+        currentEvent = event;
+
+        // Mettre à jour les informations de l'événement de manière sécurisée
+        const elements = {
+            title: document.getElementById('eventTitle'),
+            dates: document.getElementById('eventDates'),
+            type: document.getElementById('eventType'),
+            observations: document.getElementById('eventObservations'),
+            prestationDiv: document.getElementById('eventPrestation'),
+            prestationActions: document.getElementById('prestationActions'),
+            prestationInfo: document.getElementById('prestationInfo')
+        };
+
+        // Vérifier que tous les éléments nécessaires existent
+        if (!elements.title || !elements.dates || !elements.type || !elements.observations) {
+            console.error('Éléments du modal manquants');
+            alert('Erreur: Éléments du modal manquants');
+            return;
+        }
+
+        // Mettre à jour les valeurs
+        elements.title.textContent = event.title || '';
+        elements.dates.textContent = formatDates(event.start, event.end);
+        elements.type.textContent = event.extendedProps.type || '';
+        elements.observations.value = event.extendedProps.observations || '';
+
+        // Gérer l'affichage de la prestation
+        if (elements.prestationDiv && elements.prestationInfo) {
+            if (event.extendedProps.prestation) {
+                elements.prestationDiv.classList.remove('d-none');
+                const prestation = event.extendedProps.prestation;
+                elements.prestationInfo.innerHTML = `
+                    <strong>Type:</strong> ${prestation.type_demenagement || 'Non spécifié'}<br>
+                    <strong>Client:</strong> ${prestation.client_nom ? prestation.client_nom + ' ' + prestation.client_prenom : 'Non spécifié'}<br>
+                    <strong>Date:</strong> ${prestation.date_debut ? new Date(prestation.date_debut).toLocaleDateString() : 'Non spécifiée'}
+                `;
+            } else {
+                elements.prestationDiv.classList.add('d-none');
+            }
+        }
+
+        // Charger les documents
+        if (typeof chargerDocuments === 'function') {
+            chargerDocuments(eventId);
+        }
+
+        // Mettre à jour le bouton d'archive
+        if (typeof updateArchiveButton === 'function') {
+            updateArchiveButton(event.extendedProps.archive);
+        }
+
+        // Afficher le modal de manière sécurisée
+        const modalElement = document.getElementById('detailsEvenementModal');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        } else {
+            console.error('Modal non trouvé');
+            alert('Erreur: Modal non trouvé');
+        }
+    } catch (error) {
+        console.error('Erreur dans voirDetails:', error);
+        alert('Une erreur est survenue lors de l\'affichage des détails');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Récupérer les événements supprimés du sessionStorage
+    let deletedEvents = JSON.parse(sessionStorage.getItem('deletedEvents') || '[]');
+    
+    // Filtrer les événements pour exclure ceux qui ont été supprimés
+    let allEvents = {{ evenements|tojson|safe }};
+    let filteredEvents = allEvents.filter(event => !deletedEvents.includes(event.id.toString()));
+    
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        locale: 'fr',
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+        },
+        events: filteredEvents,
+        eventClick: function(info) {
+            console.log('Event clicked:', info.event);
+            try {
+                // Utiliser la fonction du fichier JavaScript externe si disponible
+                if (typeof window.voirDetails === 'function') {
+                    window.voirDetails(info.event.id);
+                } else {
+                    // Sinon, utiliser la fonction définie dans ce fichier
+                    voirDetails(info.event.id);
+                }
+            } catch (error) {
+                console.error('Erreur lors du clic sur l\'événement:', error);
+                alert('Erreur lors de l\'affichage des détails de l\'événement');
+            }
+        },
+        eventContent: function(arg) {
+            return {
+                html: `
+                    <div class="fc-content">
+                        <div class="fc-title">${arg.event.title}</div>
+                        ${arg.event.extendedProps.type ? `<div class="fc-type">${arg.event.extendedProps.type}</div>` : ''}
+                    </div>
+                `
+            };
+        },
+        eventDidMount: function(info) {
+            if (info.event.extendedProps.prestation) {
+                info.el.classList.add('has-prestation');
+            }
+        }
+    });
+    calendar.render();
+
+    // Stocker l'instance du calendrier globalement
+    window.calendar = calendar;
+});
+
+function changerVue(vue) {
+    switch(vue) {
+        case 'mois':
+            calendar.changeView('dayGridMonth');
+            break;
+        case 'semaine':
+            calendar.changeView('timeGridWeek');
+            break;
+        case 'jour':
+            calendar.changeView('timeGridDay');
+            break;
+        case 'liste':
+            calendar.changeView('listWeek');
+            break;
+        default:
+            console.error('Vue non reconnue:', vue);
+            break;
+    }
+}
+
+function filtrerEvenements() {
+    const typeFiltre = document.getElementById('filterType').value;
+    const periodeFiltre = document.getElementById('filterPeriod').value;
+
+    // Récupérer tous les événements du calendrier
+    let events = calendar.getEvents();
+    
+    // Pour chaque événement, déterminer s'il doit être visible ou non
+    events.forEach(event => {
+        let visible = true;
+
+        // Filtre par type
+        if (typeFiltre && event.extendedProps && event.extendedProps.type !== typeFiltre) {
+            visible = false;
+        }
+
+        // Filtre par période
+        if (periodeFiltre !== 'all' && visible) {
+            const now = new Date();
+            const eventDate = event.start;
+            
+            if (!eventDate) {
+                visible = false;
+            } else {
+                switch(periodeFiltre) {
+                    case 'today':
+                        visible = eventDate.toDateString() === now.toDateString();
+                        break;
+                    case 'week':
+                        // Créer des copies de date pour éviter de modifier l'original
+                        const currentDay = now.getDay() || 7; // Transformer 0 (dimanche) en 7
+                        const weekStart = new Date(now);
+                        weekStart.setDate(now.getDate() - currentDay + 1); // Lundi de la semaine courante
+                        weekStart.setHours(0, 0, 0, 0);
+                        
+                        const weekEnd = new Date(now);
+                        weekEnd.setDate(now.getDate() + (7 - currentDay)); // Dimanche de la semaine courante
+                        weekEnd.setHours(23, 59, 59, 999);
+                        
+                        visible = eventDate >= weekStart && eventDate <= weekEnd;
+                        break;
+                    case 'month':
+                        visible = eventDate.getMonth() === now.getMonth() && 
+                                eventDate.getFullYear() === now.getFullYear();
+                        break;
+                }
+            }
+        }
+
+        // Appliquer la visibilité en utilisant la méthode setProp de FullCalendar
+        if (!visible) {
+            // Si l'événement ne doit pas être visible, on le masque
+            event.setProp('display', 'none');
+        } else {
+            // Si l'événement doit être visible, on le montre
+            event.setProp('display', 'auto');
+        }
+    });
+    
+    // Mettre à jour le calendrier pour refléter les changements
+    calendar.render();
+}
+
+function chargerDocuments(eventId) {
+    fetch(`/api/evenements/${eventId}/documents`)
+        .then(response => response.json())
+        .then(documents => {
+            const documentsList = document.getElementById('documentsList');
+            documentsList.innerHTML = '';
+
+            documents.forEach(doc => {
+                const docItem = document.createElement('div');
+                docItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                docItem.innerHTML = `
+                    <div>
+                        <i class="bi bi-file-earmark"></i>
+                        ${doc.nom}
+                    </div>
+                    <div class="btn-group">
+                        <a href="/documents/${doc.id}/download" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-download"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger" onclick="supprimerDocument(${doc.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                `;
+                documentsList.appendChild(docItem);
+            });
+        });
+}
+
+function supprimerDocument(docId) {
+    if (!confirm('Voulez-vous vraiment supprimer ce document ?')) return;
+
+    fetch(`/api/documents/${docId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            chargerDocuments(currentEventId);
+        }
+    });
+}
+
+function sauvegarderObservations() {
+    const observations = [];
+    document.querySelectorAll('.observation-text').forEach(textarea => {
+        if (textarea.value.trim()) {
+            observations.push(textarea.value.trim());
+        }
+    });
+
+    fetch(`/api/evenements/${currentEventId}/observations`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ observations: observations })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            const event = calendar.getEventById(currentEventId);
+            event.setExtendedProp('observations', observations);
+            alert('Observations sauvegardées');
+        }
+    });
+}
+
+function toggleArchive() {
+    console.log('toggleArchive appelé pour l\'événement:', currentEventId);
+    const event = calendar.getEventById(currentEventId);
+    const isArchived = event.extendedProps.archive;
+    const action = isArchived ? 'desarchiver' : 'archiver';
+    
+    console.log('État actuel d\'archive:', isArchived);
+    console.log('Action à effectuer:', action);
+    console.log('URL de la requête:', `/api/evenements/${currentEventId}/${action}`);
+
+    fetch(`/api/evenements/${currentEventId}/${action}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Réponse reçue:', response.status);
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        console.log('Résultat:', result);
+        if (result.success) {
+            event.setExtendedProp('archive', !isArchived);
+            updateArchiveButton(!isArchived);
+            
+            // Rafraîchir le calendrier pour refléter les changements
+            calendar.refetchEvents();
+            
+            // Fermer le modal
+            bootstrap.Modal.getInstance(document.getElementById('detailsEvenementModal')).hide();
+            
+            // Afficher un message de confirmation
+            alert(isArchived ? 'Événement désarchivé avec succès!' : 'Événement archivé avec succès!');
+        } else {
+            alert('Erreur: ' + (result.error || 'Une erreur est survenue'));
+        }
+    })
+    .catch(error => {
+        console.error('Erreur lors de l\'archivage:', error);
+        alert('Erreur lors de l\'archivage: ' + error.message);
+    });
+}
+
+function updateArchiveButton(isArchived) {
+    const button = document.getElementById('archiveButton');
+    const text = document.getElementById('archiveButtonText');
+
+    if (isArchived) {
+        button.classList.remove('btn-outline-warning');
+        button.classList.add('btn-outline-success');
+        text.textContent = 'Désarchiver';
+    } else {
+        button.classList.remove('btn-outline-success');
+        button.classList.add('btn-outline-warning');
+        text.textContent = 'Archiver';
+    }
+}
+
+function confirmerSuppression() {
+    const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    modal.show();
+}
+
+function supprimerEvenement() {
+    console.log('supprimerEvenement appelé pour l\'événement:', currentEventId);
+    
+    fetch(`/api/evenements/${currentEventId}`, {
+        method: 'DELETE',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        }
+    })
+    .then(response => {
+        console.log('Réponse reçue:', response.status);
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        console.log('Résultat:', result);
+        if (result.success) {
+            // Fermer les modals
+            bootstrap.Modal.getInstance(document.getElementById('confirmationModal')).hide();
+            bootstrap.Modal.getInstance(document.getElementById('detailsEvenementModal')).hide();
+
+            // Supprimer l'événement du calendrier
+            const event = calendar.getEventById(currentEventId);
+            if (event) {
+                event.remove();
+            }
+            
+            // Force le rafraîchissement des données du calendrier
+            calendar.refetchEvents();
+            
+            // Stocker l'ID de l'événement supprimé dans sessionStorage
+            let deletedEvents = JSON.parse(sessionStorage.getItem('deletedEvents') || '[]');
+            deletedEvents.push(currentEventId);
+            sessionStorage.setItem('deletedEvents', JSON.stringify(deletedEvents));
+            
+            // Afficher un message de confirmation
+            alert('Événement supprimé avec succès!');
+        } else {
+            alert('Erreur: ' + (result.error || 'Une erreur est survenue'));
+        }
+    })
+    .catch(error => {
+        console.error('Erreur lors de la suppression:', error);
+        alert('Erreur lors de la suppression: ' + error.message);
+    });
+}
+
+function assignerPrestationDirecte(prestationId) {
+    try {
+        if (!currentEventId) {
+            alert('Erreur: Aucun événement sélectionné');
+            return;
+        }
+
+        console.log(`Assignation directe de la prestation ${prestationId} à l'événement ${currentEventId}`);
+
+        // Afficher un indicateur de chargement
+        const modal = document.getElementById('assignerPrestationModal');
+        if (!modal) {
+            console.error('Modal non trouvé');
+            alert('Erreur: Modal non trouvé');
+            return;
+        }
+        
+        const modalBody = modal.querySelector('.modal-body');
+        if (modalBody) {
+            modalBody.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p class="mt-2">Assignation en cours...</p></div>';
+        }
+
+        // Méthode simplifiée utilisant un formulaire standard au lieu de JSON
+        const formData = new FormData();
+        formData.append('prestation_id', prestationId);
+        
+        // Ajouter le token CSRF si disponible
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        const headers = new Headers();
+        if (csrfToken) {
+            headers.append('X-CSRFToken', csrfToken.getAttribute('content'));
+        }
+        
+        // Envoyer une requête simple pour assigner la prestation
+        fetch(`/api/evenements/${currentEventId}/assigner-prestation`, {
+            method: 'POST',
+            body: formData,
+            headers: headers
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(result => {
+            if (result.success) {
+                // Fermer le modal
+                const modalInstance = bootstrap.Modal.getInstance(modal);
+                if (modalInstance) modalInstance.hide();
+
+                // Mettre à jour l'événement dans le calendrier
+                const event = calendar.getEventById(currentEventId);
+                if (event) {
+                    event.setExtendedProp('prestation', result.prestation);
+                    // Ajouter une classe pour indiquer que l'événement a une prestation
+                    event.setProp('classNames', ['has-prestation']);
+                    
+                    // Rafraîchir le calendrier
+                    calendar.refetchEvents();
+                }
+
+                // Afficher un message de succès
+                alert('Prestation assignée avec succès');
+
+                // Rafraîchir les détails de l'événement
+                setTimeout(() => voirDetails(currentEventId), 500);
+            } else {
+                alert('Erreur: ' + (result.error || 'Une erreur est survenue'));
+                // Fermer le modal en cas d'erreur
+                const modalInstance = bootstrap.Modal.getInstance(modal);
+                if (modalInstance) modalInstance.hide();
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur lors de l\'assignation: ' + error.message);
+            
+            // Fermer simplement le modal en cas d'erreur
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) modalInstance.hide();
+        });
+    } catch (e) {
+        console.error('Erreur dans assignerPrestationDirecte:', e);
+        alert('Une erreur inattendue est survenue lors de l\'assignation');
+    }
+}
+
+// Exposer la fonction pour qu'elle soit accessible depuis calendrier.js
+window.assignerPrestationDirecteTemplate = assignerPrestationDirecte;
+
+function ouvrirAssignation() {
+    try {
+        if (!currentEventId) {
+            alert('Erreur: Aucun événement sélectionné');
+            return;
+        }
+
+        console.log('Ouverture du modal d\'assignation pour l\'événement ID:', currentEventId);
+
+        // Définir l'ID de l'événement dans le formulaire
+        document.getElementById('evenement_id_assigner').value = currentEventId;
+
+        // Fermer le modal de détails
+        const detailsModal = document.getElementById('detailsEvenementModal');
+        if (detailsModal) {
+            const modalInstance = bootstrap.Modal.getInstance(detailsModal);
+            if (modalInstance) modalInstance.hide();
+        }
+
+        // Ouvrir le modal d'assignation
+        const assignerModal = document.getElementById('assignerPrestationModal');
+        if (!assignerModal) {
+            console.error('Modal d\'assignation non trouvé');
+            alert('Erreur: Modal d\'assignation non trouvé');
+            return;
+        }
+        
+        // Ouvrir le modal
+        const modal = new bootstrap.Modal(assignerModal);
+        modal.show();
+    } catch (e) {
+        console.error('Erreur dans ouvrirAssignation:', e);
+        alert('Une erreur inattendue est survenue lors de l\'ouverture du modal d\'assignation');
+    }
+}
+
+function ajouterObservation() {
+    const observationsList = document.getElementById('observationsList');
+    const newObservation = document.createElement('div');
+    newObservation.className = 'observation-item mb-2';
+    newObservation.innerHTML = `
+        <div class="input-group">
+            <textarea class="form-control observation-text" rows="2"></textarea>
+            <button class="btn btn-outline-danger" onclick="supprimerObservation(this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    `;
+    observationsList.appendChild(newObservation);
+}
+
+function supprimerObservation(button) {
+    button.closest('.observation-item').remove();
+}
+
+function sauvegarderObservations() {
+    const observations = [];
+    document.querySelectorAll('.observation-text').forEach(textarea => {
+        if (textarea.value.trim()) {
+            observations.push(textarea.value.trim());
+        }
+    });
+
+    fetch(`/api/evenements/${currentEventId}/observations`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ observations: observations })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            const event = calendar.getEventById(currentEventId);
+            event.setExtendedProp('observations', observations);
+            alert('Observations sauvegardées');
+        }
+    });
+}
+
+function ouvrirModification() {
+    const event = calendar.getEventById(currentEventId);
+    
+    // Rediriger vers la nouvelle page de modification en utilisant une URL absolue
+    window.location.href = "{{ url_for('calendrier.modifier_evenement_page', evenement_id=0) }}".replace('0', currentEventId);
+    
+    // Fermer le modal
+    bootstrap.Modal.getInstance(document.getElementById('detailsEvenementModal')).hide();
+}
+
+function sauvegarderModifications() {
+    const form = document.getElementById('modifierEvenementForm');
+    const formData = new FormData(form);
+    
+    // Créer un objet avec les données du formulaire
+    const data = {
+        titre: formData.get('titre'),
+        date_debut: formData.get('date_debut'),
+        date_fin: formData.get('date_fin'),
+        type_evenement: formData.get('type_evenement'),
+        observations: formData.get('observations')
+    };
+    
+    // Afficher les données pour le débogage
+    console.log('Données à envoyer:', data);
+
+    fetch(`/api/evenements/${currentEventId}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            // Mettre à jour l'événement dans le calendrier
+            const event = calendar.getEventById(currentEventId);
+            event.setProp('title', data.titre);
+            event.setDates(data.date_debut, data.date_fin || data.date_debut);
+            event.setExtendedProp('type', data.type_evenement);
+            event.setExtendedProp('observations', data.observations);
+            event.setExtendedProp('version', result.version);
+
+            // Fermer le modal et réouvrir les détails
+            bootstrap.Modal.getInstance(document.getElementById('modifierEvenementModal')).hide();
+            voirDetails(currentEventId);
+            
+            // Afficher un message de succès
+            alert('Événement modifié avec succès!');
+        } else {
+            alert('Erreur lors de la modification: ' + (result.error || 'Erreur inconnue'));
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la modification: ' + error.message);
+    });
+}
+
+// Exposer la fonction pour qu'elle soit accessible depuis calendrier.js
+window.sauvegarderModifications = sauvegarderModifications;
+
+function voirPrestation() {
+    if (!currentEvent) return;
+
+    fetch(`/calendrier/api/evenements/${currentEvent.id}/prestation`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const prestation = data.prestation;
+                prestationId = prestation.id;
+
+                // Remplir les détails de la prestation
+                document.getElementById('prestationClient').textContent = prestation.client;
+                document.getElementById('prestationType').textContent = prestation.type_demenagement;
+                document.getElementById('prestationDateDebut').textContent = prestation.date_debut;
+                document.getElementById('prestationDateFin').textContent = prestation.date_fin;
+                document.getElementById('prestationAdresseDepart').textContent = prestation.adresse_depart;
+                document.getElementById('prestationAdresseArrivee').textContent = prestation.adresse_arrivee;
+
+                // Gérer le statut avec une couleur appropriée
+                const statutElement = document.getElementById('prestationStatut');
+                statutElement.textContent = prestation.statut;
+                switch(prestation.statut.toLowerCase()) {
+                    case 'en attente':
+                        statutElement.className = 'badge bg-warning';
+                        break;
+                    case 'en cours':
+                        statutElement.className = 'badge bg-info';
+                        break;
+                    case 'terminée':
+                        statutElement.className = 'badge bg-success';
+                        break;
+                    case 'annulée':
+                        statutElement.className = 'badge bg-danger';
+                        break;
+                    default:
+                        statutElement.className = 'badge bg-secondary';
+                }
+
+                // Afficher le modal
+                new bootstrap.Modal(document.getElementById('detailsPrestationModal')).show();
+            } else {
+                alert('Impossible de charger les détails de la prestation.');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue lors du chargement des détails de la prestation.');
+        });
+}
+</script>
+
+<!-- Modal Détails Prestation -->
+<div class="modal fade" id="detailsPrestationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Détails de la prestation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Client:</strong> <span id="prestationClient"></span></p>
+                        <p><strong>Type de déménagement:</strong> <span id="prestationType"></span></p>
+                        <p><strong>Statut:</strong> <span id="prestationStatut" class="badge"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Date de début:</strong> <span id="prestationDateDebut"></span></p>
+                        <p><strong>Date de fin:</strong> <span id="prestationDateFin"></span></p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <p><strong>Adresse de départ:</strong></p>
+                        <p class="ms-3" id="prestationAdresseDepart"></p>
+                        <p><strong>Adresse d'arrivée:</strong></p>
+                        <p class="ms-3" id="prestationAdresseArrivee"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let prestationId = null;
+</script>
+
+<!-- Inclure le fichier JavaScript spécifique au calendrier -->
+<script src="{{ url_for('static', filename='js/calendrier.js') }}"></script>
+
+<style>
+.fc-event {
+    cursor: pointer;
+    padding: 4px;
+    margin: 2px 0;
+    border-radius: 4px;
+}
+
+.fc-event .fc-title {
+    font-weight: bold;
+}
+
+.fc-event .fc-type {
+    font-size: 0.8em;
+    opacity: 0.8;
+}
+
+.fc-event.has-prestation {
+    border-left: 4px solid #28a745;
+}
+
+.calendar-container {
+    height: calc(100vh - 250px);
+    margin-bottom: 20px;
+}
+
+#calendar {
+    height: 100%;
+}
+
+.fc-event {
+    cursor: pointer;
+    padding: 4px;
+    margin: 2px 0;
+    border-radius: 4px;
+}
+
+.fc-event .fc-title {
+    font-weight: bold;
+}
+
+.fc-event .fc-type {
+    font-size: 0.8em;
+    opacity: 0.8;
+}
+
+.fc-event.has-prestation {
+    border-left: 4px solid #28a745;
+}
+
+.calendar-container {
+    height: calc(100vh - 250px);
+    margin-bottom: 20px;
+}
+
+#calendar {
+    height: 100%;
+}
+
+.fc-event {
+    cursor: pointer;
+    border-left: 4px solid #3788d8;
+    padding: 2px 5px;
+}
+.fc-event.has-prestation {
+    border-left-color: #28a745;
+}
+.fc-daygrid-event-dot {
+    display: none;
+}
+</style>
+
+{% endblock %}
+
+{% block page_scripts %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/fr.js"></script>
+{% endblock %}

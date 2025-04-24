@@ -1,0 +1,62 @@
+/**
+ * Styles pour la barre de recherche du calendrier R-Cavalier
+ */
+
+.calendar-search-container {
+    margin-bottom: 20px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.search-results-container {
+    position: absolute;
+    z-index: 1000;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 0.25rem;
+    background-color: #fff;
+}
+
+.search-results-container .card {
+    border: none;
+}
+
+.search-result-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.search-result-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Style pour mettre en évidence les événements sélectionnés */
+.fc-event-highlighted {
+    box-shadow: 0 0 0 2px #007bff !important;
+    z-index: 10 !important;
+}
+
+/* Animation de clignotement pour attirer l'attention */
+.blink-highlight {
+    animation: blink-animation 1s ease-in-out 3;
+}
+
+@keyframes blink-animation {
+    0% { box-shadow: 0 0 0 2px #007bff; }
+    50% { box-shadow: 0 0 0 4px #28a745; }
+    100% { box-shadow: 0 0 0 2px #007bff; }
+}
+
+/* Ajustements responsive */
+@media (max-width: 768px) {
+    .calendar-search-container {
+        margin-bottom: 10px;
+    }
+    
+    .search-results-container {
+        max-height: 250px;
+    }
+}

@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des documents{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Documents</h6>
+                    <div>
+                        <a href="{{ url_for('document.upload_document') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-upload"></i> Ajouter un document
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% include 'components/flash_messages.html' %}
+                    
+                    <!-- Filtres de recherche -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <form method="get" action="{{ url_for('document.list_documents') }}" class="form">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    {{ form.query.label(class="form-control-label") }}
+                                                    {{ form.query(class="form-control") }}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    {{ form.client_id.label(class="form-control-label") }}
+                                                    {{ form.client_id(class="form-control") }}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    {{ form.type.label(class="form-control-label") }}
+                                                    {{ form.type(class="form-control") }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    {{ form.categorie.label(class="form-control-label") }}
+                                                    {{ form.categorie(class="form-control") }}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    {{ form.date_debut.label(class="form-control-label") }}
+                                                    {{ form.date_debut(class="form-control", type="date") }}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    {{ form.date_fin.label(class="form-control-label") }}
+                                                    {{ form.date_fin(class="form-control", type="date") }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group text-center">
+                                            <button type="submit" name="submit" value="1" class="btn btn-primary">
+                                                <i class="fas fa-search"></i> Rechercher
+                                            </button>
+                                            <a href="{{ url_for('document.list_documents') }}" class="btn btn-secondary">
+                                                <i class="fas fa-sync"></i> Réinitialiser
+                                            </a>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Liste des documents -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="documentsTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Client</th>
+                                    <th>Type</th>
+                                    <th>Catégorie</th>
+                                    <th>Tags</th>
+                                    <th>Date d'upload</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for document in documents.items %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('document.view_document', document_id=document.id) }}" class="text-primary">
+                                            <i class="fas fa-file-{{ 'pdf' if document.format == 'pdf' else 'alt' }}"></i>
+                                            {{ document.nom }}
+                                        </a>
+                                        {% if document.notes %}
+                                        <span class="ml-2" data-toggle="tooltip" title="{{ document.notes }}">
+                                            <i class="fas fa-sticky-note text-warning"></i>
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('client.details', id=document.client_id) }}">
+                                            {% if document.client %}{{ document.client.nom }} {{ document.client.prenom }}{% else %}-{% endif %}
+                                        </a>
+                                    </td>
+                                    <td>{{ document.type|capitalize if document.type else '-' }}</td>
+                                    <td>{{ document.categorie|capitalize if document.categorie else '-' }}</td>
+                                    <td>
+                                        {% if document.tags %}
+                                        {% for tag in document.tags.split(',') %}
+                                        <span class="badge badge-secondary">{{ tag.strip() }}</span>
+                                        {% endfor %}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ document.date_upload.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('document.download_document', document_id=document.id) }}" class="btn btn-info" title="Télécharger">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <a href="{{ url_for('document.edit_document', document_id=document.id) }}" class="btn btn-primary" title="Modifier">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal{{ document.id }}" title="Supprimer">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Modal de confirmation de suppression -->
+                                        <div class="modal fade" id="deleteModal{{ document.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel{{ document.id }}" aria-hidden="true">
+                                            <div class="modal-dialog" role="document">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="deleteModalLabel{{ document.id }}">Confirmation de suppression</h5>
+                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        Êtes-vous sûr de vouloir supprimer le document <strong>{{ document.nom }}</strong> ?
+                                                        <p class="text-danger mt-2">Cette action est irréversible.</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                                                        <form action="{{ url_for('document.delete_document', document_id=document.id) }}" method="post">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                            <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if documents.pages > 1 %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center mt-4">
+                            {% if documents.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('document.list_documents', page=documents.prev_num, **request.args) }}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;</span>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in documents.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                                {% if page_num %}
+                                    {% if page_num == documents.page %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }} <span class="sr-only">(current)</span></span>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('document.list_documents', page=page_num, **request.args) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if documents.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('document.list_documents', page=documents.next_num, **request.args) }}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;</span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    <!-- Message si aucun document -->
+                    {% if documents.items|length == 0 %}
+                    <div class="alert alert-info text-center mt-4">
+                        <i class="fas fa-info-circle"></i> Aucun document ne correspond à votre recherche.
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Ajout d'un élément caché pour stocker les données -->
+                    <div id="search-params" 
+                         {% if request.args.get('query') %}data-query="{{ request.args.get('query') }}"{% endif %}
+                         {% if request.args.get('client_id') %}data-client-id="{{ request.args.get('client_id') }}"{% endif %}
+                         {% if request.args.get('type') %}data-type="{{ request.args.get('type') }}"{% endif %}
+                         {% if request.args.get('categorie') %}data-categorie="{{ request.args.get('categorie') }}"{% endif %}
+                         {% if request.args.get('date_debut') %}data-date-debut="{{ request.args.get('date_debut') }}"{% endif %}
+                         {% if request.args.get('date_fin') %}data-date-fin="{{ request.args.get('date_fin') }}"{% endif %}
+                         style="display: none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Activation des tooltips Bootstrap
+        if (typeof bootstrap !== 'undefined' && typeof bootstrap.Tooltip === 'function') {
+            var tooltipElements = document.querySelectorAll('[data-toggle="tooltip"]');
+            for (var i = 0; i < tooltipElements.length; i++) {
+                new bootstrap.Tooltip(tooltipElements[i]);
+            }
+        }
+        
+        // Récupération des paramètres de recherche depuis l'élément caché
+        var searchParamsElement = document.getElementById('search-params');
+        if (searchParamsElement) {
+            // Récupérer et appliquer la valeur de recherche
+            var query = searchParamsElement.getAttribute('data-query');
+            if (query && document.getElementById('query')) {
+                document.getElementById('query').value = query;
+            }
+            
+            // Récupérer et appliquer l'ID client
+            var clientId = searchParamsElement.getAttribute('data-client-id');
+            if (clientId && document.getElementById('client_id')) {
+                document.getElementById('client_id').value = clientId;
+            }
+            
+            // Récupérer et appliquer le type
+            var type = searchParamsElement.getAttribute('data-type');
+            if (type && document.getElementById('type')) {
+                document.getElementById('type').value = type;
+            }
+            
+            // Récupérer et appliquer la catégorie
+            var categorie = searchParamsElement.getAttribute('data-categorie');
+            if (categorie && document.getElementById('categorie')) {
+                document.getElementById('categorie').value = categorie;
+            }
+            
+            // Récupérer et appliquer la date de début
+            var dateDebut = searchParamsElement.getAttribute('data-date-debut');
+            if (dateDebut && document.getElementById('date_debut')) {
+                document.getElementById('date_debut').value = dateDebut;
+            }
+            
+            // Récupérer et appliquer la date de fin
+            var dateFin = searchParamsElement.getAttribute('data-date-fin');
+            if (dateFin && document.getElementById('date_fin')) {
+                document.getElementById('date_fin').value = dateFin;
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+
+{% block title %}Répondre à la Prestation - {{ config.APP_NAME }}{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/prestation-theme.css') }}">
+    <style>
+        .response-card {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .response-card .card-header {
+            background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+            color: white;
+            padding: 20px;
+        }
+        
+        .response-card .card-body {
+            padding: 30px;
+        }
+        
+        .prestation-details {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .detail-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .detail-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            color: #212529;
+        }
+        
+        .response-options {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .response-option {
+            flex: 1;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .response-option:hover {
+            transform: translateY(-5px);
+        }
+        
+        .response-option.accept {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .response-option.accept:hover, .response-option.accept.selected {
+            background-color: #c8e6c9;
+            border-color: #2e7d32;
+        }
+        
+        .response-option.decline {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        
+        .response-option.decline:hover, .response-option.decline.selected {
+            background-color: #ffcdd2;
+            border-color: #c62828;
+        }
+        
+        .response-option i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .response-option h4 {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .response-form {
+            margin-top: 20px;
+        }
+        
+        .action-buttons {
+            margin-top: 25px;
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="mb-3">Répondre à la Prestation #{{ prestation.id }}</h1>
+            <p class="text-muted">Vous avez été assigné à cette prestation. Veuillez indiquer si vous acceptez ou refusez cette mission.</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="response-card">
+                <div class="card-header">
+                    <h3 class="mb-0">Détails de la Prestation</h3>
+                </div>
+                <div class="card-body">
+                    <div class="prestation-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Dates</div>
+                            <div class="detail-value">Du {{ prestation.date_debut.strftime('%d/%m/%Y') }} au {{ prestation.date_fin.strftime('%d/%m/%Y') }}</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Type de déménagement</div>
+                            <div class="detail-value">{{ prestation.type_demenagement }}</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Adresse de départ</div>
+                            <div class="detail-value">{{ prestation.adresse_depart }}</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Adresse d'arrivée</div>
+                            <div class="detail-value">{{ prestation.adresse_arrivee }}</div>
+                        </div>
+                        
+                        {% if prestation.observations %}
+                        <div class="detail-item">
+                            <div class="detail-label">Observations</div>
+                            <div class="detail-value">{{ prestation.observations|safe }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('prestation.repondre', id=prestation.id) }}" class="response-form">
+                        <h4 class="mb-3">Votre Réponse</h4>
+                        
+                        <div class="response-options">
+                            <div class="response-option accept" id="option-accept" onclick="selectOption('accepter')">
+                                <i class="fas fa-check-circle"></i>
+                                <h4>Accepter</h4>
+                                <p>Je confirme ma disponibilité pour cette prestation</p>
+                            </div>
+                            
+                            <div class="response-option decline" id="option-decline" onclick="selectOption('refuser')">
+                                <i class="fas fa-times-circle"></i>
+                                <h4>Refuser</h4>
+                                <p>Je ne suis pas disponible pour cette prestation</p>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" name="reponse" id="reponse-input" value="">
+                        
+                        <div class="form-group mt-4">
+                            <label for="commentaire" class="form-label">Commentaire (optionnel)</label>
+                            <textarea name="commentaire" id="commentaire" class="form-control" rows="4" placeholder="Ajoutez un commentaire concernant votre réponse..."></textarea>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <a href="{{ url_for('prestation.mes_prestations') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Retour
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submit-btn" disabled>
+                                <i class="fas fa-paper-plane"></i> Envoyer ma réponse
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+    function selectOption(option) {
+        // Réinitialiser les classes
+        document.getElementById('option-accept').classList.remove('selected');
+        document.getElementById('option-decline').classList.remove('selected');
+        
+        // Ajouter la classe selected à l'option choisie
+        if (option === 'accepter') {
+            document.getElementById('option-accept').classList.add('selected');
+        } else {
+            document.getElementById('option-decline').classList.add('selected');
+        }
+        
+        // Mettre à jour le champ caché
+        document.getElementById('reponse-input').value = option;
+        
+        // Activer le bouton d'envoi
+        document.getElementById('submit-btn').disabled = false;
+    }
+</script>
+{% endblock %}

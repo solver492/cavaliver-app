@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestion des factures - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="facture-page">
+    <div class="page-title">
+        <h1><i class="fas fa-file-invoice-dollar"></i> Gestion des factures</h1>
+        <a href="{{ url_for('facture.add') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nouvelle facture
+        </a>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="filter-toggle mb-2">
+                <i class="fas fa-filter"></i> Filtres de recherche
+                <i class="fas fa-chevron-down ms-1"></i>
+            </div>
+            
+            <div class="filter-options d-none">
+                <form method="GET" action="{{ url_for('facture.index') }}" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="client_id" class="form-label">{{ form.client_id.label.text }}</label>
+                        {{ form.client_id(class="form-control", id="client_id") }}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="statut" class="form-label">{{ form.statut.label.text }}</label>
+                        {{ form.statut(class="form-control", id="statut") }}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="date_debut" class="form-label">{{ form.date_debut.label.text }}</label>
+                        {{ form.date_debut(class="form-control", id="date_debut", type="date") }}
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="date_fin" class="form-label">{{ form.date_fin.label.text }}</label>
+                        {{ form.date_fin(class="form-control", id="date_fin", type="date") }}
+                    </div>
+                    
+                    <div class="col-12 d-flex justify-content-end">
+                        {{ form.reset(class="btn btn-secondary me-2", id="reset-filter") }}
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>N° Facture</th>
+                        <th>Client</th>
+                        <th>Prestation</th>
+                        <th>Montant TTC</th>
+                        <th>Date émission</th>
+                        <th>Date échéance</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if factures %}
+                        {% for facture in factures %}
+                            <tr>
+                                <td>{{ facture.numero }}</td>
+                                <td>{{ facture.client.nom }} {{ facture.client.prenom }}</td>
+                                <td>
+                                    {% if facture.prestation %}
+                                        {{ facture.prestation.type_demenagement }} ({{ facture.prestation.date_debut.strftime('%d/%m/%Y') }})
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ "{:,.2f}".format(facture.montant_ttc) }} €</td>
+                                <td>{{ facture.date_emission.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ facture.date_echeance.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    <span class="badge status-{{ facture.statut|lower|replace(' ', '-') }}">
+                                        {{ facture.statut }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('facture.view', id=facture.id) }}" class="btn btn-outline-info" title="Visualiser">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('facture.edit', id=facture.id) }}" class="btn btn-outline-primary" title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ url_for('facture.view', id=facture.id) }}#documents" class="btn btn-outline-success" title="Documents de facturation">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                        {% if current_user.is_admin() %}
+                                            <a href="{{ url_for('facture.delete', id=facture.id) }}" 
+                                               class="btn btn-outline-danger delete-facture" 
+                                               title="Supprimer" 
+                                               data-facture-num="{{ facture.numero }}">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-3">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle"></i> Aucune facture trouvée.
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/factures.js') }}"></script>
+{% endblock %}

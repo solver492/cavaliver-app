@@ -1,0 +1,105 @@
+/* Styles pour le widget de sélection des transporteurs */
+.transporteur-widget-container {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.transporteur-widget-container.loading {
+    opacity: 0.7;
+}
+
+.loading-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    z-index: 10;
+}
+
+.transporteur-search-container {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.transporteur-search-container input {
+    flex-grow: 1;
+    margin-right: 5px;
+}
+
+.filter-buttons {
+    margin-bottom: 10px;
+}
+
+.filter-btn {
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+.filter-btn.active {
+    font-weight: bold;
+}
+
+.selected-transporteurs-count {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+/* Styles pour les options dans le select */
+option.vehicule-adapte {
+    background-color: #d4edda;
+    font-weight: bold;
+}
+
+option.soon-available {
+    background-color: #fff3cd;
+    font-style: italic;
+}
+
+/* Styles pour le bouton de validation */
+#valider-transporteurs {
+    margin-top: 10px;
+}
+
+/* Styles pour les véhicules recommandés */
+.alert-info ul {
+    margin-bottom: 0;
+    padding-left: 20px;
+}
+
+/* Styles pour le bouton de vérification de disponibilité */
+#check-disponibilite-btn {
+    display: block;
+    margin-bottom: 10px;
+}
+
+/* Styles pour le select multiple */
+select[multiple] {
+    height: 200px;
+    overflow-y: auto;
+}
+
+/* Styles pour les boutons de filtre */
+.filter-btn[data-filter="adapted"] {
+    background-color: #d1e7dd;
+    border-color: #badbcc;
+    color: #0f5132;
+}
+
+.filter-btn[data-filter="adapted"].active {
+    background-color: #0f5132;
+    border-color: #0f5132;
+    color: white;
+}
+
+.transporteurs-widget-container {
+    position: fixed;
+    bottom: 90px;
+    left: 20px;
+    width: 400px;
+}

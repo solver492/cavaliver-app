@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Ajouter un Document{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="page-title">Ajouter un Nouveau Document</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Tableau de bord</a></li>
+          <li class="breadcrumb-item"><a href="{{ url_for('documents.index') }}">Documents</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Ajouter</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-file-upload"></i> Informations du Document</h5>
+        </div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="mb-3">
+              <label for="nom" class="form-label">Nom du document *</label>
+              <input type="text" class="form-control" id="nom" name="nom" required>
+              <div class="invalid-feedback">
+                Veuillez fournir un nom pour le document.
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="type" class="form-label">Type de document</label>
+              <select class="form-select" id="type" name="type">
+                <option value="">Sélectionner un type</option>
+                <option value="contrat">Contrat</option>
+                <option value="facture">Facture</option>
+                <option value="rapport">Rapport</option>
+                <option value="autre">Autre</option>
+              </select>
+            </div>
+            
+            <div class="mb-3">
+              <label for="fichier" class="form-label">Fichier *</label>
+              <input class="form-control" type="file" id="fichier" name="fichier" required>
+              <div class="invalid-feedback">
+                Veuillez sélectionner un fichier.
+              </div>
+              <small class="text-muted">Formats acceptés: PDF, Word, Excel, images (max. 10MB)</small>
+            </div>
+            
+            <div class="mb-3">
+              <label for="client_id" class="form-label">Client associé</label>
+              <select class="form-select" id="client_id" name="client_id">
+                <option value="">Aucun client</option>
+                <!-- Les options des clients seront générées dynamiquement en Flask -->
+              </select>
+            </div>
+            
+            <div class="mb-3">
+              <label for="prestation_id" class="form-label">Prestation associée</label>
+              <select class="form-select" id="prestation_id" name="prestation_id">
+                <option value="">Aucune prestation</option>
+                <!-- Les options des prestations seront générées dynamiquement en Flask -->
+              </select>
+            </div>
+            
+            <div class="mb-3">
+              <label for="notes" class="form-label">Notes</label>
+              <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+            </div>
+            
+            <div class="mb-3">
+              <label for="tags" class="form-label">Tags (séparés par des virgules)</label>
+              <input type="text" class="form-control" id="tags" name="tags" placeholder="ex: important, contrat, client">
+            </div>
+            
+            <div class="mb-3">
+              <label for="statut" class="form-label">Statut</label>
+              <select class="form-select" id="statut" name="statut">
+                <option value="Actif">Actif</option>
+                <option value="Archivé">Archivé</option>
+              </select>
+            </div>
+            
+            <div class="mb-4">
+              <label for="observations" class="form-label">Observations supplémentaires</label>
+              <textarea class="form-control" id="observations" name="observations_supplementaires" rows="3"></textarea>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="{{ url_for('documents.index') }}" class="btn btn-outline-secondary me-md-2">
+                <i class="fas fa-times"></i> Annuler
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Enregistrer
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-info-circle"></i> Aide</h5>
+        </div>
+        <div class="card-body">
+          <p>Ajoutez un nouveau document à votre bibliothèque pour garder une trace organisée de tous vos fichiers importants.</p>
+          <ul class="mb-0">
+            <li>Taille maximale: 10 MB</li>
+            <li>Formats supportés: PDF, Word, Excel, images</li>
+            <li>Utilisez des tags pour faciliter la recherche ultérieure</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-cog"></i> Options</h5>
+        </div>
+        <div class="card-body">
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="notification">
+            <label class="form-check-label" for="notification">
+              Envoyer une notification aux administrateurs
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="confidential">
+            <label class="form-check-label" for="confidential">
+              Marquer comme confidentiel
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Validation des formulaires Bootstrap
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        
+        form.classList.add('was-validated');
+      }, false);
+    });
+    
+    // Client et prestations liées dynamiquement
+    const clientSelect = document.getElementById('client_id');
+    const prestationSelect = document.getElementById('prestation_id');
+    
+    if (clientSelect) {
+      clientSelect.addEventListener('change', function() {
+        const clientId = this.value;
+        
+        if (clientId && prestationSelect) {
+          // Réinitialiser d'abord
+          prestationSelect.innerHTML = '<option value="">Aucune prestation</option>';
+          
+          // Si un client est sélectionné, charger ses prestations
+          if (clientId) {
+            fetch(`/api/client/${clientId}/prestations`)
+              .then(response => response.json())
+              .then(data => {
+                if (data.success && data.prestations) {
+                  data.prestations.forEach(prestation => {
+                    const option = document.createElement('option');
+                    option.value = prestation.id;
+                    option.textContent = `${prestation.reference || '#' + prestation.id} - ${new Date(prestation.date_debut).toLocaleDateString()}`;
+                    prestationSelect.appendChild(option);
+                  });
+                }
+              })
+              .catch(error => console.error('Erreur lors du chargement des prestations:', error));
+          }
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

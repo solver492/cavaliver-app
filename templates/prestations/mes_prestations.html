@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title %}Mes Prestations - {{ config.APP_NAME }}{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/prestation-theme.css') }}">
+    <style>
+        .prestation-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .prestation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+            color: white;
+            font-weight: 600;
+            padding: 15px 20px;
+        }
+        
+        .card-header.en-attente {
+            background: linear-gradient(135deg, #f2994a, #f2c94c);
+        }
+        
+        .card-header.accepte {
+            background: linear-gradient(135deg, #56ab2f, #a8e063);
+        }
+        
+        .card-header.refuse {
+            background: linear-gradient(135deg, #cb2d3e, #ef473a);
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .prestation-dates {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: #555;
+        }
+        
+        .prestation-address {
+            margin-bottom: 10px;
+            padding-left: 10px;
+            border-left: 3px solid #3a7bd5;
+        }
+        
+        .prestation-status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+        
+        .status-en-attente {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-en-cours {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-terminee {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-annulee {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .action-buttons {
+            margin-top: 15px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            font-weight: 600;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            color: #adb5bd;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1 class="mb-3">Mes Prestations</h1>
+            <p class="text-muted">Liste des prestations auxquelles vous êtes assigné en tant que transporteur.</p>
+        </div>
+    </div>
+    
+    {% if prestations %}
+        <div class="row">
+            {% for prestation in prestations %}
+                <div class="col-md-6">
+                    <div class="card prestation-card">
+                        <div class="card-header {% if prestation.status_transporteur == 'accepte' %}accepte{% elif prestation.status_transporteur == 'refuse' %}refuse{% else %}en-attente{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Prestation #{{ prestation.id }}</h5>
+                                <span class="prestation-status status-{{ prestation.statut|lower|replace(' ', '-') }}">
+                                    {{ prestation.statut }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="prestation-dates">
+                                <i class="fas fa-calendar-alt me-2"></i> 
+                                Du {{ prestation.date_debut.strftime('%d/%m/%Y') }} au {{ prestation.date_fin.strftime('%d/%m/%Y') }}
+                            </div>
+                            
+                            <div class="prestation-details">
+                                <div class="prestation-address">
+                                    <strong>Départ:</strong> {{ prestation.adresse_depart }}
+                                </div>
+                                <div class="prestation-address">
+                                    <strong>Arrivée:</strong> {{ prestation.adresse_arrivee }}
+                                </div>
+                                <div class="mt-2">
+                                    <strong>Type:</strong> {{ prestation.type_demenagement }}
+                                </div>
+                            </div>
+                            
+                            <div class="action-buttons">
+                                {% if prestation.status_transporteur == 'en_attente' %}
+                                    <a href="{{ url_for('prestation.repondre', id=prestation.id) }}" class="btn btn-primary">
+                                        <i class="fas fa-reply"></i> Répondre
+                                    </a>
+                                {% elif prestation.status_transporteur == 'accepte' %}
+                                    <div class="alert alert-success mb-0">
+                                        <i class="fas fa-check-circle"></i> Vous avez accepté cette prestation
+                                    </div>
+                                {% elif prestation.status_transporteur == 'refuse' %}
+                                    <div class="alert alert-danger mb-0">
+                                        <i class="fas fa-times-circle"></i> Vous avez refusé cette prestation
+                                    </div>
+                                {% endif %}
+                                
+                                <a href="{{ url_for('prestation.view', id=prestation.id) }}" class="btn btn-outline-info mt-2">
+                                    <i class="fas fa-eye"></i> Voir les détails
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-truck-loading"></i>
+            <h3>Aucune prestation assignée</h3>
+            <p>Vous n'avez actuellement aucune prestation qui vous est assignée. Les nouvelles prestations apparaîtront ici.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

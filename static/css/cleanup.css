@@ -1,0 +1,65 @@
+/* Masquer uniquement les éléments des messages système */
+.comment-system-btn, 
+.comment-panel, 
+.comment-panel-title,
+.comment-panel-body,
+.comment-panel-close,
+.comment-panel-footer {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    z-index: -9999 !important;
+    pointer-events: none !important;
+}
+
+/* Style pour la bulle des véhicules suggérés et transporteurs bientôt disponibles */
+#vehicules-suggeres-bubble,
+.floating-bubble {
+    position: static !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 1 !important;
+    pointer-events: auto !important;
+    max-width: 100% !important;
+    width: auto !important;
+    margin: 20px 0 !important;
+    border: 1px solid #0d6efd !important;
+    border-radius: 8px !important;
+    background-color: #f8f9fa !important;
+    padding: 15px !important;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1) !important;
+    transform: none !important;
+    transition: none !important;
+}
+
+/* Styles pour les éléments repositionnés */
+.positioned {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 15px 0 !important;
+    padding: 15px !important;
+    border-radius: 6px !important;
+    border: 1px solid #0d6efd !important;
+    background-color: #f8f9fa !important;
+}
+
+/* Assurer que le fond de page est propre */
+body::after {
+    content: none !important;
+}
+
+/* Pour les petits écrans mobiles */
+@media (max-width: 768px) {
+    #vehicules-suggeres-bubble,
+    .floating-bubble,
+    .fixed-bubble {
+        width: 100% !important;
+        max-width: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+    }
+}

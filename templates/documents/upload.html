@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Ajouter un document{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-md-8 offset-md-2">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Ajouter un nouveau document</h6>
+                    <div>
+                        <a href="{{ url_for('document.list_documents') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Retour à la liste
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% include 'components/flash_messages.html' %}
+                    
+                    <form method="post" action="{{ url_for('document.upload_document') }}" enctype="multipart/form-data">
+                        {{ form.csrf_token }}
+                        
+                        <div class="form-group">
+                            <label for="client_id" class="form-control-label font-weight-bold">Client <span class="text-danger">*</span></label>
+                            {{ form.client_id(class="form-control custom-select", id="client_id") }}
+                            {% if form.client_id.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.client_id.errors %}
+                                <span><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Veuillez sélectionner le client auquel ce document est associé</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="nom" class="form-control-label font-weight-bold">Nom du document <span class="text-danger">*</span></label>
+                            {{ form.nom(class="form-control", id="nom", placeholder="Entrez un nom descriptif pour ce document") }}
+                            {% if form.nom.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.nom.errors %}
+                                <span><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Choisissez un nom clair et descriptif pour faciliter la recherche ultérieure</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="fichier" class="form-control-label font-weight-bold">Fichier à téléverser <span class="text-danger">*</span></label>
+                            {{ form.fichier(class="form-control-file", id="fichier") }}
+                            {% if form.fichier.errors %}
+                            <div class="text-danger">
+                                {% for error in form.fichier.errors %}
+                                <span><i class="fas fa-exclamation-circle"></i> {{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Formats acceptés : PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, TXT</small>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.type.label(class="form-control-label") }}
+                                    {{ form.type(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.categorie.label(class="form-control-label") }}
+                                    {{ form.categorie(class="form-control") }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form.tags.label(class="form-control-label") }}
+                            {{ form.tags(class="form-control", placeholder="Exemple: important, facture, 2023") }}
+                            <small class="form-text text-muted">Séparez les tags par des virgules</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="notes" class="form-control-label font-weight-bold">Notes / Commentaires <span class="text-primary">(Important)</span></label>
+                            {{ form.notes(class="form-control", rows=5, id="notes", placeholder="Ajoutez ici vos notes et commentaires sur ce document...") }}
+                            <small class="form-text text-muted">Utilisez ce champ pour ajouter des informations importantes concernant ce document. Ces notes faciliteront l'identification du document ultérieurement.</small>
+                        </div>
+                        
+                        <div class="form-group d-none">
+                            {{ form.statut.label(class="form-control-label") }}
+                            {{ form.statut(class="form-control") }}
+                        </div>
+                        
+                        <div class="form-group text-center mt-4">
+                            <a href="{{ url_for('document.list_documents') }}" class="btn btn-secondary">
+                                Annuler
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Mise en évidence du champ de notes
+        $('#notes').on('focus', function() {
+            $(this).parent().addClass('border-left border-primary pl-2');
+        }).on('blur', function() {
+            $(this).parent().removeClass('border-left border-primary pl-2');
+        });
+        
+        // Mise à jour automatique du nom du document en fonction du nom de fichier
+        $('#fichier').change(function() {
+            var fileName = $(this).val().split('\\').pop();
+            if (fileName) {
+                // Afficher le nom du fichier sélectionné
+                $(this).next('.custom-file-label').html(fileName);
+                
+                // Remplir automatiquement le nom du document si vide
+                if (!$('#nom').val()) {
+                    // Enlever l'extension du fichier pour le nom
+                    var fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
+                    $('#nom').val(fileNameWithoutExt);
+                }
+            }
+        });
+        
+        // Validation du formulaire avant soumission
+        $('form').on('submit', function(e) {
+            var isValid = true;
+            var errorMessages = [];
+            
+            // Vérification du client
+            if (!$('#client_id').val()) {
+                isValid = false;
+                errorMessages.push('Veuillez sélectionner un client');
+                $('#client_id').addClass('is-invalid');
+            } else {
+                $('#client_id').removeClass('is-invalid').addClass('is-valid');
+            }
+            
+            // Vérification du nom du document
+            if (!$('#nom').val().trim()) {
+                isValid = false;
+                errorMessages.push('Le nom du document est obligatoire');
+                $('#nom').addClass('is-invalid');
+            } else {
+                $('#nom').removeClass('is-invalid').addClass('is-valid');
+            }
+            
+            // Vérification du fichier
+            var fileInput = document.getElementById('fichier');
+            if (!fileInput.files.length) {
+                isValid = false;
+                errorMessages.push('Veuillez sélectionner un fichier');
+                $('#fichier').addClass('is-invalid');
+            } else {
+                $('#fichier').removeClass('is-invalid').addClass('is-valid');
+            }
+            
+            // Vérification des notes (recommandé mais pas obligatoire)
+            if (!$('#notes').val().trim()) {
+                if (!confirm('Vous n\'avez pas ajouté de notes pour ce document. Les notes sont importantes pour identifier le document ultérieurement. Voulez-vous continuer sans ajouter de notes?')) {
+                    e.preventDefault();
+                    $('#notes').focus();
+                    return false;
+                }
+            }
+            
+            // Afficher les messages d'erreur si nécessaire
+            if (!isValid) {
+                e.preventDefault();
+                var errorHtml = '<div class="alert alert-danger"><strong><i class="fas fa-exclamation-triangle"></i> Veuillez corriger les erreurs suivantes :</strong><ul>';
+                errorMessages.forEach(function(msg) {
+                    errorHtml += '<li>' + msg + '</li>';
+                });
+                errorHtml += '</ul></div>';
+                
+                // Afficher les erreurs en haut du formulaire
+                $('.card-body').prepend(errorHtml);
+                
+                // Scroll vers le haut du formulaire
+                $('html, body').animate({
+                    scrollTop: $('.card-body').offset().top - 100
+                }, 200);
+                
+                return false;
+            }
+            
+            // Afficher un indicateur de chargement
+            if (isValid) {
+                $(this).find('button[type="submit"]').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Chargement...').prop('disabled', true);
+            }
+        });
+    });
+</script>
+{% endblock %}

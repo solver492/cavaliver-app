@@ -1,0 +1,81 @@
+<!-- Fragment HTML pour la liste des documents d'une prestation -->
+{% if documents %}
+<div class="mb-3">
+    <h6>Documents associés à cette prestation</h6>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Type</th>
+                    <th>Date d'ajout</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                <tr>
+                    <td>{{ doc.nom }}</td>
+                    <td><span class="badge bg-secondary">{{ doc.type }}</span></td>
+                    <td>{{ doc.date_upload.strftime('%d/%m/%Y') }}</td>
+                    <td>
+                        <a href="{{ url_for('document.download_document', document_id=doc.id) }}" class="btn btn-sm btn-outline-primary" title="Télécharger">
+                            <i class="fas fa-download"></i>
+                        </a>
+                        <a href="{{ url_for('document.edit_document', document_id=doc.id) }}" class="btn btn-sm btn-outline-secondary" title="Modifier">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-danger delete-document" data-document-id="{{ doc.id }}" title="Supprimer">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> Aucun document associé à cette prestation.
+</div>
+{% endif %}
+
+<!-- Ajouter un nouveau document -->
+<div class="mt-3">
+    <h6>Ajouter un nouveau document</h6>
+    <div class="row">
+        <div class="col-md-6 mb-2">
+            <input type="text" name="document_nom" class="form-control" placeholder="Nom du document">
+        </div>
+        <div class="col-md-6 mb-2">
+            <select name="document_type" class="form-select">
+                <option value="">Type de document...</option>
+                <option value="contrat">Contrat</option>
+                <option value="facture">Facture</option>
+                <option value="devis">Devis</option>
+                <option value="photo">Photo</option>
+                <option value="note">Note</option>
+                <option value="autre">Autre</option>
+            </select>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-md-12">
+            <div class="input-group">
+                <input type="file" name="document_fichier" class="form-control" id="document_fichier">
+                <button type="button" class="btn btn-primary" id="btn-ajouter-document">
+                    <i class="fas fa-plus-circle"></i> Ajouter
+                </button>
+            </div>
+            <small class="form-text text-muted">Formats acceptés: PDF, images, documents Office, texte (max 10MB)</small>
+        </div>
+    </div>
+</div>
+
+<!-- Lien vers la gestion complète des documents -->
+<div class="mt-3 text-end">
+    <a href="{{ url_for('documents.list_documents_for_prestation', prestation_id=prestation.id) }}" class="btn btn-outline-primary">
+        <i class="fas fa-folder-open"></i> Gestion complète des documents
+    </a>
+</div>

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des utilisateurs - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-users-cog"></i> Gestion des utilisateurs</h1>
+        <div>
+            <a href="{{ url_for('user.liste') }}" class="btn btn-info me-2">
+                <i class="fas fa-th-large"></i> Liste des Employés
+            </a>
+            <a href="{{ url_for('user.add') }}" class="btn btn-primary">
+                <i class="fas fa-user-plus"></i> Nouvel utilisateur
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('user.index') }}" class="row g-3 align-items-end mb-4">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <input type="text" name="query" id="user-search" class="form-control" placeholder="Rechercher un utilisateur (nom, prénom, username)" value="{{ request.args.get('query', '') }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="role" class="form-label">{{ form.role.label.text }}</label>
+                    {{ form.role(class="form-control", id="role") }}
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="statut" class="form-label">{{ form.statut.label.text }}</label>
+                    {{ form.statut(class="form-control", id="statut") }}
+                </div>
+                
+                <div class="col-md-2">
+                    {{ form.submit(class="btn btn-primary w-100") }}
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Prénom</th>
+                            <th>Nom d'utilisateur</th>
+                            <th>Rôle</th>
+                            <th>Statut</th>
+                            <th>Véhicule</th>
+                            <th>Dernière connexion</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if users %}
+                            {% for user in users %}
+                                <tr{% if user.statut == 'inactif' %} class="table-secondary"{% endif %}>
+                                    <td>{{ user.nom }}</td>
+                                    <td>{{ user.prenom }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ user.role }}">
+                                            {{ user.role }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-{{ user.statut }}">
+                                            {{ user.statut }}
+                                        </span>
+                                    </td>
+                                    <td>{{ user.vehicule or '-' }}</td>
+                                    <td>
+                                        {% if user.derniere_connexion %}
+                                            {{ user.derniere_connexion.strftime('%d/%m/%Y %H:%M') }}
+                                        {% else %}
+                                            Jamais
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if current_user.role == 'superadmin' %}
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('user.edit', id=user.id) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i> Modifier
+                                                </a>
+                                                {% if current_user.id != user.id %}
+                                                    <a href="{{ url_for('user.delete', id=user.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')">
+                                                        <i class="fas fa-trash"></i> Supprimer
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        {% elif current_user.role == 'admin' and user.role not in ['admin', 'superadmin'] %}
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('user.edit', id=user.id) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i> Modifier
+                                                </a>
+                                                {% if current_user.id != user.id %}
+                                                    <a href="{{ url_for('user.delete', id=user.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')">
+                                                        <i class="fas fa-trash"></i> Supprimer
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        {% elif current_user.id == user.id %}
+                                            <a href="{{ url_for('user.edit', id=user.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i> Modifier mon profil
+                                            </a>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center">Aucun utilisateur trouvé</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/users.js') }}"></script>
+{% endblock %}

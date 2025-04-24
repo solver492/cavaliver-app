@@ -1,0 +1,53 @@
+# R-Cavalier Application - Workspace Backup
+# Date: 2025-04-03
+
+## État actuel du projet
+
+### Fonctionnalités développées
+- Tableau de bord avec affichage des statistiques et des graphiques
+- Module de gestion des clients
+- Module de gestion des prestations de déménagement
+- Module de facturation
+- Module de stockage
+- Système de notifications pour alerter les commerciaux
+- Calendrier en plein écran pour visualiser les prestations
+
+### Travaux réalisés aujourd'hui
+- Correction et simplification du menu de navigation
+- Suppression des modules non utilisés du menu (transporteur et véhicule)
+- Restructuration des liens dans la navbar pour une navigation intuitive
+- Amélioration des préfixes d'URL pour une meilleure organisation
+
+### Travaux en cours
+- Finalisation du système de notification entre transporteurs et commerciaux
+- Résolution du problème d'importation du modèle Notification
+- Finalisation du calendrier interactif en plein écran
+
+### Problèmes en attente de résolution
+- Problème d'importation du modèle Notification dans le module transporteur
+- Problèmes d'encodage de certains caractères accentués
+
+### Prochaines étapes
+- Finaliser la documentation du code et le README
+- Préparer le déploiement sur Render
+
+## Architecture technique
+
+### Backend
+- Python 3.12
+- Flask (framework web)
+- SQLAlchemy (ORM)
+- Flask-Login (gestion d'authentification)
+- Flask-WTF (formulaires)
+
+### Frontend
+- Bootstrap 5.2.3
+- jQuery 3.6.4
+- FullCalendar 5.11.3
+- Chart.js 3.9.1
+- Font Awesome 6.2.1
+
+### Organisation du code
+- Structure modulaire avec blueprints Flask
+- Templates Jinja2 pour le rendu HTML
+- Système de routes logiquement organisées

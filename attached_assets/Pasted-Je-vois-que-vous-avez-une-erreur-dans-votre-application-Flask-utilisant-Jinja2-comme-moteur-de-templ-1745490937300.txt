@@ -1,0 +1,68 @@
+Je vois que vous avez une erreur dans votre application Flask utilisant Jinja2 comme moteur de templates. Je vais analyser le problème et vous proposer une solution.
+
+## Source de l'erreur
+
+L'erreur `jinja2.exceptions.UndefinedError: 'form' is undefined` indique que vous essayez d'utiliser une variable appelée `form` dans votre template, mais cette variable n'a pas été définie ou transmise au template.
+
+D'après la trace d'erreur, le problème se situe dans le fichier `templates/documents/edit.html`, ligne 22, où vous utilisez `{{ form.csrf_token }}`.
+
+## Cause du problème
+
+Dans votre fonction `edit_document` (fichier `routes/document.py`, ligne 191), vous rendez le template mais vous ne lui passez que la variable `document` :
+
+```python
+return render_template('documents/edit.html', document=document)
+```
+
+Vous n'avez pas transmis de variable `form` au template, alors que celui-ci tente d'y accéder.
+
+## Solution
+
+Vous devez créer et passer un objet formulaire à votre template. Voici comment corriger ce problème :
+
+1. Dans votre fichier `routes/document.py`, modifiez la fonction `edit_document` :
+
+```python
+from flask_wtf import FlaskForm
+# Importez vos classes de formulaire ou créez-en une
+from forms import DocumentForm  # Ajustez l'import selon votre structure
+
+@app.route('/documents/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_document(id):
+    document = Document.query.get_or_404(id)
+    
+    # Créez le formulaire et initialisez-le avec les données du document
+    form = DocumentForm(obj=document)
+    
+    # Gérez la soumission du formulaire si c'est une requête POST
+    if request.method == 'POST' and form.validate_on_submit():
+        form.populate_obj(document)
+        db.session.commit()
+        flash('Document mis à jour avec succès', 'success')
+        return redirect(url_for('view_document', id=document.id))
+    
+    # Passez le formulaire ET le document au template
+    return render_template('documents/edit.html', form=form, document=document)
+```
+
+2. Assurez-vous d'avoir une classe de formulaire appropriée, par exemple :
+
+```python
+# Dans forms.py
+from flask_wtf import FlaskForm
+from wtforms import StringField, TextAreaField
+from wtforms.validators import DataRequired
+
+class DocumentForm(FlaskForm):
+    title = StringField('Titre', validators=[DataRequired()])
+    content = TextAreaField('Contenu')
+    # Ajoutez tous les champs nécessaires selon votre modèle de document
+```
+
+Cette solution permet de :
+1. Créer un formulaire avec les données du document existant
+2. Traiter la soumission du formulaire
+3. Passer le formulaire au template pour que `{{ form.csrf_token }}` fonctionne correctement
+
+Le message d'erreur indique clairement que la variable `form` n'est pas disponible dans le contexte du template, alors qu'elle est nécessaire pour générer le jeton CSRF et probablement d'autres champs de formulaire.

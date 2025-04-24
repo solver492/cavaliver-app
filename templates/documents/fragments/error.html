@@ -1,0 +1,24 @@
+<!-- Fragment HTML pour les erreurs -->
+<div class="alert alert-danger">
+    <i class="fas fa-exclamation-circle"></i> 
+    <strong>Erreur</strong> - {{ error_message }}
+    <div class="mt-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary retry-action">
+            <i class="fas fa-sync"></i> Réessayer
+        </button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Ajouter un gestionnaire d'événements pour le bouton de réessai
+    const retryButtons = document.querySelectorAll('.retry-action');
+    retryButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Déclencher un événement personnalisé pour informer le script parent
+            const event = new CustomEvent('document-action-retry');
+            document.dispatchEvent(event);
+        });
+    });
+});
+</script>

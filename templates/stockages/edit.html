@@ -1,0 +1,389 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h1 class="display-5">Stockage {{ stockage.reference }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Tableau de bord</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('stockage.index') }}">Stockages</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ stockage.reference }}</li>
+                </ol>
+            </nav>
+            <div class="btn-toolbar mb-2 mb-md-0 float-right">
+                <div class="btn-group mr-2">
+                    <a href="{{ url_for('stockage.detail', id=stockage.id) }}" class="btn btn-sm btn-info">
+                        <i class="fas fa-eye"></i> Voir les détails
+                    </a>
+                    <a href="{{ url_for('stockage.create_invoice', id=stockage.id) }}" class="btn btn-sm btn-warning">
+                        <i class="fas fa-file-invoice-dollar"></i> Créer une facture
+                    </a>
+                    <a href="{{ url_for('stockage.toggle_archive', id=stockage.id) }}" class="btn btn-sm btn-secondary"
+                       onclick="return confirm('Êtes-vous sûr de vouloir {{ 'restaurer' if stockage.archive else 'archiver' }} ce stockage?')">
+                        <i class="fas fa-{{ 'undo' if stockage.archive else 'archive' }}"></i> {{ 'Restaurer' if stockage.archive else 'Archiver' }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-edit"></i> Modifier le stockage
+                </div>
+                <div class="card-body">
+                    <form method="post" id="stockageForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Informations générales</h5>
+                                
+                                <div class="form-group">
+                                    {{ form.client_id.label(class="form-control-label") }}
+                                    {{ form.client_id(class="form-control selectpicker", data_live_search="true") }}
+                                    {% if form.client_id.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.client_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    {{ form.reference.label(class="form-control-label") }}
+                                    {{ form.reference(class="form-control") }}
+                                    {% if form.reference.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.reference.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    {{ form.emplacement.label(class="form-control-label") }}
+                                    {{ form.emplacement(class="form-control") }}
+                                    {% if form.emplacement.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.emplacement.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    {{ form.statut.label(class="form-control-label") }}
+                                    {{ form.statut(class="form-control") }}
+                                    {% if form.statut.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.statut.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5 class="mb-3">Période et Finances</h5>
+                                
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        {{ form.date_debut.label(class="form-control-label") }}
+                                        {{ form.date_debut(class="form-control", type="date") }}
+                                        {% if form.date_debut.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.date_debut.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="form-group col-md-6">
+                                        {{ form.date_fin.label(class="form-control-label") }}
+                                        {{ form.date_fin(class="form-control", type="date") }}
+                                        <small class="form-text text-muted">Facultatif si durée indéterminée</small>
+                                        {% if form.date_fin.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.date_fin.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        {{ form.montant_mensuel.label(class="form-control-label") }}
+                                        <div class="input-group">
+                                            {{ form.montant_mensuel(class="form-control") }}
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">€</span>
+                                            </div>
+                                        </div>
+                                        {% if form.montant_mensuel.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.montant_mensuel.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="form-group col-md-6">
+                                        {{ form.caution.label(class="form-control-label") }}
+                                        <div class="input-group">
+                                            {{ form.caution(class="form-control") }}
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">€</span>
+                                            </div>
+                                        </div>
+                                        {% if form.caution.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.caution.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        {{ form.volume_total.label(class="form-control-label") }}
+                                        <div class="input-group">
+                                            {{ form.volume_total(class="form-control") }}
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">m³</span>
+                                            </div>
+                                        </div>
+                                        {% if form.volume_total.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.volume_total.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="form-group col-md-6">
+                                        {{ form.poids_total.label(class="form-control-label") }}
+                                        <div class="input-group">
+                                            {{ form.poids_total(class="form-control") }}
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">kg</span>
+                                            </div>
+                                        </div>
+                                        {% if form.poids_total.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.poids_total.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    {{ form.observations.label(class="form-control-label") }}
+                                    {{ form.observations(class="form-control", rows=4) }}
+                                    {% if form.observations.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.observations.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Enregistrer les modifications
+                            </button>
+                            <a href="{{ url_for('stockage.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Retour à la liste
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-5">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-boxes"></i> Articles stockés
+                    <span class="badge badge-light ml-2">{{ articles|length }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Article</th>
+                                    <th>Dimension</th>
+                                    <th>Qté</th>
+                                    <th>Vol/Poids</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in articles %}
+                                <tr{% if item.article.fragile %} class="table-warning"{% endif %}>
+                                    <td>
+                                        {{ item.article.nom }}
+                                        {% if item.article.fragile %}
+                                            <span class="badge badge-danger">Fragile</span>
+                                        {% endif %}
+                                        <div class="small text-muted">{{ item.article.categorie }}</div>
+                                    </td>
+                                    <td>{{ item.article.dimensions or '-' }}</td>
+                                    <td>{{ item.quantite }}</td>
+                                    <td>
+                                        {% if item.article.volume %}{{ item.article.volume|round(2) }} m³<br>{% endif %}
+                                        {% if item.article.poids %}{{ item.article.poids|round(2) }} kg{% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('stockage.remove_article', stockage_id=item.stockage_id, article_id=item.article_id) }}" class="btn btn-sm btn-danger" 
+                                           onclick="return confirm('Êtes-vous sûr de vouloir retirer cet article?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">Aucun article dans ce stockage.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="bg-light font-weight-bold">
+                                <tr>
+                                    <td colspan="2" class="text-right">Totaux:</td>
+                                    <td>{{ articles|sum(attribute='quantite') }}</td>
+                                    <td>
+                                        {{ stockage.volume_total|round(2) if stockage.volume_total else '0.00' }} m³<br>
+                                        {{ stockage.poids_total|round(2) if stockage.poids_total else '0.00' }} kg
+                                    </td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-plus-circle"></i> Ajouter un article
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('stockage.add_article') }}">
+                        {{ form_article.hidden_tag() }}
+                        <input type="hidden" name="stockage_id" value="{{ stockage.id }}">
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-8">
+                                {{ form_article.nom.label(class="form-control-label") }}
+                                {{ form_article.nom(class="form-control") }}
+                            </div>
+                            <div class="form-group col-md-4">
+                                {{ form_article.quantite.label(class="form-control-label") }}
+                                {{ form_article.quantite(class="form-control") }}
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                {{ form_article.categorie.label(class="form-control-label") }}
+                                {{ form_article.categorie(class="form-control") }}
+                            </div>
+                            <div class="form-group col-md-6">
+                                {{ form_article.dimensions.label(class="form-control-label") }}
+                                {{ form_article.dimensions(class="form-control", placeholder="LxlxH en cm") }}
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                {{ form_article.volume.label(class="form-control-label") }}
+                                <div class="input-group">
+                                    {{ form_article.volume(class="form-control") }}
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">m³</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-6">
+                                {{ form_article.poids.label(class="form-control-label") }}
+                                <div class="input-group">
+                                    {{ form_article.poids(class="form-control") }}
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">kg</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                {{ form_article.valeur_declaree.label(class="form-control-label") }}
+                                <div class="input-group">
+                                    {{ form_article.valeur_declaree(class="form-control") }}
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">€</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-6">
+                                {{ form_article.code_barre.label(class="form-control-label") }}
+                                {{ form_article.code_barre(class="form-control") }}
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            {{ form_article.description.label(class="form-control-label") }}
+                            {{ form_article.description(class="form-control", rows=2) }}
+                        </div>
+                        
+                        <div class="form-group form-check">
+                            {{ form_article.fragile(class="form-check-input") }}
+                            {{ form_article.fragile.label(class="form-check-label") }}
+                        </div>
+                        
+                        <div class="mt-2">
+                            <button type="submit" class="btn btn-success btn-block">
+                                <i class="fas fa-plus"></i> {{ form_article.submit.label.text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Activer les sélecteurs améliorés
+    $('.selectpicker').selectpicker();
+});
+</script>
+{% endblock %}

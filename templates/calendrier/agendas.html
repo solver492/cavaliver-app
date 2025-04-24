@@ -1,0 +1,379 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestion des agendas - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="agenda-container">
+    <div class="agenda-header">
+        <i class="fas fa-calendar-week"></i>
+        <h1>Mes Agendas</h1>
+    </div>
+    <div class="d-flex justify-content-end mb-4">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nouvelAgendaModal">
+            <i class="fas fa-plus"></i> Nouvel Agenda
+        </button>
+    </div>
+
+    <div class="row">
+        {% for agenda in agendas %}
+        <div class="col-md-4 mb-4">
+            <div class="agenda-card" data-type="{{ agenda.type_agenda }}" data-color="{{ agenda.couleur }}">
+                <div class="agenda-header agenda-type-{{ agenda.type_agenda }}">
+                    <div class="d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <h5 class="mb-0">
+                                {% if not est_proprietaire(agenda) %}
+                                    <i class="bi bi-share-fill text-primary me-2" title="Agenda partagé"></i>
+                                {% endif %}
+                                {{ agenda.nom }}
+                            </h5>
+                            {% if not est_proprietaire(agenda) %}
+                                <small class="text-muted">
+                                    Partagé par {{ agenda.user.prenom }} {{ agenda.user.nom }}
+                                </small>
+                            {% endif %}
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton{{ agenda.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                Paramètres
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton{{ agenda.id }}">
+                                <li>
+                                    <a href="{{ url_for('calendrier.voir_agenda', agenda_id=agenda.id) }}" class="dropdown-item">
+                                        <i class="bi bi-calendar-event"></i> Gérer
+                                    </a>
+                                </li>
+                                {% if est_proprietaire(agenda) %}
+                                    <li>
+                                        <a href="{{ url_for('calendrier.modifier_agenda', agenda_id=agenda.id) }}" class="dropdown-item">
+                                            <i class="bi bi-pencil"></i> Modifier
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ url_for('calendrier.partager_agenda', agenda_id=agenda.id) }}" class="dropdown-item">
+                                            <i class="bi bi-share"></i> Partager
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <form action="{{ url_for('calendrier.supprimer_agenda', agenda_id=agenda.id) }}" method="POST" style="display: inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet agenda ? Cette action est irréversible.')">
+                                                <i class="bi bi-trash"></i> Supprimer
+                                            </button>
+                                        </form>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="agenda-content">
+                    <ul class="agenda-events">
+                        {% if agenda.evenements %}
+                            {% set prochains_evenements = agenda.evenements.filter(and_(Evenement.date_debut >= now(), Evenement.archive == False)).order_by(Evenement.date_debut.asc()).limit(3).all() %}
+                            {% if prochains_evenements %}
+                                {% for evenement in prochains_evenements %}
+                                <li class="agenda-event">
+                                    <strong>{{ evenement.titre }}</strong>
+                                    <small class="text-muted d-block">{{ evenement.date_debut.strftime('%d/%m/%Y') }}</small>
+                                    {% if evenement.type_evenement %}
+                                        <small class="text-muted d-block">{{ evenement.type_evenement }}</small>
+                                    {% endif %}
+                                </li>
+                                {% endfor %}
+                            {% else %}
+                                <li class="text-muted text-center py-3">
+                                    Aucun événement programmé
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="text-muted text-center py-3">
+                                Aucun événement programmé
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal Nouvel Agenda -->
+<div class="modal fade" id="nouvelAgendaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nouvel Agenda</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('calendrier.nouveau_agenda') }}" method="POST" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nom" class="form-label">Nom de l'agenda <span class="text-danger">*</span></label>
+                        {{ form.nom(class="form-control", required=true) }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="type_agenda" class="form-label">Type d'agenda <span class="text-danger">*</span></label>
+                        {{ form.type_agenda(class="form-control", required=true) }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        {{ form.description(class="form-control", rows=3) }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Couleur</label>
+                        <div class="d-flex gap-2">
+                            <input type="color" name="couleur" class="form-control form-control-color" value="#3498db">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observations</label>
+                        <div id="observations-container">
+                            <div class="input-group mb-2">
+                                <input type="text" name="observations[]" class="form-control">
+                                <button type="button" class="btn btn-outline-danger" onclick="removeObservation(this)">
+                                    <i class="bi bi-dash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addObservation()">
+                            <i class="bi bi-plus"></i> Ajouter une observation
+                        </button>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Documents</label>
+                        <input type="file" class="form-control mb-2" name="documents[]" multiple>
+                        <small class="text-muted">Vous pouvez sélectionner plusieurs fichiers</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Modifier Agenda -->
+<div class="modal fade" id="modifierAgendaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Le contenu sera chargé dynamiquement -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nouvel Événement -->
+<div class="modal fade" id="nouvelEvenementModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nouvel Événement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="evenementForm">
+                    <input type="hidden" id="agenda_id" name="agenda_id">
+                    <div class="mb-3">
+                        <label class="form-label">Type d'événement</label>
+                        <select class="form-select" name="type_evenement" id="type_evenement" required>
+                            <option value="">Sélectionnez un type...</option>
+                            <option value="prestation">Prestation</option>
+                            <option value="stockage">Stockage</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Titre</label>
+                        <input type="text" class="form-control" name="titre" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Date de début</label>
+                                <input type="datetime-local" class="form-control" name="date_debut" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Date de fin</label>
+                                <input type="datetime-local" class="form-control" name="date_fin" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observations</label>
+                        <textarea class="form-control" name="observations" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Documents</label>
+                        <input type="file" class="form-control" name="documents" multiple>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" onclick="soumettreEvenement()">Créer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Partage Agenda -->
+<div class="modal fade" id="partageAgendaModal" tabindex="-1" aria-labelledby="partageAgendaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="partageAgendaModalLabel">
+                    <i class="bi bi-people-fill me-2"></i>Liste des commerciaux
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formPartageAgenda" method="POST">
+                    <!-- Message d'information -->
+                    <div class="alert alert-info mb-3" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Seuls les commerciaux actifs qui n'ont pas encore accès à cet agenda sont affichés.
+                    </div>
+                    
+                    <!-- Sélection du commercial -->
+                    <div class="mb-4">
+                        <label for="selectCommercial" class="form-label fw-bold">
+                            <i class="bi bi-person-badge me-2"></i>Sélectionner un commercial
+                        </label>
+                        <div class="position-relative">
+                            <select class="form-select form-select-lg" 
+                                    id="selectCommercial" 
+                                    name="user_id" 
+                                    required 
+                                    style="padding-left: 2.5rem;">
+                                <option value="">Choisir un commercial...</option>
+                            </select>
+                            <div class="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted">
+                                <i class="bi bi-search"></i>
+                            </div>
+                        </div>
+                        <div id="commercialHelp" class="form-text mt-2">
+                            <i class="bi bi-arrow-up-circle me-1"></i>
+                            Sélectionnez un commercial dans la liste pour partager l'agenda
+                        </div>
+                    </div>
+
+                    <!-- Boutons d'action -->
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-2"></i>Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-share me-2"></i>Partager
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+// Fonction pour partager un agenda
+function partagerAgenda(id) {
+    // Afficher la modal immédiatement
+    const modal = new bootstrap.Modal(document.getElementById('partageAgendaModal'));
+    modal.show();
+    
+    // Configurer le formulaire
+    const form = document.getElementById('formPartageAgenda');
+    form.action = '/agendas/' + id + '/partage';
+    
+    // Afficher un message de chargement
+    const select = document.getElementById('selectCommercial');
+    select.innerHTML = '<option value="">Chargement des commerciaux...</option>';
+    select.disabled = true;
+    
+    // Récupérer la liste des commerciaux
+    fetch('/agendas/' + id + '/partage')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération des commerciaux');
+            }
+            return response.json();
+        })
+        .then(commerciaux => {
+            select.disabled = false;
+            // Vider les options existantes
+            select.innerHTML = '<option value="">Choisir un commercial...</option>';
+            
+            if (commerciaux.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Aucun commercial disponible';
+                option.disabled = true;
+                select.appendChild(option);
+                // Désactiver le bouton de partage
+                form.querySelector('button[type="submit"]').disabled = true;
+                return;
+            }
+            
+            // Ajouter les commerciaux
+            commerciaux.forEach(commercial => {
+                const option = document.createElement('option');
+                option.value = commercial.id;
+                option.textContent = commercial.nom;
+                select.appendChild(option);
+            });
+            
+            // Activer le bouton de partage
+            form.querySelector('button[type="submit"]').disabled = false;
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            select.innerHTML = '<option value="">Erreur lors du chargement</option>';
+            select.disabled = true;
+            // Désactiver le bouton de partage
+            form.querySelector('button[type="submit"]').disabled = true;
+        });
+}
+</script>
+<script src="{{ url_for('static', filename='js/charger-transporteurs.js') }}"></script>
+<script src="{{ url_for('static', filename='js/agendas.js') }}"></script>
+<script src="{{ url_for('static', filename='js/agenda.js') }}"></script>
+<script>
+function addObservation() {
+    const container = document.getElementById('observations-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'input-group mb-2';
+    newRow.innerHTML = `
+        <input type="text" name="observations[]" class="form-control">
+        <button type="button" class="btn btn-outline-danger" onclick="removeObservation(this)">
+            <i class="bi bi-dash"></i>
+        </button>
+    `;
+    container.appendChild(newRow);
+}
+
+function removeObservation(button) {
+    button.closest('.input-group').remove();
+}
+
+function modifierAgenda(id) {
+    // Logique pour modifier l'agenda
+}
+
+function archiverAgenda(id) {
+    if (confirm('Êtes-vous sûr de vouloir archiver cet agenda ?')) {
+        window.location.href = '/agendas/' + id + '/archive';
+    }
+}
+
+
+</script>
+{% endblock %}

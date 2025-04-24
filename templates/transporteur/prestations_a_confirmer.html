@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Prestations à confirmer - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="prestation-page">
+    <div class="page-title">
+        <h1><i class="fas fa-check-circle"></i> Prestations à confirmer</h1>
+        <a href="{{ url_for('prestation.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Retour à mes prestations
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            {% set has_prestations = prestations|length > 0 %}
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="notification-flash">
+                        <div class="alert {% if prestations|length > 0 %}alert-warning{% else %}alert-info{% endif %} d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas {% if prestations|length > 0 %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} fa-2x me-3"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                {% if prestations|length > 0 %}
+                                    <h4 class="alert-heading">Prestations en attente de confirmation</h4>
+                                    <p class="mb-0">Vous avez <strong>{{ prestations|length }}</strong> prestation(s) en attente de confirmation. Veuillez les confirmer ou contacter l'administrateur si vous avez des questions.</p>
+                                {% else %}
+                                    <h4 class="alert-heading">Aucune prestation à confirmer</h4>
+                                    <p class="mb-0">Vous n'avez aucune prestation en attente de confirmation pour le moment.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if prestations|length > 0 %}
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>Client</th>
+                        <th>Date du00e9but</th>
+                        <th>Date fin</th>
+                        <th>Du00e9part</th>
+                        <th>Destination</th>
+                        <th>Type</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prestation in prestations %}
+                    <tr>
+                        <td>
+                            {% if prestation.client_principal %}
+                            <a href="{{ url_for('client.edit', id=prestation.client_principal.id) }}" class="text-primary">
+                                {{ prestation.client_principal.nom }} {{ prestation.client_principal.prenom }}
+                            </a>
+                            {% else %}
+                            <span class="text-muted">Client inconnu</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ prestation.date_debut.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ prestation.date_fin.strftime('%d/%m/%Y') }}</td>
+                        <td title="{{ prestation.adresse_depart }}">{{ prestation.adresse_depart|truncate(25, true) }}</td>
+                        <td title="{{ prestation.adresse_arrivee }}">{{ prestation.adresse_arrivee|truncate(25, true) }}</td>
+                        <td>{{ prestation.type_demenagement }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{{ url_for('transporteur.view_prestation', id=prestation.id) }}" class="btn btn-sm btn-outline-secondary" title="Voir les du00e9tails">
+                                    <i class="fas fa-eye"></i> Visualiser
+                                </a>
+                                <form method="POST" action="{{ url_for('transporteur.confirmer_prestation', id=prestation.id) }}" class="d-inline">
+                                    <input type="hidden" name="action" value="accept">
+                                    <button type="submit" class="btn btn-sm btn-success" title="Confirmer cette prestation" onclick="return confirm('u00cates-vous su00fbr de vouloir confirmer cette prestation ?')">
+                                        <i class="fas fa-check"></i> Confirmer
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('transporteur.confirmer_prestation', id=prestation.id) }}" class="d-inline">
+                                    <input type="hidden" name="action" value="refuse">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Refuser cette prestation" onclick="return confirm('u00cates-vous su00fbr de vouloir refuser cette prestation ?')">
+                                        <i class="fas fa-times"></i> Refuser
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

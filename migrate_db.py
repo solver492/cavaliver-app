@@ -1,46 +1,118 @@
-import sqlite3
-import os
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-def migrate_database():
+"""
+Script pour ajouter les colonnes manquantes aux tables de la base de données
+en utilisant SQLAlchemy
+"""
+
+import os
+import sys
+import logging
+from sqlalchemy import create_engine, text, MetaData, Table, Column, String, Text, DateTime, inspect
+from sqlalchemy.exc import OperationalError
+from app import create_app
+from extensions import db
+
+# Configuration du logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+def add_columns():
     """
-    Script pour migrer la base de données et ajouter les colonnes manquantes à la table prestation
+    Ajoute les colonnes manquantes aux tables de la base de données
+    en utilisant SQLAlchemy
     """
-    print("Début de la migration de la base de données...")
+    try:
+        # Créer l'application Flask pour accéder à la configuration de la base de données
+        app = create_app()
+        app.app_context().push()
+        
+        # Obtenir l'inspecteur pour vérifier les colonnes existantes
+        inspector = inspect(db.engine)
+        
+        # Vérifier les colonnes existantes dans la table prestation
+        columns = [col['name'] for col in inspector.get_columns('prestation')]
+        
+        # Liste des colonnes à ajouter à la table prestation
+        prestation_columns = [
+            {
+                "name": "status_transporteur",
+                "type": "VARCHAR(20)",
+                "default": "'en_attente'"
+            },
+            {
+                "name": "raison_refus",
+                "type": "TEXT",
+                "default": None
+            },
+            {
+                "name": "date_reponse",
+                "type": "DATETIME",
+                "default": None
+            },
+            {
+                "name": "createur_id",
+                "type": "INTEGER",
+                "default": None
+            },
+            {
+                "name": "modificateur_id",
+                "type": "INTEGER",
+                "default": None
+            },
+            {
+                "name": "stockage_id",
+                "type": "INTEGER",
+                "default": None
+            },
+            {
+                "name": "mode_groupage",
+                "type": "BOOLEAN",
+                "default": "0"
+            }
+        ]
+        
+        # Ajouter les colonnes manquantes à la table prestation
+        with db.engine.connect() as conn:
+            for column in prestation_columns:
+                name = column["name"]
+                col_type = column["type"]
+                default = column["default"]
+                
+                if name not in columns:
+                    logger.info(f"Ajout de la colonne {name} à la table prestation...")
+                    
+                    # Construire la requête SQL avec ou sans valeur par défaut
+                    if default is not None:
+                        sql = f"ALTER TABLE prestation ADD COLUMN {name} {col_type} DEFAULT {default}"
+                    else:
+                        sql = f"ALTER TABLE prestation ADD COLUMN {name} {col_type}"
+                    
+                    conn.execute(text(sql))
+                    conn.commit()
+                    logger.info(f"Colonne {name} ajoutée avec succès à la table prestation")
+                else:
+                    logger.info(f"La colonne {name} existe déjà dans la table prestation")
+        
+        return True
     
-    # Connexion à la base de données
-    conn = sqlite3.connect('demenage.db')
-    cursor = conn.cursor()
-    
-    # Vérifier la structure de la table prestation
-    cursor.execute("PRAGMA table_info(prestation)")
-    columns = cursor.fetchall()
-    column_names = [column[1] for column in columns]
-    
-    print("Structure actuelle de la table prestation:")
-    for column in columns:
-        print(f"- {column[1]} ({column[2]})")
-    
-    # Ajouter la colonne camion_type si elle n'existe pas
-    if 'camion_type' not in column_names:
-        print("Ajout de la colonne 'camion_type' à la table 'prestation'...")
-        cursor.execute("ALTER TABLE prestation ADD COLUMN camion_type TEXT")
-        conn.commit()
-        print("Colonne 'camion_type' ajoutée avec succès.")
-    else:
-        print("La colonne 'camion_type' existe déjà dans la table 'prestation'.")
-    
-    # Ajouter la colonne priorite si elle n'existe pas
-    if 'priorite' not in column_names:
-        print("Ajout de la colonne 'priorite' à la table 'prestation'...")
-        cursor.execute("ALTER TABLE prestation ADD COLUMN priorite INTEGER DEFAULT 0")
-        conn.commit()
-        print("Colonne 'priorite' ajoutée avec succès.")
-    else:
-        print("La colonne 'priorite' existe déjà dans la table 'prestation'.")
-    
-    # Fermer la connexion
-    conn.close()
-    print("Migration terminée avec succès.")
+    except Exception as e:
+        logger.error(f"Erreur lors de l'ajout des colonnes: {str(e)}")
+        return False
 
 if __name__ == "__main__":
-    migrate_database()
+    logger.info("Démarrage du script de migration...")
+    success = add_columns()
+    
+    if success:
+        logger.info("Migration terminée avec succès")
+    else:
+        logger.error("Échec de la migration")

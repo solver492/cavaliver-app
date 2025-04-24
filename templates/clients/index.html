@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestion des clients - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="client-page">
+    <div class="page-title">
+        <h1><i class="fas fa-users"></i> Gestion des clients</h1>
+        <div>
+            <a href="{{ url_for('client.liste') }}" class="btn btn-info me-2">
+                <i class="fas fa-th-large"></i> Vue Avancée
+            </a>
+            <a href="{{ url_for('client.add') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nouveau client
+            </a>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('client.index') }}" class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" name="query" id="client-search" class="form-control" placeholder="Rechercher un client..." value="{{ search_query }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="archive-toggle" name="archives" {% if show_archived %}checked{% endif %} onchange="this.form.submit()">
+                        <label class="form-check-label" for="archive-toggle">Afficher les clients archivés</label>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Prénom</th>
+                        <th>Type</th>
+                        <th>Adresse</th>
+                        <th>Ville</th>
+                        <th>Téléphone</th>
+                        <th>Email</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if clients %}
+                        {% for client in clients %}
+                            <tr {% if client.archive %}class="table-secondary"{% endif %}>
+                                <td>{{ client.nom }}</td>
+                                <td>{{ client.prenom }}</td>
+                                <td>{{ client.type_client }}</td>
+                                <td>{{ client.adresse|truncate(20) }}</td>
+                                <td>
+                                  {% if client.code_postal or client.ville %}
+                                    {{ client.code_postal }} {{ client.ville }}
+                                  {% endif %}
+                                </td>
+                                <td>{{ client.telephone }}</td>
+                                <td>{{ client.email }}</td>
+                                <td>{{ client.date_creation.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('client.details', id=client.id) }}" class="btn btn-outline-info" title="Fiche client">
+                                            <i class="fas fa-id-card"></i>
+                                        </a>
+                                        <a href="{{ url_for('documents.client_documents', client_id=client.id) }}" class="btn btn-outline-secondary" title="Documents">
+                                            <i class="fas fa-file-alt"></i>
+                                        </a>
+                                        <a href="{{ url_for('client.edit', id=client.id) }}" class="btn btn-outline-primary" title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form method="POST" action="{{ url_for('client.toggle_archive', id=client.id) }}" style="display:inline;">
+                                            <button type="submit" 
+                                                   class="btn btn-outline-{{ 'success' if client.archive else 'warning' }}" 
+                                                   title="{{ 'Désarchiver' if client.archive else 'Archiver' }}">
+                                                <i class="fas fa-{{ 'box-open' if client.archive else 'archive' }}"></i>
+                                            </button>
+                                        </form>
+                                        {% if current_user.is_admin() and not client.prestations and not client.factures %}
+                                            <form method="POST" action="{{ url_for('client.delete', id=client.id) }}" style="display:inline;" class="delete-client-form" data-client-name="{{ client.nom }} {{ client.prenom }}">
+                                                <button type="submit" 
+                                                       class="btn btn-outline-danger" 
+                                                       title="Supprimer">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center py-3">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fas fa-info-circle"></i> Aucun client n'a été ajouté pour le moment.
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/client.js') }}"></script>
+{% endblock %}

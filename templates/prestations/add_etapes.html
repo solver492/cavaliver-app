@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">
+        <i class="fas fa-map-marker-alt"></i> Ajouter des étapes
+    </h1>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-info-circle"></i> Détails de la prestation
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Client:</strong> {{ prestation.client_principal.nom }} {{ prestation.client_principal.prenom }}</p>
+                    <p><strong>Date de début:</strong> {{ prestation.date_debut.strftime('%d/%m/%Y') }}</p>
+                    <p><strong>Date de fin:</strong> {{ prestation.date_fin.strftime('%d/%m/%Y') }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Adresse de départ:</strong> {{ prestation.adresse_depart }}</p>
+                    <p><strong>Adresse d'arrivée:</strong> {{ prestation.adresse_arrivee }}</p>
+                    <p><strong>Type de déménagement:</strong> {{ prestation.type_demenagement }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <form method="POST" action="{{ url_for('prestation.add_etapes', id=prestation.id) }}">
+        <div class="row">
+            <!-- Étapes de départ -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-sign-out-alt"></i> Étapes de départ
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Ajoutez des étapes supplémentaires de départ.
+                        </div>
+                        
+                        <div id="etapes-depart-container">
+                            {% if etapes_depart %}
+                                {% for etape in etapes_depart %}
+                                <div class="input-group mb-2 etape-depart-group">
+                                    <input type="text" name="etape_depart[]" class="form-control" value="{{ etape }}" placeholder="Adresse de l'étape">
+                                    <button type="button" class="btn btn-danger remove-etape">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                            <div class="input-group mb-2 etape-depart-group">
+                                <input type="text" name="etape_depart[]" class="form-control" placeholder="Adresse de l'étape">
+                                <button type="button" class="btn btn-danger remove-etape">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button type="button" id="add-etape-depart" class="btn btn-outline-success btn-sm mt-2">
+                            <i class="fas fa-plus-circle"></i> Ajouter une étape de départ
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Étapes d'arrivée -->
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-sign-in-alt"></i> Étapes d'arrivée
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Ajoutez des étapes supplémentaires d'arrivée.
+                        </div>
+                        
+                        <div id="etapes-arrivee-container">
+                            {% if etapes_arrivee %}
+                                {% for etape in etapes_arrivee %}
+                                <div class="input-group mb-2 etape-arrivee-group">
+                                    <input type="text" name="etape_arrivee[]" class="form-control" value="{{ etape }}" placeholder="Adresse de l'étape">
+                                    <button type="button" class="btn btn-danger remove-etape">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                            <div class="input-group mb-2 etape-arrivee-group">
+                                <input type="text" name="etape_arrivee[]" class="form-control" placeholder="Adresse de l'étape">
+                                <button type="button" class="btn btn-danger remove-etape">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button type="button" id="add-etape-arrivee" class="btn btn-outline-danger btn-sm mt-2">
+                            <i class="fas fa-plus-circle"></i> Ajouter une étape d'arrivée
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Enregistrer
+                </button>
+                <a href="{{ url_for('prestation.view', id=prestation.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Annuler
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Ajouter une étape de départ
+        $('#add-etape-depart').click(function() {
+            var newEtape = `
+                <div class="input-group mb-2 etape-depart-group">
+                    <input type="text" name="etape_depart[]" class="form-control" placeholder="Adresse de l'étape">
+                    <button type="button" class="btn btn-danger remove-etape">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            $('#etapes-depart-container').append(newEtape);
+        });
+        
+        // Ajouter une étape d'arrivée
+        $('#add-etape-arrivee').click(function() {
+            var newEtape = `
+                <div class="input-group mb-2 etape-arrivee-group">
+                    <input type="text" name="etape_arrivee[]" class="form-control" placeholder="Adresse de l'étape">
+                    <button type="button" class="btn btn-danger remove-etape">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            $('#etapes-arrivee-container').append(newEtape);
+        });
+        
+        // Supprimer une étape
+        $(document).on('click', '.remove-etape', function() {
+            $(this).closest('.input-group').remove();
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

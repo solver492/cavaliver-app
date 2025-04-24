@@ -1,63 +1,28 @@
-from app import app, db, User
-from datetime import datetime
+from app import create_app
+from extensions import db
+from models import User
+from werkzeug.security import generate_password_hash
 
-def create_admin_user():
-    """Créer un utilisateur admin par défaut si aucun n'existe"""
+def create_super_admin():
+    app = create_app()
     with app.app_context():
-        # Vérifier si un utilisateur admin existe déjà
-        admin = User.query.filter_by(role='admin').first()
-        
+        # Vérifier si l'admin existe déjà
+        admin = User.query.filter_by(username='admin').first()
         if not admin:
-            # Créer un utilisateur admin
             admin = User(
                 username='admin',
-                email='admin@cavalier.com',
                 nom='Admin',
-                prenom='Cavalier',
+                prenom='Super',
+                email='admin@example.com',
                 role='admin',
-                statut='actif',
-                date_creation=datetime.utcnow()
+                statut='actif'
             )
-            admin.set_password('admin123')
-            
+            admin.password_hash = generate_password_hash('admin123')
             db.session.add(admin)
-            
-            # Créer un utilisateur commercial
-            commercial = User(
-                username='commercial',
-                email='commercial@cavalier.com',
-                nom='Commercial',
-                prenom='Cavalier',
-                role='commercial',
-                statut='actif',
-                date_creation=datetime.utcnow()
-            )
-            commercial.set_password('commercial123')
-            
-            db.session.add(commercial)
-            
-            # Créer un utilisateur transporteur
-            transporteur = User(
-                username='transporteur',
-                email='transporteur@cavalier.com',
-                nom='Transporteur',
-                prenom='Cavalier',
-                role='transporteur',
-                statut='actif',
-                vehicule='Fourgon 12m³',
-                date_creation=datetime.utcnow()
-            )
-            transporteur.set_password('transporteur123')
-            
-            db.session.add(transporteur)
-            
             db.session.commit()
-            print("Utilisateurs par défaut créés avec succès!")
-            print("Admin: username='admin', password='admin123'")
-            print("Commercial: username='commercial', password='commercial123'")
-            print("Transporteur: username='transporteur', password='transporteur123'")
+            print("Super admin créé avec succès!")
         else:
-            print("Un utilisateur admin existe déjà.")
+            print("L'admin existe déjà!")
 
 if __name__ == '__main__':
-    create_admin_user()
+    create_super_admin()

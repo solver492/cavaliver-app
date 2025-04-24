@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier un document - {{ config.APP_NAME }}{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <!-- Inclure Summernote pour l'éditeur de texte enrichi -->
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/lang/summernote-fr-FR.min.js"></script>
+    <style>
+        .note-editor .dropdown-toggle::after {
+            display: none;
+        }
+        .note-editor .note-btn {
+            background-color: #f8f9fa;
+            border-color: #ddd;
+        }
+        .note-editor.note-frame {
+            border-color: #ced4da;
+            border-radius: 0.25rem;
+        }
+        .note-editor .note-toolbar {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #ced4da;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1><i class="fas fa-edit"></i> Modifier un document</h1>
+            <p class="text-muted">
+                {% if document.prestation %}
+                Prestation: <a href="{{ url_for('prestation.edit', prestation_id=document.prestation_id) }}">{{ document.prestation.reference }}</a> |
+                {% endif %}
+                {% if document.client %}
+                Client: <a href="{{ url_for('client.view', client_id=document.client_id) }}">{{ document.client.nom }} {{ document.client.prenom }}</a> |
+                {% endif %}
+                Date d'ajout: {{ document.date_upload.strftime('%d/%m/%Y') }}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if document.prestation_id %}
+            <a href="{{ url_for('prestation.edit', prestation_id=document.prestation_id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour à la prestation
+            </a>
+            {% elif document.client_id %}
+            <a href="{{ url_for('document.client_documents', client_id=document.client_id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour aux documents du client
+            </a>
+            {% else %}
+            <a href="{{ url_for('document.list_documents') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour à la liste des documents
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-file-alt"></i> Informations du document</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.csrf_token }}
+                        
+                        <div class="mb-3">
+                            <label for="nom" class="form-label">{{ form.nom.label.text }}</label>
+                            {{ form.nom(class="form-control" + (" is-invalid" if form.nom.errors else ""), id="nom") }}
+                            {% for error in form.nom.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="type" class="form-label">{{ form.type.label.text }}</label>
+                            {{ form.type(class="form-select" + (" is-invalid" if form.type.errors else ""), id="type") }}
+                            {% for error in form.type.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">{{ form.description.label.text }}</label>
+                            {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), id="description", rows=4) }}
+                            {% for error in form.description.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="observations_supplementaires" class="form-label">Observations supplémentaires</label>
+                            {{ form.observations_supplementaires(class="form-control summernote" + (" is-invalid" if form.observations_supplementaires.errors else ""), id="observations_supplementaires", rows=6) }}
+                            {% for error in form.observations_supplementaires.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <small class="form-text text-muted">Utilisez l'éditeur pour ajouter des observations détaillées, des commentaires ou des informations complémentaires.</small>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Enregistrer les modifications
+                            </button>
+                            
+                            <a href="{{ url_for('document.download_document', document_id=document.id) }}" class="btn btn-outline-primary">
+                                <i class="fas fa-download"></i> Télécharger le fichier
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Détails du document</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Format</span>
+                            <span class="badge bg-secondary">{{ document.format or 'Non spécifié' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Taille</span>
+                            <span>{{ (document.taille / 1024)|round(1) }} KB</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Date d'ajout</span>
+                            <span>{{ document.date_upload.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Ajouté par</span>
+                            <span>{{ document.user.nom }} {{ document.user.prenom }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0 text-danger"><i class="fas fa-trash-alt"></i> Zone de danger</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">La suppression d'un document est irréversible.</p>
+                    <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="fas fa-trash-alt"></i> Supprimer ce document
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmer la suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer définitivement le document <strong>{{ document.nom }}</strong> ?</p>
+                <p class="text-danger">Cette action est irréversible.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form action="{{ url_for('document.delete_document', document_id=document.id) }}" method="POST" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Supprimer définitivement</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+    {{ super() }}
+    <script>
+        $(document).ready(function() {
+            // Initialiser l'éditeur Summernote pour les observations supplémentaires
+            $('#observations_supplementaires').summernote({
+                lang: 'fr-FR',
+                height: 200,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'underline', 'clear']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['table', ['table']],
+                    ['insert', ['link']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ],
+                placeholder: 'Saisissez vos observations supplémentaires ici...',
+                callbacks: {
+                    onImageUpload: function(files) {
+                        // Afficher un message d'erreur si l'utilisateur tente d'uploader une image
+                        alert('L\'upload d\'images n\'est pas pris en charge dans cet éditeur. Veuillez utiliser le gestionnaire de documents pour ajouter des images.');
+                    }
+                }
+            });
+            
+            // Gestion du modal de suppression
+            $('#deleteModal').on('show.bs.modal', function (e) {
+                // Animation ou effet visuel pour le modal
+                $(this).find('.modal-content').addClass('border-danger');
+            });
+        });
+    </script>
+{% endblock %}

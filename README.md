@@ -1,356 +1,136 @@
-# Documentation de Migration - Application de Gestion de Déménagement
+# R-Cavalier App
 
-## Table des matières
-1. [Prérequis](#prérequis)
-2. [Structure du Projet](#structure-du-projet)
-3. [Installation](#installation)
-4. [Configuration](#configuration)
-5. [Migration de la Base de Données](#migration-de-la-base-de-données)
-6. [Déploiement](#déploiement)
-7. [Maintenance](#maintenance)
-8. [Correction de la Base de Données sur Render](#correction-de-la-base-de-données-sur-render)
+Application web de gestion pour entreprise de du00e9mu00e9nagement, permettant la gestion des clients, prestations, transporteurs, facturation et plus encore.
 
-## Prérequis
+![Dashboard R-Cavalier](static/img/dashboard-preview.png)
 
-- Python 3.8 ou supérieur
-- pip (gestionnaire de paquets Python)
-- SQLite 3
-- Serveur Web (Apache ou Nginx)
-- Git
+## Fonctionnalitu00e9s principales
 
-## Structure du Projet
+- **Gestion des clients** : ajout, modification, visualisation et recherche de clients
+- **Gestion des prestations** : planification des du00e9mu00e9nagements avec attribution des transporteurs
+- **Interface transporteur** : vue du00e9diu00e9e pour confirmer et suivre les prestations assignu00e9es
+- **Facturation** : gu00e9nu00e9ration et suivi des factures pour les prestations
+- **Tableau de bord** : visualisation des statistiques et activitu00e9s ru00e9centes
+- **Calendrier** : planification et vue d'ensemble des prestations sur un calendrier interactif
+- **Notifications** : systu00e8me de notifications entre commerciaux et transporteurs
 
-```
-demenage/
-├── app.py              # Application principale Flask
-├── models.py           # Modèles de base de données
-├── forms.py            # Formulaires WTForms
-├── utils.py           # Utilitaires (génération PDF, etc.)
-├── requirements.txt    # Dépendances Python
-├── static/            # Fichiers statiques
-│   ├── css/
-│   ├── js/
-│   └── img/
-└── templates/         # Templates Jinja2
-    ├── base.html
-    ├── dashboard.html
-    ├── clients/
-    ├── prestations/
-    └── users/
-```
+## Pru00e9requis
+
+- Python 3.12+
+- Pip (gestionnaire de paquets Python)
+- Navigateur web moderne
 
 ## Installation
 
-1. Cloner le repository :
+### 1. Cloner le du00e9pu00f4t
+
 ```bash
-git clone [URL_DU_REPO]
-cd demenage
+git clone https://github.com/solver492/R-cavalier-app.git
+cd R-cavalier-app
 ```
 
-2. Créer un environnement virtuel :
+### 2. Cru00e9er un environnement virtuel
+
 ```bash
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
 ```
 
-3. Installer les dépendances :
+### 3. Activer l'environnement virtuel
+
+Sous Windows :
+```bash
+venv\Scripts\activate
+```
+
+Sous macOS/Linux :
+```bash
+source venv/bin/activate
+```
+
+### 4. Installer les du00e9pendances
+
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Initialiser la base de données :
-```bash
-python init_db.py
-```
-
-## Configuration
-
-1. Configuration de la base de données :
-```python
-# app.py
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///demenagement.db'  # SQLite
-# ou
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://user:password@localhost/demenagement'  # MySQL
-```
-
-2. Configuration de la clé secrète :
-```python
-# app.py
-app.secret_key = 'votre_nouvelle_cle_secrete'  # À changer en production
-```
-
-3. Variables d'environnement (créer un fichier .env) :
-```
-FLASK_APP=app.py
-FLASK_ENV=production
-DATABASE_URL=mysql://user:password@localhost/demenagement
-SECRET_KEY=votre_nouvelle_cle_secrete
-```
-
-## Lancement de l'application
-
-1. Activer l'environnement virtuel (si ce n'est pas déjà fait)
-2. Lancer l'application :
-```bash
-python app.py
-```
-3. Ouvrir un navigateur et aller à l'adresse : http://localhost:8000
-
-## Identifiants par défaut
-
-- Nom d'utilisateur : admin
-- Mot de passe : admin
-
-## Migration de la Base de Données
-
-1. Initialiser les migrations :
-```bash
-flask db init
-```
-
-2. Créer la première migration :
-```bash
-flask db migrate -m "Initial migration"
-```
-
-3. Appliquer les migrations :
-```bash
-flask db upgrade
-```
-
-4. Pour les futures migrations :
-```bash
-# Après modification des modèles
-flask db migrate -m "Description des changements"
-flask db upgrade
-```
-
-## Déploiement
-
-### Option 1 : Apache avec mod_wsgi
-
-1. Installer mod_wsgi :
-```bash
-apt-get install apache2 libapache2-mod-wsgi-py3  # Debian/Ubuntu
-```
-
-2. Configuration Apache (créer /etc/apache2/sites-available/demenagement.conf) :
-```apache
-<VirtualHost *:80>
-    ServerName votre-domaine.com
-    
-    WSGIDaemonProcess demenagement python-path=/chemin/vers/venv/lib/python3.8/site-packages
-    WSGIProcessGroup demenagement
-    WSGIScriptAlias / /chemin/vers/app.wsgi
-    
-    <Directory /chemin/vers/demenagement>
-        Require all granted
-    </Directory>
-</VirtualHost>
-```
-
-3. Créer le fichier WSGI (app.wsgi) :
-```python
-import sys
-sys.path.insert(0, '/chemin/vers/demenagement')
-
-from app import app as application
-```
-
-### Option 2 : Nginx avec Gunicorn
-
-1. Installer Gunicorn :
-```bash
-pip install gunicorn
-```
-
-2. Configuration Nginx (créer /etc/nginx/sites-available/demenagement) :
-```nginx
-server {
-    listen 80;
-    server_name votre-domaine.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-3. Lancer Gunicorn :
-```bash
-gunicorn -w 4 -b 127.0.0.1:8000 app:app
-```
-
-## Maintenance
-
-### Sauvegardes
-
-1. Base de données SQLite :
-```bash
-# Sauvegarde
-sqlite3 demenagement.db .dump > backup.sql
-
-# Restauration
-sqlite3 demenagement.db < backup.sql
-```
-
-2. Base de données MySQL :
-```bash
-# Sauvegarde
-mysqldump -u user -p demenagement > backup.sql
-
-# Restauration
-mysql -u user -p demenagement < backup.sql
-```
-
-### Logs
-
-1. Configuration des logs dans app.py :
-```python
-import logging
-logging.basicConfig(
-    filename='app.log',
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s: %(message)s'
-)
-```
-
-2. Rotation des logs (logrotate) :
-```
-/chemin/vers/demenagement/app.log {
-    daily
-    rotate 7
-    compress
-    delaycompress
-    missingok
-    notifempty
-}
-```
-
-### Mise à jour
-
-1. Sauvegarder les données :
-```bash
-# Backup base de données
-sqlite3 demenagement.db .dump > backup.sql
-
-# Backup fichiers de configuration
-cp .env .env.backup
-```
-
-2. Mettre à jour le code :
-```bash
-git pull origin main
-```
-
-3. Mettre à jour les dépendances :
-```bash
-pip install -r requirements.txt --upgrade
-```
-
-4. Appliquer les migrations :
-```bash
-flask db upgrade
-```
-
-5. Redémarrer le serveur :
-```bash
-# Apache
-sudo service apache2 restart
-
-# ou Gunicorn
-sudo systemctl restart gunicorn
-```
-
-### Surveillance
-
-1. Mettre en place une surveillance des processus avec Supervisor :
-```ini
-[program:demenagement]
-command=/chemin/vers/venv/bin/gunicorn -w 4 -b 127.0.0.1:8000 app:app
-directory=/chemin/vers/demenagement
-user=www-data
-autostart=true
-autorestart=true
-stderr_logfile=/var/log/demenagement/err.log
-stdout_logfile=/var/log/demenagement/out.log
-```
-
-2. Surveiller les performances :
-```bash
-# Installation de New Relic
-pip install newrelic
-
-# Configuration
-newrelic-admin generate-config YOUR_LICENSE_KEY newrelic.ini
-```
-
-## Correction de la Base de Données sur Render
-
-L'application peut rencontrer des problèmes sur Render en raison de colonnes ou tables manquantes dans la base de données. Deux scripts ont été créés pour résoudre ces problèmes :
-
-### Option 1 : Correction manuelle via le Shell Render (nécessite un abonnement)
-
-Si vous avez accès au shell Render (fonctionnalité payante), vous pouvez exécuter directement :
+### 5. Initialiser la base de donnu00e9es
 
 ```bash
-cd /opt/render/project/src/
-python fix_render_db.py
+python update_db.py
 ```
 
-Ce script va :
-- Vérifier les tables existantes
-- Ajouter les colonnes manquantes (societe, montant, tags dans la table prestation et tags dans la table client)
-- Créer la table facture si elle n'existe pas
-- Initialiser un utilisateur admin si nécessaire
-
-### Option 2 : Utilisation de l'API Render (gratuit)
-
-Si vous n'avez pas d'abonnement Render avec accès au shell, vous pouvez utiliser l'API Render pour exécuter le script de correction :
-
-1. Assurez-vous d'avoir une clé API Render (créée dans les paramètres de votre compte)
-2. Exécutez le script d'automatisation localement :
+### 6. Lancer l'application
 
 ```bash
-# Installez d'abord les dépendances
-pip install requests
-
-# Exécutez le script (assurez-vous de mettre à jour l'ID de service dans le script)
-python render_api_deploy.py
+python main.py
 ```
 
-Le script `render_api_deploy.py` va :
-- Se connecter à l'API Render avec votre clé
-- Exécuter le script de correction de base de données sur votre service
-- Déclencher un redéploiement de l'application
-- Suivre le statut du déploiement
+L'application sera accessible u00e0 l'adresse [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
-### Colonnes et tables manquantes connues
+## Version des du00e9pendances
 
-Les problèmes suivants ont été identifiés et sont gérés par les scripts de correction :
+Les versions spu00e9cifiques des du00e9pendances requises sont :
 
-1. Colonnes manquantes dans la table prestation :
-   - societe
-   - montant
-   - tags
-   - trajet_depart
-   - trajet_destination
-   - requires_packaging
-   - demenagement_type
-   - camion_type
-   - priorite
+- SQLAlchemy 2.0.40
+- Flask-SQLAlchemy 3.1.1
+- Flask-Login 0.6.3
+- Flask-WTF 1.2.2
 
-2. Colonnes manquantes dans la table client :
-   - tags
-   - client_type
+## Structure du projet
 
-3. Tables manquantes :
-   - facture
-   - ligne_facture
+Consultez le fichier [DOCUMENTATION.md](DOCUMENTATION.md) pour une description du00e9taillu00e9e de l'architecture et des modules de l'application.
 
-Le code de l'application a été adapté pour gérer ces absences, mais les scripts de correction permettent de rétablir la structure complète de la base de données.
+## Utilisateurs par du00e9faut
 
-Pour toute question ou assistance supplémentaire, veuillez contacter l'équipe de support.
+Apru00e8s l'initialisation de la base de donnu00e9es, un compte administrateur est cru00e9u00e9 par du00e9faut :
+
+- **Nom d'utilisateur** : admin
+- **Mot de passe** : password
+
+## Du00e9ploiement sur Render
+
+### 1. Cru00e9er un compte Render
+
+Si vous n'avez pas encore de compte, inscrivez-vous sur [render.com](https://render.com/).
+
+### 2. Cru00e9er un nouveau service Web
+
+1. Dans votre tableau de bord Render, cliquez sur "New" puis "Web Service"
+2. Connectez votre du00e9pu00f4t GitHub contenant l'application R-Cavalier
+3. Donnez un nom u00e0 votre service (par exemple "r-cavalier-app")
+
+### 3. Configurer le service
+
+Utilisez les paramu00e8tres suivants :
+
+- **Environment** : Python 3
+- **Build Command** : `pip install -r requirements.txt`
+- **Start Command** : `gunicorn main:app`
+
+### 4. Ajouter les variables d'environnement
+
+Dans la section "Environment Variables", ajoutez :
+
+- `FLASK_ENV` : production
+- `SESSION_SECRET` : [gu00e9nu00e9rer une clu00e9 secru00e8te alu00e9atoire]
+- `DATABASE_URL` : [URL de votre base de donnu00e9es PostgreSQL]
+
+### 5. Configurer la base de donnu00e9es PostgreSQL
+
+1. Dans Render, cru00e9ez un nouveau service PostgreSQL
+2. Connectez votre service web u00e0 cette base de donnu00e9es
+3. Utilisez l'URL de connexion fournie comme valeur pour `DATABASE_URL`
+
+### 6. Du00e9ployer l'application
+
+Cliquez sur "Create Web Service" et attendez que le du00e9ploiement soit terminu00e9.
+
+## Licence
+
+Ce projet est sous licence [MIT](LICENSE).
+
+## Contact
+
+Pour toute question ou suggestion, veuillez contacter :
+- Email : contact@r-cavalier.com
+- Site web : [www.r-cavalier.com](https://www.r-cavalier.com)

@@ -1,0 +1,103 @@
+
+OperationalError
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: prestation.agenda_id
+[SQL: SELECT count(*) AS count_1 
+FROM (SELECT prestation.id AS prestation_id, prestation.client_id AS prestation_client_id, prestation.commercial_id AS prestation_commercial_id, prestation.transporteur_id AS prestation_transporteur_id, prestation.vehicule_id AS prestation_vehicule_id, prestation.date_debut AS prestation_date_debut, prestation.date_fin AS prestation_date_fin, prestation.adresse_depart AS prestation_adresse_depart, prestation.adresse_arrivee AS prestation_adresse_arrivee, prestation.type_demenagement AS prestation_type_demenagement, prestation.type_demenagement_id AS prestation_type_demenagement_id, prestation.statut AS prestation_statut, prestation.priorite AS prestation_priorite, prestation.status_transporteur AS prestation_status_transporteur, prestation.raison_refus AS prestation_raison_refus, prestation.date_reponse AS prestation_date_reponse, prestation.observations AS prestation_observations, prestation.archive AS prestation_archive, prestation.date_creation AS prestation_date_creation, prestation.date_modification AS prestation_date_modification, prestation.createur_id AS prestation_createur_id, prestation.modificateur_id AS prestation_modificateur_id, prestation.stockage_id AS prestation_stockage_id, prestation.agenda_id AS prestation_agenda_id, prestation.mode_groupage AS prestation_mode_groupage, prestation.tags AS prestation_tags, prestation.societe AS prestation_societe, prestation.montant AS prestation_montant 
+FROM prestation 
+WHERE prestation.archive = 0) AS anon_1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+Traceback (most recent call last)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+self.dialect.do_execute(
+^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+cursor.execute(statement, parameters)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The above exception was the direct cause of the following exception:
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 2213, in __call__
+return self.wsgi_app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/werkzeug/middleware/proxy_fix.py", line 182, in __call__
+return self.app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 2193, in wsgi_app
+response = self.handle_exception(e)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 2190, in wsgi_app
+response = self.full_dispatch_request()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1486, in full_dispatch_request
+rv = self.handle_user_exception(e)
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1484, in full_dispatch_request
+rv = self.dispatch_request()
+     ^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1469, in dispatch_request
+return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_login/utils.py", line 290, in decorated_view
+return current_app.ensure_sync(func)(*args, **kwargs)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/routes/dashboard.py", line 21, in index
+prestations_count = Prestation.query.filter_by(archive=False).count()
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 3147, in count
+self._legacy_from_self(col).enable_eagerloads(False).scalar()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2836, in scalar
+ret = self.one()
+      ^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2809, in one
+return self._iter().one()  # type: ignore
+       ^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2858, in _iter
+result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                              
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+return self._execute_internal(
+       
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+result: Result[Any] = compile_state_cls.orm_execute_statement(
+                      
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+result = conn.execute(
+         
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+return meth(
+       
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 523, in _execute_on_connection
+return connection._execute_clauseelement(
+       
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1638, in _execute_clauseelement
+ret = self._execute_context(
+      
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1843, in _execute_context
+return self._exec_single_context(
+       
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1983, in _exec_single_context
+self._handle_dbapi_exception(
+^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2352, in _handle_dbapi_exception
+raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+self.dialect.do_execute(
+^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 945, in do_execute
+cursor.execute(statement, parameters)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: prestation.agenda_id
+[SQL: SELECT count(*) AS count_1
+FROM (SELECT prestation.id AS prestation_id, prestation.client_id AS prestation_client_id, prestation.commercial_id AS prestation_commercial_id, prestation.transporteur_id AS prestation_transporteur_id, prestation.vehicule_id AS prestation_vehicule_id, prestation.date_debut AS prestation_date_debut, prestation.date_fin AS prestation_date_fin, prestation.adresse_depart AS prestation_adresse_depart, prestation.adresse_arrivee AS prestation_adresse_arrivee, prestation.type_demenagement AS prestation_type_demenagement, prestation.type_demenagement_id AS prestation_type_demenagement_id, prestation.statut AS prestation_statut, prestation.priorite AS prestation_priorite, prestation.status_transporteur AS prestation_status_transporteur, prestation.raison_refus AS prestation_raison_refus, prestation.date_reponse AS prestation_date_reponse, prestation.observations AS prestation_observations, prestation.archive AS prestation_archive, prestation.date_creation AS prestation_date_creation, prestation.date_modification AS prestation_date_modification, prestation.createur_id AS prestation_createur_id, prestation.modificateur_id AS prestation_modificateur_id, prestation.stockage_id AS prestation_stockage_id, prestation.agenda_id AS prestation_agenda_id, prestation.mode_groupage AS prestation_mode_groupage, prestation.tags AS prestation_tags, prestation.societe AS prestation_societe, prestation.montant AS prestation_montant
+FROM prestation
+WHERE prestation.archive = 0) AS anon_1]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+The debugger caught an exception in your WSGI application. You can now look at the traceback which led to the error.
+To switch between the interactive traceback and the plaintext one, you can click on the "Traceback" headline. From the text traceback you can also create a paste of it. For code execution mouse-over the frame you want to debug and click on the console icon on the right side.
+
+You can execute arbitrary Python code in the stack frames and there are some extra helpers available for introspection:
+
+dump() shows all variables in the frame
+dump(obj) dumps all that's known about the object
+Brought to you by DON'T PANIC, your friendly Werkzeug powered traceback interpreter.

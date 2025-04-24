@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h1 class="display-5">Nouveau Stockage</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Tableau de bord</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('stockage.index') }}">Stockages</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Nouveau</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-plus-circle"></i> Ajouter un stockage
+                </div>
+                <div class="card-body">
+                    <form method="post" id="stockageForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4 class="mb-3">Informations générales</h4>
+                                
+                                <div class="form-group">
+                                    {{ form.client_id.label(class="form-control-label") }}
+                                    {{ form.client_id(class="form-control selectpicker", data_live_search="true") }}
+                                    {% if form.client_id.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.client_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    {{ form.reference.label(class="form-control-label") }}
+                                    {{ form.reference(class="form-control") }}
+                                    {% if form.reference.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.reference.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    {{ form.emplacement.label(class="form-control-label") }}
+                                    {{ form.emplacement(class="form-control") }}
+                                    {% if form.emplacement.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.emplacement.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    {{ form.statut.label(class="form-control-label") }}
+                                    {{ form.statut(class="form-control") }}
+                                    {% if form.statut.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.statut.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h4 class="mb-3">Période et Finances</h4>
+                                
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        {{ form.date_debut.label(class="form-control-label") }}
+                                        {{ form.date_debut(class="form-control", type="date") }}
+                                        {% if form.date_debut.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.date_debut.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="form-group col-md-6">
+                                        {{ form.date_fin.label(class="form-control-label") }}
+                                        {{ form.date_fin(class="form-control", type="date") }}
+                                        <small class="form-text text-muted">Facultatif si durée indéterminée</small>
+                                        {% if form.date_fin.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.date_fin.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        {{ form.montant_mensuel.label(class="form-control-label") }}
+                                        <div class="input-group">
+                                            {{ form.montant_mensuel(class="form-control") }}
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">€</span>
+                                            </div>
+                                        </div>
+                                        {% if form.montant_mensuel.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.montant_mensuel.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="form-group col-md-6">
+                                        {{ form.caution.label(class="form-control-label") }}
+                                        <div class="input-group">
+                                            {{ form.caution(class="form-control") }}
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">€</span>
+                                            </div>
+                                        </div>
+                                        {% if form.caution.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.caution.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        {{ form.volume_total.label(class="form-control-label") }}
+                                        <div class="input-group">
+                                            {{ form.volume_total(class="form-control") }}
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">m³</span>
+                                            </div>
+                                        </div>
+                                        {% if form.volume_total.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.volume_total.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="form-group col-md-6">
+                                        {{ form.poids_total.label(class="form-control-label") }}
+                                        <div class="input-group">
+                                            {{ form.poids_total(class="form-control") }}
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">kg</span>
+                                            </div>
+                                        </div>
+                                        {% if form.poids_total.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.poids_total.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    {{ form.observations.label(class="form-control-label") }}
+                                    {{ form.observations(class="form-control", rows=4) }}
+                                    {% if form.observations.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.observations.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Enregistrer
+                            </button>
+                            <a href="{{ url_for('stockage.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Annuler
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Activer les sélecteurs améliorés
+    $('.selectpicker').selectpicker();
+    
+    // Générer une référence unique au chargement si le champ est vide
+    if ($('#reference').val() === '') {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        
+        // Générer un nombre aléatoire à 3 chiffres
+        const random = Math.floor(Math.random() * 900) + 100;
+        
+        // Formater la référence: STK-YYYYMMDD-RRR
+        const reference = `STK-${year}${month}${day}-${random}`;
+        
+        $('#reference').val(reference);
+    }
+});
+</script>
+{% endblock %}

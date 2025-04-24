@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier une facture - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="facture-page">
+    <div class="page-title">
+        <h1><i class="fas fa-edit"></i> Modifier une facture</h1>
+        <a href="{{ url_for('facture.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="client_id" class="form-label">{{ form.client_id.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.client_id(class="form-control" + (" is-invalid" if form.client_id.errors else ""), id="client_id") }}
+                        {% for error in form.client_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="statut" class="form-label">{{ form.statut.label.text }}</label>
+                        {{ form.statut(class="form-control" + (" is-invalid" if form.statut.errors else ""), id="statut") }}
+                        {% for error in form.statut.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="prestation_id" class="form-label">{{ form.prestation_id.label.text }}</label>
+                        {{ form.prestation_id(class="form-control" + (" is-invalid" if form.prestation_id.errors else ""), id="prestation_id") }}
+                        {% for error in form.prestation_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="mode_paiement" class="form-label">{{ form.mode_paiement.label.text }}</label>
+                        {{ form.mode_paiement(class="form-control" + (" is-invalid" if form.mode_paiement.errors else ""), id="mode_paiement") }}
+                        {% for error in form.mode_paiement.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="numero" class="form-label">{{ form.numero.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.numero(class="form-control" + (" is-invalid" if form.numero.errors else ""), id="numero") }}
+                        {% for error in form.numero.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="taux_tva" class="form-label">{{ form.taux_tva.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.taux_tva(class="form-control" + (" is-invalid" if form.taux_tva.errors else ""), id="taux_tva") }}
+                        {% for error in form.taux_tva.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="date_emission" class="form-label">{{ form.date_emission.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.date_emission(class="form-control" + (" is-invalid" if form.date_emission.errors else ""), id="date_emission", type="date") }}
+                        {% for error in form.date_emission.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="notes" class="form-label">{{ form.notes.label.text }}</label>
+                        {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), id="notes") }}
+                        {% for error in form.notes.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="date_echeance" class="form-label">{{ form.date_echeance.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.date_echeance(class="form-control" + (" is-invalid" if form.date_echeance.errors else ""), id="date_echeance", type="date") }}
+                        {% for error in form.date_echeance.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label for="montant_ht" class="form-label">{{ form.montant_ht.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.montant_ht(class="form-control" + (" is-invalid" if form.montant_ht.errors else ""), id="montant_ht", type="number", step="0.01") }}
+                        {% for error in form.montant_ht.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-2 text-center d-flex align-items-center justify-content-center">
+                        <div class="h4 mb-0">+</div>
+                    </div>
+                    
+                    <div class="col-md-2 text-center">
+                        <label class="form-label">TVA</label>
+                        <div class="d-flex align-items-center">
+                            <div class="form-control-plaintext text-center">
+                                {{ facture.montant_ht * facture.tva / 100 }} €
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-1 text-center d-flex align-items-center justify-content-center">
+                        <div class="h4 mb-0">=</div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="montant_ttc" class="form-label">{{ form.montant_ttc.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.montant_ttc(class="form-control" + (" is-invalid" if form.montant_ttc.errors else ""), id="montant_ttc", type="number", step="0.01", readonly=True) }}
+                        {% for error in form.montant_ttc.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('facture.index') }}" class="btn btn-secondary">Annuler</a>
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/factures.js') }}"></script>
+{% endblock %}

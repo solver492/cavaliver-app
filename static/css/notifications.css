@@ -1,0 +1,93 @@
+/* Styles pour les notifications */
+.notifications-count {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.4rem;
+    margin-left: -0.5rem;
+    margin-top: -0.5rem;
+}
+
+.notifications-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+    background-color: #f8f9fa;
+}
+
+.notification-item.unread:hover {
+    background-color: #d0ebff;
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.notification-time {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.notification-content {
+    color: #212529;
+}
+
+.notification-actions {
+    margin-top: 1rem;
+}
+
+.notification-actions .btn {
+    margin-right: 0.5rem;
+}
+
+.notification-item .notification-time {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.notification-item .notification-message {
+    margin-bottom: 0.5rem;
+}
+
+.notification-item .notification-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Animation pour le badge de notification */
+@keyframes notification-pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.notifications-count.has-notifications {
+    animation: notification-pulse 1s infinite;
+}
+
+/* Supprimer les styles du bouton des réponses des transporteurs */
+#transporteur-responses-btn {
+    display: none !important;
+}

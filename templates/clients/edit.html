@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier un client - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="client-page">
+    <div class="page-title">
+        <h1><i class="fas fa-user-edit"></i> Modifier un client</h1>
+        <a href="{{ url_for('client.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="nom" class="form-label">{{ form.nom.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.nom(class="form-control" + (" is-invalid" if form.nom.errors else ""), id="nom") }}
+                        {% for error in form.nom.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="prenom" class="form-label">{{ form.prenom.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.prenom(class="form-control" + (" is-invalid" if form.prenom.errors else ""), id="prenom") }}
+                        {% for error in form.prenom.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="adresse" class="form-label">{{ form.adresse.label.text }}</label>
+                    {{ form.adresse(class="form-control" + (" is-invalid" if form.adresse.errors else ""), id="adresse", rows=3) }}
+                    {% for error in form.adresse.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="code_postal" class="form-label">{{ form.code_postal.label.text }}</label>
+                        {{ form.code_postal(class="form-control" + (" is-invalid" if form.code_postal.errors else ""), id="code_postal") }}
+                        {% for error in form.code_postal.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="ville" class="form-label">{{ form.ville.label.text }}</label>
+                        {{ form.ville(class="form-control" + (" is-invalid" if form.ville.errors else ""), id="ville", autocomplete="off") }}
+                        {% for error in form.ville.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div id="ville-suggestions" class="suggestions-dropdown"></div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label for="pays" class="form-label">{{ form.pays.label.text }}</label>
+                        {{ form.pays(class="form-control" + (" is-invalid" if form.pays.errors else ""), id="pays") }}
+                        {% for error in form.pays.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="telephone" class="form-label">{{ form.telephone.label.text }}</label>
+                        {{ form.telephone(class="form-control" + (" is-invalid" if form.telephone.errors else ""), id="telephone") }}
+                        {% for error in form.telephone.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">{{ form.email.label.text }}</label>
+                        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), id="email", type="email") }}
+                        {% for error in form.email.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="type_client" class="form-label">{{ form.type_client.label.text }}</label>
+                        {{ form.type_client(class="form-control" + (" is-invalid" if form.type_client.errors else ""), id="type_client") }}
+                        {% for error in form.type_client.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="tags" class="form-label">{{ form.tags.label.text }}</label>
+                        {{ form.tags(class="form-control" + (" is-invalid" if form.tags.errors else ""), id="tags") }}
+                        {% for error in form.tags.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Ex: vip, prioritaire, fidèle</div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="observations" class="form-label">{{ form.observations.label.text }}</label>
+                    {{ form.observations(class="form-control" + (" is-invalid" if form.observations.errors else ""), id="observations", rows=4) }}
+                    {% for error in form.observations.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                    <div class="form-text">Notes importantes concernant ce client</div>
+                </div>
+                
+                <!-- Documents existants -->
+                {% if documents %}
+                    <div class="mb-3">
+                        <label class="form-label">Documents existants</label>
+                        <ul class="document-list">
+                            {% for document in documents %}
+                                <li>
+                                    <div class="document-name">
+                                        <i class="fas fa-file-pdf"></i> {{ document.nom }}
+                                    </div>
+                                    <div class="document-actions">
+                                        <a href="{{ url_for('client.download_document', doc_id=document.id) }}" title="Télécharger">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
+                <div class="mb-4">
+                    <label for="documents" class="form-label">{{ form.documents.label.text }}</label>
+                    {{ form.documents(class="form-control" + (" is-invalid" if form.documents.errors else ""), id="documents", multiple=True) }}
+                    {% for error in form.documents.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                    <div class="form-text">Vous pouvez sélectionner plusieurs nouveaux fichiers PDF.</div>
+                    <div class="file-list mt-2"></div>
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('client.index') }}" class="btn btn-secondary">Annuler</a>
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/client.js') }}"></script>
+
+<style>
+    .suggestions-dropdown {
+        display: none;
+        position: absolute;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0 0 0.25rem 0.25rem;
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        max-height: 200px;
+        overflow-y: auto;
+        width: 100%;
+        z-index: 1000;
+    }
+    
+    .suggestion-item {
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+    
+    .suggestion-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .suggestion-item.active {
+        background-color: #e9ecef;
+    }
+</style>
+
+<script>
+    // Liste des villes françaises les plus courantes
+    const villesFrancaises = [
+        "Paris", "Marseille", "Lyon", "Toulouse", "Nice", "Nantes", "Strasbourg", "Montpellier", 
+        "Bordeaux", "Lille", "Rennes", "Reims", "Le Havre", "Saint-Étienne", "Toulon", "Grenoble", 
+        "Dijon", "Angers", "Saint-Denis", "Villeurbanne", "Le Mans", "Aix-en-Provence", "Clermont-Ferrand", 
+        "Brest", "Tours", "Limoges", "Amiens", "Annecy", "Perpignan", "Besançon", "Metz", "Orléans", 
+        "Rouen", "Mulhouse", "Caen", "Nancy", "Saint-Denis", "Saint-Paul", "Argenteuil", "Montreuil", 
+        "Roubaix", "Dunkerque", "Tourcoing", "Avignon", "Nanterre", "Créteil", "Poitiers", "Versailles", 
+        "Pau", "Courbevoie", "Vitry-sur-Seine", "Asnières-sur-Seine", "Colombes", "Aulnay-sous-Bois", 
+        "La Rochelle", "Rueil-Malmaison", "Antibes", "Saint-Maur-des-Fossés", "Calais", "Champigny-sur-Marne", 
+        "Aubervilliers", "Béziers", "Bourges", "Cannes", "Colmar", "Drancy", "Mérignac", "Ajaccio", 
+        "Levallois-Perret", "Valence", "Villeneuve-d'Ascq", "Issy-les-Moulineaux", "Noisy-le-Grand", 
+        "Cergy", "La Seyne-sur-Mer", "Sarcelles", "Vénissieux", "Pessac", "Ivry-sur-Seine", "Quimper", 
+        "Clichy", "Antony", "Troyes", "Montauban", "Pantin", "La Roche-sur-Yon", "Neuilly-sur-Seine", 
+        "Chambéry", "Niort", "Villejuif", "Lorient", "Sarcelles", "Hyères", "Épinay-sur-Seine", "Meaux", 
+        "Saint-Quentin", "Beauvais", "Cholet", "Cherbourg", "Vannes", "Châteauroux", "Arles"
+    ];
+    
+    // Fonction pour charger les villes en fonction du code postal
+    function chargerVillesParCodePostal(codePostal) {
+        if (!codePostal || codePostal.length < 2) return [];
+        
+        // Dans une vraie application, nous ferions un appel API à un service comme celui-ci:
+        // const url = `https://geo.api.gouv.fr/communes?codePostal=${codePostal}&fields=nom,code,codesPostaux`;
+        // Ici, nous simulons un filtrage local
+        
+        // Filtrer les villes qui pourraient correspondre au code postal (simulation)
+        const deuxPremiers = codePostal.substring(0, 2);
+        let villesSuggérées = [];
+        
+        switch(deuxPremiers) {
+            case "75": 
+                villesSuggérées = ["Paris"]; break;
+            case "13": 
+                villesSuggérées = ["Marseille", "Aix-en-Provence"]; break;
+            case "69": 
+                villesSuggérées = ["Lyon", "Villeurbanne"]; break;
+            case "31": 
+                villesSuggérées = ["Toulouse"]; break;
+            case "06": 
+                villesSuggérées = ["Nice", "Cannes", "Antibes"]; break;
+            case "44": 
+                villesSuggérées = ["Nantes"]; break;
+            case "67": 
+                villesSuggérées = ["Strasbourg"]; break;
+            case "34": 
+                villesSuggérées = ["Montpellier", "Béziers"]; break;
+            case "33": 
+                villesSuggérées = ["Bordeaux", "Mérignac", "Pessac"]; break;
+            case "59": 
+                villesSuggérées = ["Lille", "Roubaix", "Tourcoing", "Dunkerque"]; break;
+            case "35": 
+                villesSuggérées = ["Rennes"]; break;
+            default:
+                // Par défaut, retourner des villes qui commencent par les mêmes lettres que le code
+                villesSuggérées = villesFrancaises;
+        }
+        
+        return villesSuggérées;
+    }
+    
+    // Fonction pour afficher les suggestions
+    function afficherSuggestions(suggestions, inputElement, suggestionContainer) {
+        suggestionContainer.innerHTML = '';
+        
+        if (suggestions.length > 0) {
+            suggestions.forEach(suggestion => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+                item.textContent = suggestion;
+                item.addEventListener('click', () => {
+                    inputElement.value = suggestion;
+                    suggestionContainer.style.display = 'none';
+                });
+                suggestionContainer.appendChild(item);
+            });
+            suggestionContainer.style.display = 'block';
+        } else {
+            suggestionContainer.style.display = 'none';
+        }
+    }
+    
+    // Initialiser l'autocomplétion pour les villes
+    document.addEventListener('DOMContentLoaded', function() {
+        const villeInput = document.getElementById('ville');
+        const codePostalInput = document.getElementById('code_postal');
+        const paysSelect = document.getElementById('pays');
+        const suggestionContainer = document.getElementById('ville-suggestions');
+        
+        // Autocomplétion basée sur le code postal
+        codePostalInput.addEventListener('input', function() {
+            if (paysSelect.value === 'France') {
+                const suggestions = chargerVillesParCodePostal(this.value);
+                afficherSuggestions(suggestions, villeInput, suggestionContainer);
+            }
+        });
+        
+        // Autocomplétion basée sur le nom de la ville
+        villeInput.addEventListener('input', function() {
+            if (paysSelect.value === 'France') {
+                const valeur = this.value.toLowerCase();
+                if (valeur.length >= 2) {
+                    const suggestions = villesFrancaises.filter(ville => 
+                        ville.toLowerCase().includes(valeur)
+                    ).slice(0, 10); // Limiter à 10 suggestions
+                    
+                    afficherSuggestions(suggestions, villeInput, suggestionContainer);
+                } else {
+                    suggestionContainer.style.display = 'none';
+                }
+            }
+        });
+        
+        // Masquer les suggestions quand on clique ailleurs
+        document.addEventListener('click', function(e) {
+            if (e.target !== villeInput && e.target !== suggestionContainer) {
+                suggestionContainer.style.display = 'none';
+            }
+        });
+        
+        // Changer le comportement en fonction du pays sélectionné
+        paysSelect.addEventListener('change', function() {
+            if (this.value !== 'France') {
+                // Pour les autres pays, pas d'autocomplétion
+                suggestionContainer.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

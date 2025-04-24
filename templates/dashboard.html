@@ -1,862 +1,191 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Tableau de bord | Cavalier{% endblock %}
-
-{% block styles %}
-{{ super() }}
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
-<style>
-/* Styles du tableau de bord */
-.dashboard-container {
-    padding: 1.5rem;
-    animation: fadeIn 0.8s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.section-title {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 3px solid var(--primary);
-    position: relative;
-    display: inline-block;
-}
-
-.section-title::after {
-    content: '';
-    position: absolute;
-    bottom: -3px;
-    left: 0;
-    width: 50%;
-    height: 3px;
-    background: var(--gradient-success);
-    animation: expandWidth 2s ease-in-out infinite;
-}
-
-@keyframes expandWidth {
-    0% { width: 0; }
-    50% { width: 50%; }
-    100% { width: 0; }
-}
-
-/* Cartes de statistiques */
-.stats-card {
-    border-radius: 0.75rem;
-    padding: 0.75rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-    height: 100%;
-    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-    margin-bottom: 0.5rem;
-}
-
-.stats-card:hover {
-    transform: translateY(-5px) scale(1.01);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.12);
-}
-
-.stats-card.prestations {
-    background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-    color: white;
-}
-
-.stats-card.clients {
-    background: linear-gradient(135deg, #1cc88a 0%, #169a68 100%);
-    color: white;
-}
-
-.stats-card.plannings {
-    background: linear-gradient(135deg, #36b9cc 0%, #258391 100%);
-    color: white;
-}
-
-.stats-card.factures {
-    background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
-    color: white;
-}
-
-.stats-card.ca {
-    background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%);
-    color: white;
-}
-
-.stats-card::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 80%);
-    z-index: -1;
-}
-
-.stats-card .icon {
-    font-size: 1.8rem;
-    margin-bottom: 0.5rem;
-    display: inline-block;
-    background: rgba(255, 255, 255, 0.2);
-    width: 50px;
-    height: 50px;
-    line-height: 50px;
-    border-radius: 50%;
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
-    animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-5px); }
-    100% { transform: translateY(0px); }
-}
-
-.stats-card .count {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.stats-card .label {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1rem;
-    font-weight: 600;
-    opacity: 0.9;
-}
-
-/* Actions rapides */
-.actions-card {
-    border-radius: 1rem;
-    background: #fff;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-    position: relative;
-    height: 100%;
-    margin-bottom: 1rem;
-}
-
-.actions-card .card-header {
-    background: var(--gradient-primary);
-    color: white;
-    padding: 1rem;
-    border: none;
-    position: relative;
-    overflow: hidden;
-}
-
-.actions-card .card-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
-}
-
-.actions-card .card-header h5 {
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    position: relative;
-    z-index: 2;
-}
-
-.actions-card .card-header h5 i {
-    margin-right: 0.5rem;
-    font-size: 1.4rem;
-}
-
-.actions-card .card-body {
-    padding: 1.25rem;
-}
-
-.action-buttons {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 0.75rem;
-}
-
-.action-button {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 1rem;
-    border-radius: 0.75rem;
-    color: white;
-    text-decoration: none;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.action-button:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
-    color: white;
-}
-
-.action-button::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(100%);
-    transition: transform 0.3s;
-    z-index: 1;
-}
-
-.action-button:hover::after {
-    transform: translateY(0);
-}
-
-.action-button i {
-    font-size: 1.8rem;
-    margin-bottom: 0.75rem;
-    z-index: 2;
-    position: relative;
-}
-
-.action-button span {
-    font-weight: 600;
-    font-size: 0.9rem;
-    z-index: 2;
-    position: relative;
-}
-
-.action-client {
-    background: var(--gradient-success);
-}
-
-.action-prestation {
-    background: var(--gradient-primary);
-}
-
-.action-planning {
-    background: var(--gradient-info);
-}
-
-.action-facture {
-    background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);
-}
-
-/* Calendrier moderne et impressionnant */
-.calendar-wrapper {
-    height: 100%;
-    position: relative;
-    border-radius: 1rem;
-    overflow: hidden;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    background: white;
-    margin-bottom: 1rem;
-}
-
-.calendar-header {
-    background: var(--gradient-primary);
-    color: white;
-    padding: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: relative;
-    overflow: hidden;
-}
-
-.calendar-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
-}
-
-.calendar-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    position: relative;
-    z-index: 2;
-}
-
-.calendar-title i {
-    margin-right: 0.5rem;
-    font-size: 1.4rem;
-}
-
-.calendar-controls {
-    display: flex;
-    gap: 0.5rem;
-    position: relative;
-    z-index: 2;
-}
-
-.calendar-btn {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.calendar-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.calendar-btn:active {
-    transform: translateY(0);
-}
-
-.calendar-btn i {
-    font-size: 1rem;
-}
-
-.calendar-container {
-    padding: 1rem;
-    height: 500px; 
-    position: relative;
-    transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
-}
-
-.calendar-fullscreen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 9999;
-    background: white;
-    padding: 2rem;
-    overflow: auto;
-    animation: fullscreenEnter 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
-}
-
-@keyframes fullscreenEnter {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes fullscreenExit {
-    from { opacity: 1; transform: scale(1); }
-    to { opacity: 0; transform: scale(0.9); }
-}
-
-#calendar {
-    height: 100%;
-    font-family: 'Poppins', sans-serif;
-    font-size: 0.9rem;
-}
-
-/* Styles FullCalendar personnalisés */
-.fc {
-    --fc-border-color: #e9ecef;
-    --fc-today-bg-color: #e8f4ff;
-    --fc-neutral-bg-color: #f8f9fa;
-    --fc-page-bg-color: #ffffff;
-    height: 100%;
-}
-
-.fc .fc-toolbar {
-    margin-bottom: 1rem;
-}
-
-.fc .fc-toolbar-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #2c3e50;
-}
-
-.fc .fc-button {
-    border-radius: 30px;
-    padding: 0.3rem 0.75rem;
-    font-weight: 500;
-    transition: all 0.3s;
-    border: none;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    font-size: 0.85rem;
-}
-
-.fc .fc-button:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.fc .fc-button-primary {
-    background: var(--gradient-primary);
-}
-
-.fc .fc-button-primary:hover {
-    background: linear-gradient(135deg, #375bce 0%, #1e429e 100%);
-}
-
-.fc-theme-standard .fc-scrollgrid {
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid #e9ecef;
-}
-
-.fc-theme-standard th {
-    padding: 0.75rem 0;
-    background: var(--primary);
-    color: white;
-}
-
-.fc-col-header-cell-cushion {
-    color: white;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.85rem;
-}
-
-.fc-daygrid-day-number {
-    color: #495057;
-    text-decoration: none;
-    font-weight: 500;
-    padding: 0.3rem;
-    font-size: 0.85rem;
-}
-
-.fc-day-today {
-    background-color: #e8f4ff !important;
-}
-
-.fc-day-sat, .fc-day-sun {
-    background-color: #f8f9fa;
-}
-
-.fc-event {
-    cursor: pointer;
-    border-radius: 6px;
-    border: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    padding: 0.15rem;
-    transition: all 0.3s;
-    font-size: 0.8rem;
-}
-
-.fc-event:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
-    z-index: 5;
-}
-
-.fc-event-title {
-    font-weight: 600;
-    padding: 0.15rem 0.3rem;
-}
-
-/* Tableau des prestations récentes */
-.table-card {
-    border-radius: 1rem;
-    overflow: hidden;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
-    height: 100%;
-}
-
-.table-card .card-header {
-    background: var(--gradient-primary);
-    color: white;
-    padding: 1rem;
-    border: none;
-    position: relative;
-    overflow: hidden;
-}
-
-.table-card .card-header::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
-}
-
-.table-card .card-header h5 {
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    position: relative;
-    z-index: 2;
-}
-
-.table-card .card-header h5 i {
-    margin-right: 0.5rem;
-    font-size: 1.4rem;
-}
-
-.table-card .card-body {
-    padding: 0;
-}
-
-.table {
-    margin-bottom: 0;
-    font-size: 0.9rem;
-}
-
-.table thead th {
-    background-color: #f8f9fa;
-    color: var(--primary);
-    font-weight: 600;
-    padding: 0.75rem 1rem;
-    border: none;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05rem;
-}
-
-.table tbody td {
-    padding: 0.75rem 1rem;
-    vertical-align: middle;
-    border-top: 1px solid #f1f1f1;
-    font-weight: 500;
-}
-
-.table-hover tbody tr {
-    transition: all 0.3s;
-}
-
-.table-hover tbody tr:hover {
-    background-color: rgba(78, 115, 223, 0.05);
-    transform: translateY(-2px);
-}
-
-.badge {
-    padding: 0.3rem 0.75rem;
-    font-weight: 600;
-    border-radius: 30px;
-    letter-spacing: 0.03rem;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-    font-size: 0.75rem;
-}
-
-.badge.bg-success {
-    background: var(--gradient-success) !important;
-}
-
-.badge.bg-warning {
-    background: var(--gradient-warning) !important;
-}
-
-.badge.bg-danger {
-    background: var(--gradient-danger) !important;
-}
-
-.action-btn {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    background: var(--gradient-primary);
-    border: none;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s;
-    font-size: 0.8rem;
-}
-
-.action-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
-}
-</style>
-{% endblock %}
+{% block title %}Tableau de bord - {{ config.APP_NAME }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid dashboard-container">
-    <h1 class="section-title">Tableau de bord</h1>
-    
-    <!-- Statistiques en ligne horizontale -->
-    <div class="row g-2 mb-3">
-        <div class="col-md-3">
-            <div class="stats-card prestations">
-                <div class="icon"><i class="fas fa-truck-moving"></i></div>
-                <div class="count">{{ total_prestations }}</div>
-                <div class="label">Prestations</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card clients">
-                <div class="icon"><i class="fas fa-users"></i></div>
-                <div class="count">{{ total_clients }}</div>
-                <div class="label">Clients</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card factures" style="background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%); color: white;">
-                <div class="icon"><i class="fas fa-file-invoice-dollar"></i></div>
-                <div class="count">{{ total_factures }}</div>
-                <div class="label">Factures</div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card ca" style="background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%); color: white;">
-                <div class="icon"><i class="fas fa-euro-sign"></i></div>
-                <div class="count">{{ "%.2f"|format(ca_total) }} €</div>
-                <div class="label">Chiffre d'affaires</div>
-            </div>
-        </div>
+<div id="dashboard-page">
+    <div class="page-title d-flex justify-content-between align-items-center">
+        <h1><i class="fas fa-tachometer-alt"></i> Tableau de bord</h1>
+        <a href="{{ url_for('calendrier.fullscreen') }}" class="btn btn-primary btn-lg pulse-button">
+            <i class="fas fa-calendar-alt"></i> <span class="d-none d-md-inline">Calendrier plein écran</span>
+            <i class="fas fa-expand-alt ml-1"></i>
+        </a>
     </div>
-    
-    <!-- Actions rapides -->
-    <div class="row g-3 mb-3">
-        <div class="col-md-6">
-            <div class="actions-card">
-                <div class="card-header">
-                    <h5><i class="fas fa-bolt"></i> Actions rapides</h5>
-                </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
                 <div class="card-body">
-                    <div class="action-buttons">
-                        <a href="{{ url_for('client_add') }}" class="action-button" style="background: linear-gradient(135deg, #1cc88a 0%, #169a68 100%);">
-                            <i class="fas fa-user-plus fa-2x mb-2"></i>
-                            <span>Nouveau client</span>
-                        </a>
-                        <a href="{{ url_for('prestation_add') }}" class="action-button" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);">
-                            <i class="fas fa-truck-loading fa-2x mb-2"></i>
-                            <span>Nouvelle prestation</span>
-                        </a>
-                        <a href="{{ url_for('facture_add') }}" class="action-button" style="background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);">
-                            <i class="fas fa-file-invoice fa-2x mb-2"></i>
-                            <span>Nouvelle facture</span>
-                        </a>
-                        {% if current_user.role in ['admin', 'super_admin'] %}
-                        <a href="{{ url_for('user_add') }}" class="action-button" style="background: linear-gradient(135deg, #6f42c1 0%, #4e2b89 100%);">
-                            <i class="fas fa-user-cog fa-2x mb-2"></i>
-                            <span>Nouvel utilisateur</span>
-                        </a>
-                        {% endif %}
-                        <a href="{{ url_for('clients_list') }}?show_archived=true" class="action-button" style="background: linear-gradient(135deg, #e74a3b 0%, #be2617 100%);">
-                            <i class="fas fa-archive fa-2x mb-2"></i>
-                            <span>Clients archivés</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6">
-            <div class="actions-card">
-                <div class="card-header" style="background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);">
-                    <h5><i class="fas fa-chart-pie"></i> Résumé financier</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <h6 class="text-muted">Factures en attente</h6>
-                                <div class="d-flex align-items-center">
-                                    <div class="flex-shrink-0">
-                                        <i class="fas fa-clock fa-2x text-warning"></i>
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <h5 class="mb-0">{{ factures_en_attente|length }}</h5>
-                                        <small class="text-muted">Montant: {{ "%.2f"|format(montant_impaye) }} €</small>
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="stat-title">Clients actifs</h6>
+                            <h3 class="stat-value">{{ stats.total_clients }}</h3>
+                            <p class="text-muted mb-0">+{{ stats.new_clients_month }} ce mois</p>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <h6 class="text-muted">Factures en retard</h6>
-                                <div class="d-flex align-items-center">
-                                    <div class="flex-shrink-0">
-                                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
-                                    </div>
-                                    <div class="flex-grow-1 ms-3">
-                                        <h5 class="mb-0">{{ factures_en_retard|length }}</h5>
-                                        <small class="text-muted">Action requise</small>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
                         </div>
                     </div>
-                    <div class="mt-3">
-                        <a href="{{ url_for('factures_list') }}" class="btn btn-warning w-100">
-                            <i class="fas fa-file-invoice-dollar me-2"></i>Gérer les factures
-                        </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="stat-title">Prestations à venir</h6>
+                            <h3 class="stat-value">{{ stats.prestations_a_venir }}</h3>
+                            <p class="text-muted mb-0">{{ stats.prestations_en_cours }} en cours</p>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-truck-moving"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="stat-title">Factures impayées</h6>
+                            <h3 class="stat-value">{{ stats.factures_impayees }}</h3>
+                            <p class="text-muted mb-0">sur {{ stats.total_factures }} factures</p>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="stat-title">Chiffre d'affaires</h6>
+                            <h3 class="stat-value">{{ "{:,.2f}".format(stats.total_revenue) }} €</h3>
+                            <p class="text-muted mb-0">Total encaissé</p>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-euro-sign"></i>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Tableaux d'informations -->
-    <div class="row g-3">
-        <div class="col-md-6">
-            <div class="table-card">
-                <div class="card-header">
-                    <h5><i class="fas fa-calendar-day"></i> Prestations à venir</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Client</th>
-                                    <th>Date</th>
-                                    <th>Adresse</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for prestation in prestations_a_venir %}
-                                <tr>
-                                    <td>{{ prestation.client.nom }} {{ prestation.client.prenom }}</td>
-                                    <td>{{ prestation.date_debut.strftime('%d/%m/%Y') }}</td>
-                                    <td>{{ prestation.adresse_depart }}</td>
-                                    <td>
-                                        <a href="{{ url_for('prestation_details', id=prestation.id) }}" class="btn btn-sm btn-primary">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                                {% if not prestations_a_venir %}
-                                <tr>
-                                    <td colspan="4" class="text-center">Aucune prestation à venir</td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-6">
-            <div class="table-card">
-                <div class="card-header" style="background: linear-gradient(135deg, #f6c23e 0%, #dda20a 100%);">
-                    <h5><i class="fas fa-file-invoice-dollar"></i> Factures récentes</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>N° Facture</th>
-                                    <th>Client</th>
-                                    <th>Montant</th>
-                                    <th>Statut</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for facture in factures_en_attente %}
-                                <tr>
-                                    <td>{{ facture.numero }}</td>
-                                    <td>{{ facture.client.nom }} {{ facture.client.prenom }}</td>
-                                    <td>{{ "%.2f"|format(facture.montant_ttc) }} €</td>
-                                    <td>
-                                        <span class="badge bg-warning">En attente</span>
-                                    </td>
-                                    <td>
-                                        <a href="{{ url_for('facture_details', id=facture.id) }}" class="btn btn-sm btn-primary">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                                {% if not factures_en_attente %}
-                                <tr>
-                                    <td colspan="5" class="text-center">Aucune facture en attente</td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Notifications et Calendrier -->
-    <div class="row g-3 mt-2">
-        <div class="col-md-4">
-            <div class="table-card">
-                <div class="card-header" style="background: linear-gradient(135deg, #36b9cc 0%, #258391 100%);">
-                    <h5><i class="fas fa-bell"></i> Notifications</h5>
-                </div>
-                <div class="card-body">
-                    <div class="notification-list">
-                        {% if notifications %}
-                            {% for notification in notifications %}
-                                <div class="notification-item {% if not notification.is_read %}unread{% endif %}">
-                                    <div class="notification-icon">
-                                        {% if notification.type == 'info' %}
-                                            <i class="fas fa-info-circle text-info"></i>
-                                        {% elif notification.type == 'warning' %}
-                                            <i class="fas fa-exclamation-triangle text-warning"></i>
-                                        {% elif notification.type == 'success' %}
-                                            <i class="fas fa-check-circle text-success"></i>
-                                        {% elif notification.type == 'error' %}
-                                            <i class="fas fa-times-circle text-danger"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div class="notification-content">
-                                        <p>{{ notification.message }}</p>
-                                        <small class="text-muted">{{ notification.date_creation.strftime('%d/%m/%Y %H:%M') }}</small>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="text-center py-3">
-                                <i class="fas fa-check-circle fa-3x text-muted mb-3"></i>
-                                <p>Aucune notification non lue</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        
+
+    <!-- Charts and Calendar -->
+    <div class="row mb-4">
         <div class="col-md-8">
-            <div class="calendar-wrapper">
-                <div class="calendar-header">
-                    <h5 class="calendar-title"><i class="fas fa-calendar-alt"></i> Calendrier des prestations</h5>
-                    <div class="calendar-controls">
-                        <button class="calendar-btn" id="toggle-fullscreen" title="Agrandir le calendrier">
-                            <i class="fas fa-expand"></i>
-                        </button>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-chart-line"></i> Évolution du chiffre d'affaires</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="revenue-chart"></canvas>
                     </div>
                 </div>
-                <div class="calendar-container">
-                    <div id="calendar"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0"><i class="fas fa-calendar-alt"></i> Calendrier des prestations</h5>
+                    <a href="{{ url_for('calendrier.fullscreen') }}" class="btn btn-primary fullscreen-btn" title="Agrandir le calendrier">
+                        <i class="fas fa-expand-alt"></i> Plein écran
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div id="dashboard-calendar" class="calendar-fullscreen"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-chart-pie"></i> Types de prestations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="service-type-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="fas fa-bell"></i> Activité récente</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% if stats.recent_clients %}
+                        {% for client in stats.recent_clients[:2] %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-user text-primary"></i>
+                                    <span>Nouveau client: {{ client.nom }} {{ client.prenom }}</span>
+                                </div>
+                                <small class="text-muted">{{ client.date_creation.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                        </li>
+                        {% endfor %}
+                        {% endif %}
+
+                        {% if stats.recent_prestations %}
+                        {% for prestation in stats.recent_prestations[:2] %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-truck-moving text-success"></i>
+                                    <span>Prestation: {{ prestation.client_principal.nom }} {{
+                                        prestation.client_principal.prenom }}</span>
+                                </div>
+                                <small class="text-muted">{{ prestation.date_debut.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                        </li>
+                        {% endfor %}
+                        {% endif %}
+
+                        {% if stats.recent_factures %}
+                        {% for facture in stats.recent_factures[:2] %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-file-invoice-dollar text-warning"></i>
+                                    <span>Facture #{{ facture.numero }}: {{ facture.client.nom }} {{
+                                        facture.client.prenom }}</span>
+                                    {% if current_user.is_admin or current_user.id == facture.commercial_id %}
+                                    <span class="badge bg-info ms-2">
+                                        <i class="fas fa-user-tie"></i> {{ facture.commercial.nom if facture.commercial
+                                        else "N/A" }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <small class="text-muted">{{ facture.date_emission.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                        </li>
+                        {% endfor %}
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{{ url_for('client.index') }}" class="btn btn-sm btn-outline-primary me-2">
+                        <i class="fas fa-users"></i> Tous les clients
+                    </a>
+                    <a href="{{ url_for('prestation.index') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-truck-moving"></i> Toutes les prestations
+                    </a>
                 </div>
             </div>
         </div>
@@ -864,152 +193,343 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-{{ super() }}
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/locales/fr.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Gérer le calendrier et son mode plein écran
-        const calendarEl = document.getElementById('calendar');
-        const calendarContainer = document.querySelector('.calendar-container');
-        const toggleBtn = document.getElementById('toggle-fullscreen');
-        let isFullScreen = false;
-        
-        // Fonction pour basculer entre le mode normal et plein écran
-        function toggleFullScreen(event) {
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            
-            isFullScreen = !isFullScreen;
-            console.log('Mode plein écran:', isFullScreen);
-            
-            if (isFullScreen) {
-                // Activer le mode plein écran
-                document.body.style.overflow = 'hidden'; // Empêcher le défilement
-                calendarContainer.classList.add('calendar-fullscreen');
-                toggleBtn.innerHTML = '<i class="fas fa-compress"></i>';
-                toggleBtn.setAttribute('title', 'Réduire le calendrier');
-                
-                // Ajouter un bouton de fermeture dans le mode plein écran
-                const closeBtn = document.createElement('button');
-                closeBtn.className = 'calendar-btn close-fullscreen';
-                closeBtn.innerHTML = '<i class="fas fa-times"></i>';
-                closeBtn.style.position = 'absolute';
-                closeBtn.style.top = '20px';
-                closeBtn.style.right = '20px';
-                closeBtn.style.zIndex = '10000';
-                closeBtn.addEventListener('click', toggleFullScreen);
-                calendarContainer.appendChild(closeBtn);
-            } else {
-                // Désactiver le mode plein écran
-                document.body.style.overflow = ''; // Rétablir le défilement
-                calendarContainer.classList.remove('calendar-fullscreen');
-                toggleBtn.innerHTML = '<i class="fas fa-expand"></i>';
-                toggleBtn.setAttribute('title', 'Agrandir le calendrier');
-                
-                // Supprimer le bouton de fermeture
-                const closeBtn = document.querySelector('.close-fullscreen');
-                if (closeBtn) {
-                    closeBtn.remove();
-                }
-            }
-            
-            // Mettre à jour la taille du calendrier après la transition
-            setTimeout(() => {
-                window.dispatchEvent(new Event('resize'));
-                calendar.updateSize();
-            }, 100);
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/calendar-fix.css') }}">
+<style>
+    /* Styles du calendrier dashboard */
+    #dashboard-calendar {
+        min-height: 600px;
+        background: white;
+    }
+
+    #dashboard-calendar .fc-event {
+        cursor: pointer;
+        padding: 2px 4px;
+        margin-bottom: 2px;
+        border-radius: 3px;
+    }
+
+    #dashboard-calendar .event-en-attente {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #000;
+    }
+
+    #dashboard-calendar .event-confirmee {
+        background-color: #17a2b8;
+        border-color: #17a2b8;
+        color: #fff;
+    }
+
+    #dashboard-calendar .event-en-cours {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: #fff;
+    }
+
+    #dashboard-calendar .event-terminee {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: #fff;
+    }
+
+    #dashboard-calendar .event-annulee {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: #fff;
+    }
+
+    #dashboard-calendar .event-refusee {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: #fff;
+    }
+
+    #dashboard-calendar .fc-content {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #dashboard-calendar .fc-description {
+        font-size: 0.85em;
+        opacity: 0.9;
+    }
+
+    /* Style pour le bouton de calendrier plein écran */
+    .pulse-button {
+        box-shadow: 0 0 0 rgba(13, 110, 253, 0.4);
+        animation: pulse 2s infinite;
+        position: relative;
+        font-weight: bold;
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4);
         }
-        
-        // Attacher l'événement au bouton d'agrandissement
-        toggleBtn.addEventListener('click', toggleFullScreen);
-        
-        // Gérer la touche Echap pour quitter le mode plein écran
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && isFullScreen) {
-                toggleFullScreen();
-            }
-        });
-        
-        // Initialiser le calendrier avec des options améliorées
-        const calendar = new FullCalendar.Calendar(calendarEl, {
-            locale: 'fr',
-            initialView: 'dayGridMonth', // Démarrer avec la vue mensuelle
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,listMonth'
-            },
-            buttonText: {
-                today: "Aujourd'hui",
-                month: 'Mois',
-                list: 'Liste'
-            },
-            events: '/api/calendar-events',
-            eventTimeFormat: {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            },
-            eventClick: function(info) {
-                if (info.event.extendedProps.prestation_id) {
-                    window.location.href = '/prestations/' + info.event.extendedProps.prestation_id;
-                }
-            },
-            slotMinTime: '06:00:00', // Commencer à 6h du matin
-            slotMaxTime: '22:00:00', // Terminer à 22h du soir
-            slotDuration: '00:30:00', // Créneaux de 30 minutes
-            allDaySlot: false, // Masquer la section "Toute la journée"
-            nowIndicator: true, // Afficher un indicateur du moment présent
-            dayMaxEvents: true,
-            height: '100%',
-            themeSystem: 'bootstrap',
-            eventDidMount: function(info) {
-                // Ajouter une info-bulle pour afficher plus de détails au survol
-                const tooltip = document.createElement('div');
-                tooltip.classList.add('calendar-tooltip');
-                
-                const title = document.createElement('h5');
-                title.textContent = info.event.title;
-                tooltip.appendChild(title);
-                
-                if (info.event.extendedProps.description) {
-                    const description = document.createElement('p');
-                    description.textContent = info.event.extendedProps.description;
-                    tooltip.appendChild(description);
-                    
-                    // Créer une info-bulle Bootstrap
-                    $(info.el).tooltip({
-                        title: info.event.extendedProps.description,
-                        placement: 'top',
-                        trigger: 'hover',
-                        container: 'body'
-                    });
-                }
-            },
-            eventDisplay: 'block', // Afficher les événements avec un style 'block'
-            eventColor: '#4e73df',
-            eventBackgroundColor: '#4e73df',
-            eventBorderColor: '#4e73df',
-            eventTextColor: 'white',
-            dayCellClassNames: function(arg) {
-                if (arg.date.getDay() === 0 || arg.date.getDay() === 6) {
-                    return ['weekend-day'];
-                }
-                return [];
-            }
-        });
-        
-        // Rendre le calendrier
-        calendar.render();
-        
-        // Mettre à jour la taille du calendrier lors du redimensionnement de la fenêtre
-        window.addEventListener('resize', function() {
-            calendar.updateSize();
-        });
-    });
-</script>
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(13, 110, 253, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+        }
+    }
+
+    .fullscreen-btn {
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+    .fullscreen-btn:hover {
+        transform: scale(1.05);
+        background-color: #0d6efd;
+    }
+
+    .calendar-container {
+        height: 400px;
+    }
+
+    .small-calendar {
+        height: 100%;
+        font-size: 0.8rem;
+    }
+
+    .small-calendar .fc-toolbar-title {
+        font-size: 1.2rem;
+    }
+
+    .small-calendar .fc-button {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .small-calendar .fc-daygrid-day-number {
+        font-size: 0.8rem;
+        padding: 2px 4px;
+    }
+
+    .small-calendar .fc-event {
+        font-size: 0.7rem;
+        line-height: 1.2;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Styles pour les différents statuts d'événements */
+    .fc-event.event-en-attente {
+        background-color: #ffc107;
+        border-color: #e0a800;
+    }
+
+    .fc-event.event-confirmee {
+        background-color: #17a2b8;
+        border-color: #138496;
+    }
+
+    .fc-event.event-en-cours {
+        background-color: #007bff;
+        border-color: #0069d9;
+    }
+
+    .fc-event.event-terminee {
+        background-color: #28a745;
+        border-color: #218838;
+    }
+
+    .fc-event.event-annulee {
+        background-color: #dc3545;
+        border-color: #c82333;
+    }
+
+    .fc-event.event-refusee {
+        background-color: #6c757d;
+        border-color: #5a6268;
+    }
+
+    /* Masquer les spinners de chargement dans les événements */
+    .fc-event .spinner-border,
+    .fc-event .loading-indicator {
+        display: none !important;
+    }
+    
+    /* Panneau de détails des prestations */
+    .prestation-details {
+        position: fixed;
+        top: 0;
+        right: -400px;
+        width: 400px;
+        height: 100vh;
+        background-color: #fff;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        z-index: 1050;
+        transition: right 0.3s ease;
+        overflow-y: auto;
+        padding: 0;
+    }
+    
+    .prestation-details.active {
+        right: 0;
+    }
+    
+    .prestation-details-content {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .prestation-header {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+    
+    .close-details {
+        cursor: pointer;
+    }
+    
+    .prestation-loader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 50px 20px;
+    }
+    
+    #prestation-details-container {
+        padding: 15px;
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+    
+    .detail-section {
+        margin-bottom: 15px;
+    }
+    
+    .action-buttons {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .stats-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .stats-icon {
+        font-size: 2rem;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: #0d6efd;
+    }
+
+    /* Styles pour le panneau de détails */
+    .prestation-details {
+        position: fixed;
+        top: 0;
+        right: -400px;
+        width: 400px;
+        height: 100vh;
+        background-color: #fff;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        z-index: 9999;
+        /* Augmenter le z-index pour s'assurer qu'il est au-dessus de tout */
+        transition: right 0.3s ease;
+        overflow-y: auto;
+        padding: 0;
+    }
+
+    .prestation-details.active {
+        right: 0;
+    }
+
+    .prestation-details-content {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .prestation-header {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+    }
+
+    .close-details {
+        cursor: pointer;
+    }
+
+    .prestation-loader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 50px 20px;
+    }
+
+    #prestation-details-container {
+        padding: 15px;
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+
+    .detail-section {
+        margin-bottom: 15px;
+    }
+
+    .action-buttons {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .prestation-detail-badge {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+    }
+
+    /* Styles responsive */
+    @media (max-width: 768px) {
+        .prestation-details.active {
+            width: 100%;
+        }
+    }
+</style>
+<!-- Panneau de détails de prestation -->
+<div class="prestation-details">
+    <div class="prestation-details-content">
+        <div class="prestation-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Détails de la prestation</h4>
+            <i class="fas fa-times close-details"></i>
+        </div>
+        <div id="prestation-details-container"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

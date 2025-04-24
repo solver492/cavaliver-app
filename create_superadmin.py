@@ -1,26 +1,35 @@
-from app import app, db
+from app import create_app
+from extensions import db
 from models import User
-from werkzeug.security import generate_password_hash
 
 def create_superadmin():
+    app = create_app()
     with app.app_context():
         # Vérifier si le super admin existe déjà
-        admin = User.query.filter_by(username='admin').first()
-        if admin:
-            print('Un utilisateur avec ce nom existe déjà.')
-            return
-
-        # Créer le super admin
-        superadmin = User(
-            username='admin',
-            password=generate_password_hash('superadmin123'),
-            role='superadmin',
-            nom='Super',
-            prenom='Admin'
-        )
-        db.session.add(superadmin)
-        db.session.commit()
-        print('Super administrateur créé avec succès.')
+        user = User.query.filter_by(username='superadmin').first()
+        if not user:
+            super_admin = User(
+                username='superadmin',
+                email='super@admin.com',
+                nom='Super',
+                prenom='Admin',
+                role='superadmin',
+                statut='actif'
+            )
+            super_admin.set_password('superadmin123')
+            db.session.add(super_admin)
+            db.session.commit()
+            print("Super Admin créé avec succès")
+            print("Username: superadmin")
+            print("Password: superadmin123")
+        else:
+            user.role = 'superadmin'
+            user.statut = 'actif'
+            user.set_password('superadmin123')
+            db.session.commit()
+            print("Le compte Super Admin a été réinitialisé avec succès")
+            print("Username: superadmin")
+            print("Password: superadmin123")
 
 if __name__ == '__main__':
     create_superadmin()

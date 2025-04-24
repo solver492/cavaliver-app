@@ -3,33 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion | Cavalier</title>
+    <title>Connexion - {{ config.APP_NAME }}</title>
+    
+    <!-- Google Fonts - Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
 </head>
 <body>
-    <div class="container" onclick>
-        <div class="top"></div>
-        <div class="bottom"></div>
-        <div class="center">
-            <h2>Veuillez vous connecter</h2>
+    <!-- Hexagon Background -->
+    <div class="hexagon-bg" id="hexagonBg"></div>
+
+    <div class="login-container">
+        <h1 class="login-title">LOGIN</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            {{ form.hidden_tag() }}
             
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+            <div class="form-group">
+                {{ form.username(class="form-control", placeholder="Email") }}
+                {% for error in form.username.errors %}
+                    <div class="error-message">{{ error }}</div>
+                {% endfor %}
+            </div>
             
-            <form method="POST" action="{{ url_for('login') }}">
-                <input type="text" name="username" placeholder="Nom d'utilisateur" required autofocus>
-                <input type="password" name="password" placeholder="Mot de passe" required>
-                <button type="submit">Se connecter</button>
-            </form>
-            <h2>&nbsp;</h2>
-        </div>
+            <div class="form-group">
+                {{ form.password(class="form-control", placeholder="Password") }}
+                {% for error in form.password.errors %}
+                    <div class="error-message">{{ error }}</div>
+                {% endfor %}
+            </div>
+            
+            <button type="submit" class="btn-login">Login</button>
+            
+            <div class="links">
+                <!-- Les liens vers auth.forgot_password et auth.signup ont été supprimés car ces routes n'existent pas -->
+            </div>
+        </form>
     </div>
+
+    <script>
+        // Création dynamique des hexagones en arrière-plan
+        function createHexagons() {
+            const bg = document.getElementById('hexagonBg');
+            const count = 25; // Nombre d'hexagones
+            
+            // Vider le conteneur si besoin
+            bg.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const hex = document.createElement('div');
+                hex.className = 'hexagon';
+                
+                // Position aléatoire
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                const size = Math.random() * 40 + 20; // Taille entre 20 et 60px
+                
+                hex.style.left = `${x}%`;
+                hex.style.top = `${y}%`;
+                hex.style.width = `${size}px`;
+                hex.style.height = `${size}px`;
+                
+                bg.appendChild(hex);
+            }
+        }
+        
+        // Fonction pour animer les hexagones en fonction de la position de la souris
+        function animateHexagons(e) {
+            const hexagons = document.querySelectorAll('.hexagon');
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            
+            hexagons.forEach(hex => {
+                // Position du centre de l'hexagone
+                const hexRect = hex.getBoundingClientRect();
+                const hexX = hexRect.left + hexRect.width / 2;
+                const hexY = hexRect.top + hexRect.height / 2;
+                
+                // Calculer la distance entre la souris et l'hexagone
+                const distX = mouseX - hexX;
+                const distY = mouseY - hexY;
+                const distance = Math.sqrt(distX * distX + distY * distY);
+                
+                // Activer les hexagones proches de la souris
+                if (distance < 150) {
+                    hex.classList.add('active');
+                    
+                    // Effet de suivi léger
+                    const moveX = distX * 0.1;
+                    const moveY = distY * 0.1;
+                    hex.style.transform = `translate(${moveX}px, ${moveY}px) scale(${1 + (150 - distance) / 150})`;
+                } else {
+                    hex.classList.remove('active');
+                    hex.style.transform = 'translate(0, 0) scale(1)';
+                }
+            });
+        }
+
+        // Créer les hexagones au chargement
+        document.addEventListener('DOMContentLoaded', () => {
+            createHexagons();
+            
+            // Ajouter les événements pour le suivi du curseur
+            document.addEventListener('mousemove', animateHexagons);
+            
+            // Redimensionnement
+            window.addEventListener('resize', createHexagons);
+        });
+    </script>
 </body>
 </html>

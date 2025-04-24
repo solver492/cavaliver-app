@@ -1,0 +1,63 @@
+/**
+ * Styles dédiés pour les boutons WhatsApp dans l'application R-cavalier
+ */
+
+/* Style de base pour tous les boutons WhatsApp */
+.whatsapp-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    background-color: #25D366 !important;
+    color: white !important;
+    text-decoration: none !important;
+    margin-left: 8px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    transition: all 0.3s ease !important;
+    border: none !important;
+    font-size: 1.2rem !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+/* Effets au survol */
+.whatsapp-btn:hover, .whatsapp-btn:focus {
+    background-color: #128C7E !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+    color: white !important;
+    text-decoration: none !important;
+}
+
+/* Pour les fiches client spécifiquement */
+.client-details .whatsapp-btn,
+#client-details .whatsapp-btn,
+.fiche-client .whatsapp-btn {
+    margin-left: 10px !important;
+}
+
+/* Ciblage spécifique pour le téléphone dans la fiche client */
+.row:has(strong:contains("Téléphone")) .whatsapp-btn,
+.row:has(label:contains("Téléphone")) .whatsapp-btn {
+    vertical-align: middle !important;
+    margin-left: 10px !important;
+    display: inline-flex !important;
+}
+
+/* Support des écrans tactiles */
+@media (pointer: coarse) {
+    .whatsapp-btn {
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 1.4rem !important;
+    }
+}
+
+/* Lorsque le bouton est inséré dans un contenu */
+span + .whatsapp-btn,
+div + .whatsapp-btn {
+    margin-left: 10px !important;
+    vertical-align: middle !important;
+}

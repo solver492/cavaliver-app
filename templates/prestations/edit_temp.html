@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier une prestation - {{ config.APP_NAME }}{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <!-- Inclure le script de gestion du formulaire de prestation -->
+    <script src="{{ url_for('static', filename='js/prestation-form.js') }}"></script>
+    <!-- Inclure le script de gestion des transporteurs disponibles -->
+    <script src="{{ url_for('static', filename='js/transporteurs-disponibilite.js') }}"></script>
+    <!-- Inclure le script robuste pour la vérification des transporteurs -->
+    <script src="{{ url_for('static', filename='js/transporteurs-verificateur.js') }}"></script>
+    <!-- Inclure le script de gestion des étapes d'arrêt -->
+    <script src="{{ url_for('static', filename='js/etapes-arret.js') }}"></script>
+    
+    <!-- Script d'intégration WhatsApp -->
+    <script src="{{ url_for('static', filename='js/whatsapp-integration.js') }}"></script>
+    
+    <!-- Script pour masquer les doublons de transporteurs bientôt disponibles -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fonction pour masquer tous les conteneurs statiques des transporteurs bientôt disponibles
+            function masquerTransporteursDupliques() {
+                // Suppression spécifique du second panneau de transporteurs en bas de page
+                const transporteursSections = Array.from(document.querySelectorAll('h4, h5, .card-title'));
+                transporteursSections.forEach(section => {
+                    if (section.textContent && section.textContent.trim() === 'Transporteurs bientôt disponibles') {
+                        // Si ce n'est pas la bulle flottante, supprimer complètement cette section
+                        const container = section.closest('.card, .row, section');
+                        if (container && !container.classList.contains('floating-bubble') && !container.closest('#vehicules-suggeres-bubble')) {
+                            if (container.parentNode) {
+                                container.parentNode.removeChild(container);
+                            } else {
+                                container.style.display = 'none';
+                                container.style.visibility = 'hidden';
+                                container.style.height = '0';
+                                container.style.margin = '0';
+                                container.style.padding = '0';
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Exécuter immédiatement
+            masquerTransporteursDupliques();
+            
+            // Et continuer à vérifier après tout chargement et changement
+            const observer = new MutationObserver(masquerTransporteursDupliques);
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+<div class="prestation-page">
+    <div class="page-title">
+        <h1><i class="fas fa-edit"></i> Modifier une prestation</h1>
+        <div>
+            {% if prestation.version and prestation.version > 1 %}
+                <span class="badge bg-info">Version {{ prestation.version }}</span>
+            {% endif %}
+            <a href="{{ url_for('prestation.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour à la liste
+            </a>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                
+                <!-- Section Client et Type de déménagement -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <!-- Ajout d'un bouton pour basculer entre les types de prestation -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label for="client_id" class="form-label">{{ form.client_id.label.text }} <span class="text-danger">*</span></label>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary {% if not prestation.est_groupage %}active{% endif %}" id="btn-standard">Prestation Standard</button>
+                                <button type="button" class="btn btn-outline-primary {% if prestation.est_groupage %}active{% endif %}" id="btn-groupage">Prestation Groupage</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Client principal -->
+                        <div id="client-principal">
+                            {{ form.client_id(class="form-control" + (" is-invalid" if form.client_id.errors else ""), id="client_id") }}
+                            {% for error in form.client_id.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Clients supplémentaires pour le groupage -->
+                        <div id="clients-supplementaires" class="mt-2" {% if not prestation.est_groupage %}style="display: none;"{% endif %}>
+                            {% if prestation.clients_supplementaires %}
+                                {% for client_id in prestation.clients_supplementaires %}
+                                    <div class="input-group mt-2 client-supplementaire">
+                                        <select name="clients_supplementaires[]" class="form-select">
+                                            <option value="">Sélectionner un client</option>
+                                            {% for client in all_clients %}
+                                                <option value="{{ client.id }}" {% if client.id == client_id %}selected{% endif %}>{{ client.nom }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="button" class="btn btn-outline-danger supprimer-client">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <button type="button" id="ajouter-client" class="btn btn-outline-secondary btn-sm mt-2" {% if not prestation.est_groupage %}style="display: none;"{% endif %}>
+                            <i class="fas fa-plus-circle"></i> Ajouter un client
+                        </button>
+                        
+                        <div class="form-text mt-1" id="mode-info">
+                            <i class="fas fa-info-circle"></i> {% if prestation.est_groupage %}Mode groupage: plusieurs clients, plusieurs points de départ/arrivée{% else %}Mode standard: un seul client, de point A à point B{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="type_demenagement_id" class="form-label">Type de déménagement <span class="text-danger">*</span></label>
+                        <!-- SOLUTION BOOTSTRAP : Select avec classe Bootstrap -->
+                        <select name="type_demenagement_id" id="type_demenagement_id" class="form-select">
+                            <option value="">Sélectionnez un type</option>
+                            {% for type in types_demenagement %}
+                                <option value="{{ type.id }}" {% if prestation.type_demenagement_id == type.id %}selected{% endif %}>{{ type.nom }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.type_demenagement_id.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.type_demenagement_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text mt-1" id="vehicle-hint">Sélectionnez d'abord le type pour voir les véhicules adaptés</div>
+                    </div>
+                </div>
+                
+                <!-- Champ caché pour la compatibilité avec l'ancien système -->
+                {{ form.type_demenagement_id(style="display: none;") }}
+                
+                <!-- Section Dates -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="date_debut" class="form-label">{{ form.date_debut.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.date_debut(class="form-control" + (" is-invalid" if form.date_debut.errors else ""), id="date_debut", type="date") }}
+                        {% for error in form.date_debut.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="date_fin" class="form-label">{{ form.date_fin.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.date_fin(class="form-control" + (" is-invalid" if form.date_fin.errors else ""), id="date_fin", type="date") }}
+                        {% for error in form.date_fin.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Section Transporteurs -->
+                <div class="row mb-3">
+                    <div class="col-md-12 form-group transporteurs">
+                        <!-- Boutons -->
+                        <div class="mb-3" style="width: 100%;">
+                            <button type="button" id="show-calendar-btn" class="btn btn-primary me-2">
+                                <i class="fas fa-calendar-alt"></i> Voir les disponibilités
+                            </button>
+                            <button type="button" id="verifier-disponibilite" class="btn btn-info">
+                                <i class="fas fa-sync-alt"></i> Vérifier les disponibilités
+                            </button>
+                        </div>
+                        
+                        <!-- Titre -->
+                        <h4 class="mb-2 mt-3">Transporteurs disponibles</h4>
+                        
+                        <!-- Section Liste des transporteurs -->
+                        <div class="border p-3 mb-3 rounded" style="border-color: #0d6efd !important; background-color: #f8f9fa;">
+                            <!-- Liste déroulante qui montre plusieurs transporteurs -->
+                            <div class="mb-2">
+                                <select name="transporteurs" id="transporteurs" multiple="multiple" 
+                                    class="form-select form-control" 
+                                    style="height: 250px !important; overflow-y: auto !important; display: block !important;">
+                                    {% for option in form.transporteurs.choices %}
+                                        <option value="{{ option[0] }}" class="p-2" {% if option[0] in prestation.transporteurs_ids %}selected{% endif %}>{{ option[1] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Message d'information -->
+                            <div class="d-flex justify-content-between align-items-center small">
+                                <div>
+                                    <i class="fas fa-info-circle text-primary"></i>
+                                    Maintenez la touche Ctrl pour sélectionner plusieurs transporteurs
+                                </div>
+                                <div class="selected-transporteurs-count text-primary fw-bold"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section Adresses -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="adresse_depart" class="form-label">{{ form.adresse_depart.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.adresse_depart(class="form-control" + (" is-invalid" if form.adresse_depart.errors else ""), id="adresse_depart", rows=3, placeholder="Adresse principale de départ") }}
+                        {% for error in form.adresse_depart.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        
+                        <!-- Étapes supplémentaires pour le départ -->
+                        <div id="etapes-depart" class="mt-2">
+                            {% if prestation.etapes_depart %}
+                                {% for etape in prestation.etapes_depart %}
+                                    <div class="input-group mt-2 etape-depart">
+                                        <input type="text" name="etape_depart[]" class="form-control" value="{{ etape }}" placeholder="Adresse intermédiaire de départ">
+                                        <button type="button" class="btn btn-outline-danger supprimer-etape">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <button type="button" id="ajouter-etape-depart" class="btn btn-outline-secondary btn-sm mt-2">
+                            <i class="fas fa-plus-circle"></i> Ajouter une étape
+                        </button>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="adresse_arrivee" class="form-label">{{ form.adresse_arrivee.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.adresse_arrivee(class="form-control" + (" is-invalid" if form.adresse_arrivee.errors else ""), id="adresse_arrivee", rows=3, placeholder="Adresse principale d'arrivée") }}
+                        {% for error in form.adresse_arrivee.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        
+                        <!-- Étapes supplémentaires pour l'arrivée -->
+                        <div id="etapes-arrivee" class="mt-2">
+                            {% if prestation.etapes_arrivee %}
+                                {% for etape in prestation.etapes_arrivee %}
+                                    <div class="input-group mt-2 etape-arrivee">
+                                        <input type="text" name="etape_arrivee[]" class="form-control" value="{{ etape }}" placeholder="Adresse intermédiaire d'arrivée">
+                                        <button type="button" class="btn btn-outline-danger supprimer-etape">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <button type="button" id="ajouter-etape-arrivee" class="btn btn-outline-secondary btn-sm mt-2">
+                            <i class="fas fa-plus-circle"></i> Ajouter une étape
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Informations supplémentaires -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="tags" class="form-label">{{ form.tags.label.text }}</label>
+                        {{ form.tags(class="form-control" + (" is-invalid" if form.tags.errors else ""), id="tags") }}
+                        {% for error in form.tags.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Ex: urgent, fragile, volumineux</div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="societe" class="form-label">{{ form.societe.label.text }}</label>
+                        {{ form.societe(class="form-control" + (" is-invalid" if form.societe.errors else ""), id="societe") }}
+                        {% for error in form.societe.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Commentaires -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="commentaires" class="form-label">{{ form.commentaires.label.text }}</label>
+                        {{ form.commentaires(class="form-control" + (" is-invalid" if form.commentaires.errors else ""), id="commentaires", rows=4) }}
+                        {% for error in form.commentaires.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Bouton de soumission -->
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i> Enregistrer les modifications
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour le calendrier -->
+<div class="modal fade" id="calendar-modal" tabindex="-1" aria-labelledby="calendarModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="calendarModalLabel">Calendrier des disponibilités</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="calendar-container">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script pour initialiser le compteur de transporteurs sélectionnés -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mettre à jour le compteur de transporteurs sélectionnés
+    function updateTransporteursCount() {
+        const select = document.getElementById('transporteurs');
+        const countDisplay = document.querySelector('.selected-transporteurs-count');
+        
+        if (select && countDisplay) {
+            const selectedCount = Array.from(select.options).filter(option => option.selected).length;
+            countDisplay.textContent = selectedCount > 0 ? `${selectedCount} transporteur(s) sélectionné(s)` : '';
+        }
+    }
+    
+    // Initialiser le compteur
+    updateTransporteursCount();
+    
+    // Mettre à jour le compteur lorsque la sélection change
+    const transporteursSelect = document.getElementById('transporteurs');
+    if (transporteursSelect) {
+        transporteursSelect.addEventListener('change', updateTransporteursCount);
+    }
+});
+</script>
+{% endblock %}

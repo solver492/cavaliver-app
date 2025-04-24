@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Documents de {{ client.nom }} {{ client.prenom }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12 col-md-10 offset-md-1">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Documents de {{ client.nom }} {{ client.prenom }}</h6>
+                    <div>
+                        <a href="{{ url_for('client.details', id=client.id) }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Retour au client
+                        </a>
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
+                            <i class="fas fa-upload"></i> Ajouter un document
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% include 'components/flash_messages.html' %}
+                    
+                    {% if documents %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered dataTable" id="documentsTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Type</th>
+                                    <th>Format</th>
+                                    <th>Taille</th>
+                                    <th>Tags</th>
+                                    <th>Date d'upload</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for document in documents %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('documents.view_document', document_id=document.id) }}" class="text-primary">
+                                            <i class="fas fa-file-{{ 'pdf' if document.format == 'pdf' else 'alt' }}"></i>
+                                            {{ document.nom }}
+                                        </a>
+                                        {% if document.notes %}
+                                        <span class="ml-2" data-toggle="tooltip" title="{{ document.notes }}">
+                                            <i class="fas fa-sticky-note text-warning"></i>
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ document.type|capitalize if document.type else '-' }}</td>
+                                    <td>
+                                        {% if document.format %}
+                                        <span class="badge badge-info">{{ document.format }}</span>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if document.taille %}
+                                        {{ (document.taille / 1024)|round|int if document.taille < 1024*1024 else ((document.taille / 1024 / 1024)|round(2)) }} 
+                                        {{ 'Ko' if document.taille < 1024*1024 else 'Mo' }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if document.tags %}
+                                        {% for tag in document.tags.split(',') %}
+                                        <span class="badge badge-secondary">{{ tag.strip() }}</span>
+                                        {% endfor %}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ document.date_upload.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('documents.download_document', document_id=document.id) }}" class="btn btn-info" title="Télécharger">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <a href="{{ url_for('documents.edit_document', document_id=document.id) }}" class="btn btn-primary" title="Modifier">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteModal{{ document.id }}" title="Supprimer">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Modal de confirmation de suppression -->
+                                        <div class="modal fade" id="deleteModal{{ document.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel{{ document.id }}" aria-hidden="true">
+                                            <div class="modal-dialog" role="document">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="deleteModalLabel{{ document.id }}">Confirmation de suppression</h5>
+                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        Êtes-vous sûr de vouloir supprimer le document <strong>{{ document.nom }}</strong> ?
+                                                        <p class="text-danger mt-2">Cette action est irréversible.</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                                                        <form action="{{ url_for('documents.delete_document', document_id=document.id) }}" method="post">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                            <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Aucun document n'a été ajouté pour ce client.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour l'upload de document -->
+<div class="modal fade" id="uploadDocumentModal" tabindex="-1" aria-labelledby="uploadDocumentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadDocumentModalLabel">Ajouter un document pour {{ client.nom }} {{ client.prenom }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{{ url_for('documents.upload', client_id=client.id) }}" enctype="multipart/form-data" id="uploadDocumentForm">
+                    {{ form.csrf_token }}
+                    <input type="hidden" name="client_id" value="{{ client.id }}" id="hidden_client_id">
+                    
+                    <div class="form-group">
+                        {{ form.nom.label(class="form-control-label") }}
+                        {{ form.nom(class="form-control") }}
+                        {% if form.nom.errors %}
+                        <div class="text-danger">
+                            {% for error in form.nom.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fichier" class="form-control-label font-weight-bold">Fichier à téléverser <span class="text-danger">*</span></label>
+                        {{ form.fichier(class="form-control-file", id="fichier") }}
+                        <small class="form-text text-muted">Formats acceptés : PDF, JPG, PNG, DOC, DOCX, XLS, XLSX, TXT</small>
+                        {% if form.fichier.errors %}
+                        <div class="text-danger">
+                            {% for error in form.fichier.errors %}
+                            <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.type.label(class="form-control-label") }}
+                                {{ form.type(class="form-control") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.categorie.label(class="form-control-label") }}
+                                {{ form.categorie(class="form-control") }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.tags.label(class="form-control-label") }}
+                        {{ form.tags(class="form-control", placeholder="Exemple: important, facture, 2023") }}
+                        <small class="form-text text-muted">Séparez les tags par des virgules</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes" class="form-control-label font-weight-bold">Notes / Commentaires <span class="text-primary">(Important)</span></label>
+                        {{ form.notes(class="form-control", rows=4, placeholder="Ajoutez ici vos notes et commentaires sur ce document...", id="notes") }}
+                        <small class="form-text text-muted">Utilisez ce champ pour ajouter des informations importantes concernant ce document.</small>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Téléverser
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#documentsTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/French.json"
+            },
+            "order": [[ 5, "desc" ]]  // Tri par date d'upload (décroissant)
+        });
+        
+        // Activer les tooltips Bootstrap
+        $('[data-toggle="tooltip"]').tooltip();
+        
+        // Gestion du formulaire d'upload de documents
+        $('#uploadDocumentForm').on('submit', function(e) {
+            console.log('Formulaire soumis');
+            
+            // Vérification du client_id
+            var clientId = $('#hidden_client_id').val();
+            console.log('Client ID avant soumission:', clientId);
+            
+            if (!clientId) {
+                alert('Erreur: Impossible d\'identifier le client. Veuillez réessayer.');
+                e.preventDefault();
+                return false;
+            }
+            
+            // Vérification du fichier
+            var fileInput = document.querySelector('#fichier');
+            console.log('Fichier sélectionné:', fileInput ? fileInput.files[0] : 'Élément non trouvé');
+            
+            if (!fileInput || !fileInput.files.length) {
+                alert('Veuillez sélectionner un fichier à uploader.');
+                e.preventDefault();
+                return false;
+            }
+            
+            // Vérification que les notes sont remplies
+            var notesField = document.querySelector('#notes');
+            if (notesField && notesField.value.trim() === '') {
+                if (!confirm('Vous n\'avez pas ajouté de notes pour ce document. Les notes sont importantes pour identifier le document ultérieurement. Voulez-vous continuer sans ajouter de notes?')) {
+                    e.preventDefault();
+                    notesField.focus();
+                    return false;
+                }
+            }
+            
+            // Affichage d'un message de chargement
+            var submitBtn = document.querySelector('#uploadDocumentForm button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Chargement...';
+                submitBtn.disabled = true;
+            }
+            
+            // Le formulaire sera soumis normalement (pas d'AJAX)
+            return true;
+        });
+        
+        // Ouvrir automatiquement la modal si demandé dans l'URL
+        if (window.location.hash === '#upload') {
+            var uploadModal = new bootstrap.Modal(document.getElementById('uploadDocumentModal'));
+            uploadModal.show();
+        }
+        
+        // Mettre en évidence le champ de notes
+        $('#notes').on('focus', function() {
+            $(this).parent().addClass('border-left border-primary pl-2');
+        }).on('blur', function() {
+            $(this).parent().removeClass('border-left border-primary pl-2');
+        });
+    });
+</script>
+{% endblock %}

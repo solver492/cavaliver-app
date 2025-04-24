@@ -1,0 +1,76 @@
+/* Style pour les logos dans la barre latérale */
+.logo-slideshow {
+    position: relative;
+    height: 60px;
+    width: 60px;
+    overflow: hidden;
+    margin-right: 15px;
+}
+
+.logo-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Animation pour faire apparaître les logos un par un */
+.logo-slide:nth-child(1) {
+    animation: fadeInOut 10s infinite 0s;
+}
+
+.logo-slide:nth-child(2) {
+    animation: fadeInOut 10s infinite 2s;
+}
+
+.logo-slide:nth-child(3) {
+    animation: fadeInOut 10s infinite 4s;
+}
+
+.logo-slide:nth-child(4) {
+    animation: fadeInOut 10s infinite 6s;
+}
+
+.logo-slide:nth-child(5) {
+    animation: fadeInOut 10s infinite 8s;
+}
+
+/* Style des images des logos */
+.logo-slide img {
+    max-height: 100%;
+    max-width: 100%;
+    /* Supprimer l'arrière-plan des images */
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.2));
+    background-color: transparent !important;
+}
+
+/* Animation pour faire apparaître/disparaître chaque logo */
+@keyframes fadeInOut {
+    0%, 20%, 100% {
+        opacity: 0;
+    }
+    25%, 45% {
+        opacity: 1;
+    }
+}
+
+/* Styles responsifs */
+@media (max-width: 768px) {
+    .logo-slideshow {
+        height: 50px;
+        width: 50px;
+    }
+}
+
+@media (max-width: 576px) {
+    .logo-slideshow {
+        height: 40px;
+        width: 40px;
+    }
+}

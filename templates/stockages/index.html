@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h1 class="display-5">Gestion des Stockages</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Tableau de bord</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Stockages</li>
+                </ol>
+            </nav>
+            {% if current_user.role in ['commercial', 'admin', 'superadmin'] %}
+            <div class="btn-toolbar mb-2 mb-md-0 float-right">
+                <div class="btn-group mr-2">
+                    <a href="{{ url_for('stockage.add') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nouveau stockage
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-filter"></i> Filtres
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{{ url_for('stockage.index') }}" class="form-inline">
+                        <div class="form-group mr-2 mb-2">
+                            <label for="client_id" class="mr-2">Client</label>
+                            {{ form.client_id(class="form-control") }}
+                        </div>
+                        <div class="form-group mr-2 mb-2">
+                            <label for="statut" class="mr-2">Statut</label>
+                            {{ form.statut(class="form-control") }}
+                        </div>
+                        <div class="form-group mr-2 mb-2">
+                            <label for="reference" class="mr-2">Référence</label>
+                            <input type="text" class="form-control" id="reference" name="reference" value="{{ request.args.get('reference', '') }}">
+                        </div>
+                        <div class="form-group mr-2 mb-2">
+                            <label for="date_debut" class="mr-2">Du</label>
+                            <input type="date" class="form-control" id="date_debut" name="date_debut" value="{{ request.args.get('date_debut', '') }}">
+                        </div>
+                        <div class="form-group mr-2 mb-2">
+                            <label for="date_fin" class="mr-2">Au</label>
+                            <input type="date" class="form-control" id="date_fin" name="date_fin" value="{{ request.args.get('date_fin', '') }}">
+                        </div>
+                        <div class="form-group form-check mr-2 mb-2">
+                            <input type="checkbox" class="form-check-input" id="archives" name="archives" {% if 'archives' in request.args %}checked{% endif %}>
+                            <label class="form-check-label" for="archives">Voir les archives</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary mb-2 mr-2">Filtrer</button>
+                        <a href="{{ url_for('stockage.index') }}" class="btn btn-secondary mb-2">Réinitialiser</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-box-open"></i> Liste des stockages
+                    <span class="badge badge-light ml-2">{{ stockages.total }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Référence</th>
+                                    <th>Client</th>
+                                    <th>Emplacement</th>
+                                    <th>Dates</th>
+                                    <th>Volume</th>
+                                    <th>Montant mensuel</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stockage in stockages.items %}
+                                <tr{% if stockage.archive %} class="table-secondary"{% endif %}>
+                                    <td>
+                                        {{ stockage.reference }}
+                                        {% if stockage.archive %}
+                                            <span class="badge badge-secondary">Archivé</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('client.edit', id=stockage.client.id) }}">
+                                            {{ stockage.client.nom }} {{ stockage.client.prenom }}
+                                        </a>
+                                    </td>
+                                    <td>{{ stockage.emplacement }}</td>
+                                    <td>
+                                        <span class="badge badge-info">Du {{ stockage.date_debut.strftime('%d/%m/%Y') }}</span>
+                                        {% if stockage.date_fin %}
+                                            <span class="badge badge-secondary">au {{ stockage.date_fin.strftime('%d/%m/%Y') }}</span>
+                                        {% else %}
+                                            <span class="badge badge-warning">en cours</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ stockage.volume_total|round(2) if stockage.volume_total else '0.00' }} m³</td>
+                                    <td>{{ stockage.montant_mensuel|round(2) }} €</td>
+                                    <td>
+                                        <span class="badge badge-{{ {'Actif':'success', 'En attente':'warning', 'Terminé':'secondary'}[stockage.statut] }}">
+                                            {{ stockage.statut }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('stockage.detail', id=stockage.id) }}" class="btn btn-info" data-toggle="tooltip" title="Détails">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('stockage.edit', id=stockage.id) }}" class="btn btn-primary" data-toggle="tooltip" title="Modifier">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('stockage.create_invoice', id=stockage.id) }}" class="btn btn-warning" data-toggle="tooltip" title="Créer une facture">
+                                                <i class="fas fa-file-invoice-dollar"></i>
+                                            </a>
+                                            <a href="{{ url_for('stockage.toggle_archive', id=stockage.id) }}" class="btn btn-secondary" data-toggle="tooltip" 
+                                               title="{{ 'Désarchiver' if stockage.archive else 'Archiver' }}"
+                                               onclick="return confirm('Êtes-vous sûr de vouloir {{ 'restaurer' if stockage.archive else 'archiver' }} ce stockage?')">
+                                                <i class="fas fa-{{ 'undo' if stockage.archive else 'archive' }}"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center">Aucun stockage trouvé.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% if stockages.pages > 1 %}
+                <div class="card-footer">
+                    <nav aria-label="Pagination des stockages">
+                        <ul class="pagination justify-content-center mb-0">
+                            <!-- Bouton précédent -->
+                            <li class="page-item {% if stockages.page == 1 %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('stockage.index', page=stockages.prev_num, **request.args) if stockages.has_prev else '#' }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            
+                            <!-- Pages -->
+                            {% set start_page = [1, stockages.page - 2]|max %}
+                            {% set end_page = [stockages.pages, stockages.page + 2]|min %}
+                            
+                            {% if start_page > 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('stockage.index', page=1, **request.args) }}">1</a>
+                                </li>
+                                {% if start_page > 2 %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                            {% endif %}
+                            
+                            {% for page_num in range(start_page, end_page + 1) %}
+                                <li class="page-item {% if page_num == stockages.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('stockage.index', page=page_num, **request.args) }}">{{ page_num }}</a>
+                                </li>
+                            {% endfor %}
+                            
+                            {% if end_page < stockages.pages %}
+                                {% if end_page < stockages.pages - 1 %}
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('stockage.index', page=stockages.pages, **request.args) }}">{{ stockages.pages }}</a>
+                                </li>
+                            {% endif %}
+                            
+                            <!-- Bouton suivant -->
+                            <li class="page-item {% if stockages.page == stockages.pages %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('stockage.index', page=stockages.next_num, **request.args) if stockages.has_next else '#' }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(function() {
+        // Activation des tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+</script>
+{% endblock %}

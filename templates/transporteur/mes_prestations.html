@@ -1,0 +1,457 @@
+{% extends 'base.html' %}
+
+{% block title %}Mes Prestations{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <h1 class="h3 mb-4"><i class="fas fa-truck me-2"></i>Mes Prestations</h1>
+    
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Prestations en attente de réponse</h5>
+            <span class="badge bg-warning" id="pending-count">0</span>
+        </div>
+        <div class="card-body">
+            <div id="pending-prestations-container">
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                    <p>Chargement des prestations...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Prestations acceptées</h5>
+                </div>
+                <div class="card-body">
+                    <div id="accepted-prestations-container">
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                            <p>Chargement des prestations...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Prestations refusées</h5>
+                </div>
+                <div class="card-body">
+                    <div id="refused-prestations-container">
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                            <p>Chargement des prestations...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de refus -->
+<div class="modal fade" id="refuseModal" tabindex="-1" aria-labelledby="refuseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="refuseModalLabel">Motif de refus</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="refuse-form">
+                    <input type="hidden" id="refuse-prestation-id" value="">
+                    <div class="mb-3">
+                        <label for="refuse-reason" class="form-label">Veuillez indiquer la raison de votre refus :</label>
+                        <textarea class="form-control" id="refuse-reason" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirm-refuse">Confirmer le refus</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de documentation -->
+<div class="modal fade" id="documentModal" tabindex="-1" aria-labelledby="documentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="documentModalLabel">Ajouter des informations</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="document-form">
+                    <input type="hidden" id="document-prestation-id" value="">
+                    <div class="mb-3">
+                        <label for="document-notes" class="form-label">Notes ou informations supplémentaires :</label>
+                        <textarea class="form-control" id="document-notes" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-info" id="confirm-document">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast de notification -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong class="me-auto">Notification</strong>
+            <small>À l'instant</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            Message de notification
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Charger les prestations du transporteur
+    loadTransporteurPrestations();
+    
+    // Ajouter les écouteurs d'événements pour les modales
+    setupEventListeners();
+});
+
+// Fonction pour charger les prestations du transporteur
+function loadTransporteurPrestations() {
+    const userId = document.body.dataset.userId;
+    
+    if (!userId) {
+        showToast("Erreur: Impossible d'identifier l'utilisateur", "danger");
+        return;
+    }
+    
+    fetch(`/api/transporteur/${userId}/prestations`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                displayPrestations(data.prestations);
+            } else {
+                showToast(data.message || "Erreur lors du chargement des prestations", "danger");
+            }
+        })
+        .catch(error => {
+            console.error("Erreur lors du chargement des prestations:", error);
+            showToast(`Erreur: ${error.message}`, "danger");
+        });
+}
+
+// Fonction pour afficher les prestations
+function displayPrestations(prestations) {
+    // Séparer les prestations par statut
+    const pendingPrestations = prestations.filter(p => p.status_transporteur === 'en_attente');
+    const acceptedPrestations = prestations.filter(p => p.status_transporteur === 'accepte');
+    const refusedPrestations = prestations.filter(p => p.status_transporteur === 'refuse');
+    
+    // Mettre à jour le compteur de prestations en attente
+    document.getElementById('pending-count').textContent = pendingPrestations.length;
+    
+    // Afficher les prestations en attente
+    displayPrestationsByStatus(pendingPrestations, 'pending-prestations-container', true);
+    
+    // Afficher les prestations acceptées
+    displayPrestationsByStatus(acceptedPrestations, 'accepted-prestations-container', false);
+    
+    // Afficher les prestations refusées
+    displayPrestationsByStatus(refusedPrestations, 'refused-prestations-container', false);
+}
+
+// Fonction pour afficher les prestations par statut
+function displayPrestationsByStatus(prestations, containerId, showActions) {
+    const container = document.getElementById(containerId);
+    
+    if (!container) return;
+    
+    if (prestations.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                <p>Aucune prestation trouvée dans cette catégorie</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<div class="list-group">';
+    
+    prestations.forEach(prestation => {
+        const dateDebut = new Date(prestation.date_debut).toLocaleDateString('fr-FR');
+        const dateFin = new Date(prestation.date_fin).toLocaleDateString('fr-FR');
+        
+        html += `
+            <div class="list-group-item list-group-item-action flex-column align-items-start">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">Prestation #${prestation.id}</h5>
+                    <small>${dateDebut} au ${dateFin}</small>
+                </div>
+                <p class="mb-1"><strong>Client:</strong> ${prestation.client_nom}</p>
+                <p class="mb-1"><strong>Adresse départ:</strong> ${prestation.adresse_depart}</p>
+                <p class="mb-1"><strong>Adresse arrivée:</strong> ${prestation.adresse_arrivee}</p>
+                <p class="mb-1"><strong>Type:</strong> ${prestation.type_demenagement}</p>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                    <div>
+                        <span class="badge bg-${getStatusBadgeClass(prestation.statut)}">${prestation.statut === 'en_cours' ? 'En cours' : prestation.statut}</span>
+                        <span class="badge bg-${getPriorityBadgeClass(prestation.priorite)}">${prestation.priorite}</span>
+                    </div>
+                    ${showActions ? `
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-success accept-btn" data-prestation-id="${prestation.id}">
+                            <i class="fas fa-check me-1"></i> Accepter
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger refuse-btn" data-prestation-id="${prestation.id}">
+                            <i class="fas fa-times me-1"></i> Refuser
+                        </button>
+                        <button type="button" class="btn btn-sm btn-info document-btn" data-prestation-id="${prestation.id}">
+                            <i class="fas fa-file-alt me-1"></i> Documenter
+                        </button>
+                    </div>
+                    ` : ''}
+                </div>
+                ${prestation.raison_refus ? `
+                <div class="mt-2 p-2 bg-light rounded">
+                    <small><strong>Raison du refus:</strong> ${prestation.raison_refus}</small>
+                </div>
+                ` : ''}
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Fonction pour configurer les écouteurs d'événements
+function setupEventListeners() {
+    // Délégation d'événements pour les boutons d'action
+    document.addEventListener('click', function(event) {
+        // Bouton Accepter
+        if (event.target.closest('.accept-btn')) {
+            const button = event.target.closest('.accept-btn');
+            const prestationId = button.dataset.prestationId;
+            acceptPrestation(prestationId);
+        }
+        
+        // Bouton Refuser
+        if (event.target.closest('.refuse-btn')) {
+            const button = event.target.closest('.refuse-btn');
+            const prestationId = button.dataset.prestationId;
+            showRefuseModal(prestationId);
+        }
+        
+        // Bouton Documenter
+        if (event.target.closest('.document-btn')) {
+            const button = event.target.closest('.document-btn');
+            const prestationId = button.dataset.prestationId;
+            showDocumentModal(prestationId);
+        }
+    });
+    
+    // Bouton de confirmation de refus
+    document.getElementById('confirm-refuse').addEventListener('click', function() {
+        const prestationId = document.getElementById('refuse-prestation-id').value;
+        const reason = document.getElementById('refuse-reason').value;
+        
+        if (!reason.trim()) {
+            showToast("Veuillez indiquer une raison de refus", "warning");
+            return;
+        }
+        
+        refusePrestation(prestationId, reason);
+    });
+    
+    // Bouton de confirmation de documentation
+    document.getElementById('confirm-document').addEventListener('click', function() {
+        const prestationId = document.getElementById('document-prestation-id').value;
+        const notes = document.getElementById('document-notes').value;
+        
+        if (!notes.trim()) {
+            showToast("Veuillez ajouter des informations", "warning");
+            return;
+        }
+        
+        documentPrestation(prestationId, notes);
+    });
+}
+
+// Fonction pour accepter une prestation
+function acceptPrestation(prestationId) {
+    updatePrestationStatus(prestationId, 'accepte');
+}
+
+// Fonction pour refuser une prestation
+function refusePrestation(prestationId, reason) {
+    updatePrestationStatus(prestationId, 'refuse', reason);
+    
+    // Fermer la modale
+    const modal = bootstrap.Modal.getInstance(document.getElementById('refuseModal'));
+    if (modal) {
+        modal.hide();
+    }
+}
+
+// Fonction pour documenter une prestation
+function documentPrestation(prestationId, notes) {
+    // Appel à l'API pour ajouter des notes à la prestation
+    fetch(`/api/prestation/${prestationId}/notes`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({ notes: notes })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showToast("Informations ajoutées avec succès", "success");
+            
+            // Fermer la modale
+            const modal = bootstrap.Modal.getInstance(document.getElementById('documentModal'));
+            if (modal) {
+                modal.hide();
+            }
+        } else {
+            showToast(data.message || "Erreur lors de l'ajout des informations", "danger");
+        }
+    })
+    .catch(error => {
+        console.error("Erreur lors de l'ajout des informations:", error);
+        showToast(`Erreur: ${error.message}`, "danger");
+    });
+}
+
+// Fonction pour mettre à jour le statut d'une prestation
+function updatePrestationStatus(prestationId, status, reason = '') {
+    fetch(`/api/prestation/${prestationId}/status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({ status: status, reason: reason })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const statusText = status === 'accepte' ? 'acceptée' : 'refusée';
+            showToast(`Prestation ${statusText} avec succès`, "success");
+            
+            // Recharger les prestations
+            loadTransporteurPrestations();
+        } else {
+            showToast(data.message || "Erreur lors de la mise à jour du statut", "danger");
+        }
+    })
+    .catch(error => {
+        console.error("Erreur lors de la mise à jour du statut:", error);
+        showToast(`Erreur: ${error.message}`, "danger");
+    });
+}
+
+// Fonction pour afficher la modale de refus
+function showRefuseModal(prestationId) {
+    document.getElementById('refuse-prestation-id').value = prestationId;
+    document.getElementById('refuse-reason').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('refuseModal'));
+    modal.show();
+}
+
+// Fonction pour afficher la modale de documentation
+function showDocumentModal(prestationId) {
+    document.getElementById('document-prestation-id').value = prestationId;
+    document.getElementById('document-notes').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('documentModal'));
+    modal.show();
+}
+
+// Fonction pour afficher un toast
+function showToast(message, type) {
+    const toastEl = document.getElementById('liveToast');
+    const toastBody = toastEl.querySelector('.toast-body');
+    
+    // Définir le message
+    toastBody.textContent = message;
+    
+    // Définir la couleur en fonction du type
+    toastEl.className = 'toast';
+    if (type === 'success') {
+        toastEl.classList.add('bg-success', 'text-white');
+    } else if (type === 'danger') {
+        toastEl.classList.add('bg-danger', 'text-white');
+    } else if (type === 'warning') {
+        toastEl.classList.add('bg-warning', 'text-dark');
+    } else {
+        toastEl.classList.add('bg-info', 'text-white');
+    }
+    
+    // Afficher le toast
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+
+// Fonction pour obtenir la classe du badge en fonction du statut
+function getStatusBadgeClass(status) {
+    switch (status) {
+        case 'En attente': return 'secondary';
+        case 'Confirmé': return 'success';
+        case 'en_cours': return 'dark';
+        case 'Terminé': return 'info';
+        case 'Annulé': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+// Fonction pour obtenir la classe du badge en fonction de la priorité
+function getPriorityBadgeClass(priority) {
+    switch (priority) {
+        case 'Basse': return 'secondary';
+        case 'Normale': return 'info';
+        case 'Haute': return 'warning';
+        case 'Urgente': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+// Fonction pour obtenir le token CSRF
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+</script>
+{% endblock %}

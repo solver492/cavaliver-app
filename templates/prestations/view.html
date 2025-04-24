@@ -1,0 +1,517 @@
+{% extends 'base.html' %}
+
+{% block title %}Détails de la Prestation - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<!-- Script de persistance du transporteur -->
+<script src="{{ url_for('static', filename='js/persistent-transporteur.js') }}"></script>
+<div class="prestation-view-page">
+    <div class="page-title">
+        <h1><i class="fas fa-truck-moving"></i> Détails de la Prestation #{{ prestation.id }}</h1>
+        <div class="btn-group">
+            <a href="{{ url_for('prestation.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Retour à la liste
+            </a>
+            <a href="{{ url_for('prestation.edit', id=prestation.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Modifier
+            </a>
+            <a href="{{ url_for('prestation.historique', id=prestation.id) }}" class="btn btn-info">
+                <i class="fas fa-history"></i> Historique des versions
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Informations générales -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Informations générales</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-details">
+                        <tr>
+                            <th>Statut</th>
+                            <td>
+                                <span class="badge status-{{ prestation.statut|lower|replace(' ', '-') }}">
+                                    {{ prestation.statut }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Type de déménagement</th>
+                            <td>{{ prestation.type_demenagement }}</td>
+                        </tr>
+                        <tr>
+                            <th>Priorité</th>
+                            <td>{{ prestation.priorite }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date de début</th>
+                            <td>{{ prestation.date_debut.strftime('%d/%m/%Y') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date de fin</th>
+                            <td>{{ prestation.date_fin.strftime('%d/%m/%Y') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Montant</th>
+                            <td>{% if prestation.montant %}{{ prestation.montant }} €{% else %}Non défini{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Société</th>
+                            <td>{{ prestation.societe or 'Non définie' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date de création</th>
+                            <td>{{ prestation.date_creation.strftime('%d/%m/%Y %H:%M') }}</td>
+                        </tr>
+                        {% if prestation.tags %}
+                        <tr>
+                            <th>Tags</th>
+                            <td>
+                                {% for tag in prestation.tags.split(',') %}
+                                    <span class="badge bg-secondary">{{ tag }}</span>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Client et adresses -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5>
+                        <i class="fas fa-user"></i> {{ 'Clients' if clients|length > 1 else 'Client' }}
+                        {% if clients|length > 1 %}
+                            <span class="badge bg-warning ms-2">{{ clients|length }}</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if clients|length > 1 %}
+                        <!-- Mode Groupage: Plusieurs clients -->
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle"></i> <strong>Prestation de groupage</strong> avec <strong>{{ clients|length }} clients</strong>
+                        </div>
+                        <div class="list-group">
+                        {% for client_item in clients %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-1">
+                                        <i class="fas fa-user me-2"></i>
+                                        <strong>{{ client_item.nom }} {{ client_item.prenom }}</strong>
+                                        {% if client_item.id == prestation.client_id %}
+                                            <span class="badge bg-primary ms-2">Principal</span>
+                                        {% endif %}
+                                    </h6>
+                                </div>
+                                <p class="mb-1">
+                                    <i class="fas fa-envelope me-2"></i>
+                                    {{ client_item.email }}
+                                </p>
+                                <p class="mb-0">
+                                    <i class="fas fa-phone me-2"></i>
+                                    {{ client_item.telephone }}
+                                </p>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <!-- Mode Standard: Un seul client -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    <i class="fas fa-user me-2"></i>
+                                    <strong>Nom:</strong>
+                                    {{ client.nom }} {{ client.prenom }}
+                                </p>
+                                {% if client.email %}
+                                <p class="mb-2">
+                                    <i class="fas fa-envelope me-2"></i>
+                                    <strong>Email:</strong>
+                                    {{ client.email }}
+                                </p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {% if client.telephone %}
+                                <p class="mb-2">
+                                    <i class="fas fa-phone me-2"></i>
+                                    <strong>Téléphone:</strong>
+                                    {{ client.telephone }}
+                                    <a href="https://wa.me/{{ client.telephone|replace(' ', '')|replace('+', '') }}" class="text-success ms-2" target="_blank">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </a>
+                                </p>
+                                {% endif %}
+                                {% if client.adresse %}
+                                <p class="mb-0">
+                                    <i class="fas fa-map-marker-alt me-2"></i>
+                                    <strong>Adresse:</strong>
+                                    {{ client.adresse }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5>
+                        <i class="fas fa-map-marker-alt"></i> Adresses
+                        {% if prestation.count_etapes() > 0 %}
+                            <span class="badge bg-warning ms-2">{{ prestation.count_etapes() + 2 }}</span>
+                        {% endif %}
+                        <div class="float-end">
+                            <a href="{{ url_for('prestation.add_etapes', id=prestation.id) }}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-plus-circle"></i> Gérer les étapes
+                            </a>
+                        </div>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3 border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="fas fa-flag-checkered"></i> Point de départ</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-0">{{ prestation.adresse_depart }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Étapes intermédiaires de départ -->
+                    {% if prestation.has_etapes_depart() %}
+                    <div class="etapes-container mb-3">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-route"></i> Étapes intermédiaires (départ)
+                                    <span class="badge bg-light text-dark">{{ prestation.get_etapes_depart()|length }}</span>
+                                </h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <ol class="list-group list-group-numbered mb-0">
+                                    {% for etape in prestation.get_etapes_depart() %}
+                                        {% if etape.strip() %}
+                                        <li class="list-group-item d-flex align-items-center">
+                                            <i class="fas fa-map-pin me-2 text-info"></i>
+                                            <span>{{ etape }}</span>
+                                        </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Adresse d'arrivée principale -->
+                    <div class="card mb-3 border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h6 class="mb-0"><i class="fas fa-flag-checkered"></i> Point d'arrivée</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>{{ prestation.adresse_arrivee }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Étapes intermédiaires d'arrivée -->
+                    {% if prestation.has_etapes_arrivee() %}
+                    <div class="etapes-container mb-3">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-route"></i> Étapes intermédiaires (arrivée)
+                                    <span class="badge bg-light text-dark">{{ prestation.get_etapes_arrivee()|length }}</span>
+                                </h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <ol class="list-group list-group-numbered mb-0">
+                                    {% for etape in prestation.get_etapes_arrivee() %}
+                                        {% if etape.strip() %}
+                                        <li class="list-group-item d-flex align-items-center">
+                                            <i class="fas fa-map-pin me-2 text-info"></i>
+                                            <span>{{ etape }}</span>
+                                        </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Transporteurs -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5>
+                        <i class="fas fa-truck"></i> Transporteurs assignés
+                        <span class="badge bg-warning ms-2">{{ transporteurs|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body" id="transporteurs-container">
+                    {% if transporteurs %}
+                    <div class="row">
+                        {% for transporteur in transporteurs %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100">
+                                <div class="card-header bg-secondary text-white">
+                                    <strong>{{ transporteur.nom }} {{ transporteur.prenom }}</strong>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-1">
+                                        <i class="fas fa-envelope me-2"></i>
+                                        {{ transporteur.email }}
+                                    </p>
+                                    <p class="mb-0">
+                                        <i class="fas fa-truck me-2"></i>
+                                        {{ transporteur.vehicule }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> Aucun transporteur assigné à cette prestation.
+                    </div>
+                    {% endif %}
+                        
+                        <div class="col-12 mt-3 text-center">
+                            <a href="{{ url_for('prestation.assign_transporteurs', id=prestation.id) }}" class="btn btn-primary">
+                                <i class="fas fa-edit me-2"></i> Modifier les transporteurs
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observations -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-sticky-note"></i> Observations</h5>
+                </div>
+                <div class="card-body">
+                    {% if prestation.observations %}
+                        <p>{{ prestation.observations|replace('\n', '<br>')|safe }}</p>
+                    {% else %}
+                        <p class="text-muted">Aucune observation</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if prestation.vehicules_suggeres %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-truck"></i> Véhicules suggérés</h5>
+                </div>
+                <div class="card-body">
+                    {{ prestation.vehicules_suggeres|replace('\n', '<br>')|safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Données de débogage (visible uniquement pour les administrateurs) -->
+    {% if current_user.role == 'admin' %}
+    <div class="card mt-4 border-dark">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-bug"></i> Données de débogage
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0">Étapes de départ</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Données brutes:</strong> <code>{{ prestation.etapes_depart }}</code></p>
+                            <p><strong>Nombre d'étapes:</strong> <code>{{ prestation.get_etapes_depart()|length }}</code></p>
+                            <p><strong>has_etapes_depart:</strong> <code>{{ prestation.has_etapes_depart() }}</code></p>
+                            <p><strong>Contenu:</strong></p>
+                            <ul>
+                                {% for etape in prestation.get_etapes_depart() %}
+                                <li><code>{{ etape }}</code></li>
+                                {% else %}
+                                <li><em>Aucune étape</em></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0">Étapes d'arrivée</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Données brutes:</strong> <code>{{ prestation.etapes_arrivee }}</code></p>
+                            <p><strong>Nombre d'étapes:</strong> <code>{{ prestation.get_etapes_arrivee()|length }}</code></p>
+                            <p><strong>has_etapes_arrivee:</strong> <code>{{ prestation.has_etapes_arrivee() }}</code></p>
+                            <p><strong>Contenu:</strong></p>
+                            <ul>
+                                {% for etape in prestation.get_etapes_arrivee() %}
+                                <li><code>{{ etape }}</code></li>
+                                {% else %}
+                                <li><em>Aucune étape</em></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">Transporteurs</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Nombre de transporteurs:</strong> <code>{{ transporteurs|length }}</code></p>
+                    <p><strong>Contenu:</strong></p>
+                    <ul>
+                        {% for t in transporteurs %}
+                        <li><code>{{ t.id }} - {{ t.nom }} {{ t.prenom }}</code></li>
+                        {% else %}
+                        <li><em>Aucun transporteur</em></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Factures associées -->
+    {% if prestation.factures %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-file-invoice-dollar"></i> Factures associées</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Numéro</th>
+                                    <th>Date d'émission</th>
+                                    <th>Montant TTC</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for facture in prestation.factures %}
+                                <tr>
+                                    <td>{{ facture.numero }}</td>
+                                    <td>{{ facture.date_emission.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ facture.montant_ttc }} €</td>
+                                    <td>
+                                        <span class="badge status-{{ facture.statut|lower|replace(' ', '-') }}">
+                                            {{ facture.statut }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('facture.view', id=facture.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/debug-prestation.js') }}"></script>
+<!-- Scripts de forçage d'affichage supprimés pour permettre l'affichage des données réelles -->
+<script src="{{ url_for('static', filename='js/debug-etapes-data.js') }}"></script>
+
+<!-- Données de la prestation exposées pour JavaScript -->
+<script type="application/json" id="prestation-data">
+{
+    "id": {{ prestation.id }},
+    "etapes_depart": {{ prestation.get_etapes_depart()|tojson }},
+    "etapes_arrivee": {{ prestation.get_etapes_arrivee()|tojson }},
+    "transporteurs": {{ transporteurs|map(attribute='id')|list|tojson }},
+    "debug_data": {{ debug_data|tojson }}
+}
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gestion du bouton de validation des transporteurs
+        const validerTransporteursBtn = document.getElementById('valider-transporteurs');
+
+        if (validerTransporteursBtn) {
+            validerTransporteursBtn.addEventListener('click', function() {
+                // Récupérer les transporteurs assignés
+                const transporteurs = [];
+                document.querySelectorAll('.list-group-item').forEach(item => {
+                    transporteurs.push(item.textContent.trim());
+                });
+
+                if (transporteurs.length === 0) {
+                    alert('Aucun transporteur n\'est assigné à cette prestation.');
+                    return;
+                }
+
+                // Afficher un message de confirmation
+                const message = `Les transporteurs suivants ont été validés pour cette prestation :\n${transporteurs.join('\n')}`;
+
+                // Créer une alerte de succès stylisée
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+                alertDiv.role = 'alert';
+                alertDiv.innerHTML = `
+                    <strong>Transporteurs validés!</strong> ${message.replace(/\n/g, '<br>')}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+                `;
+
+                // Insérer l'alerte avant le bouton de validation
+                validerTransporteursBtn.parentNode.insertBefore(alertDiv, validerTransporteursBtn);
+
+                // Masquer le bouton après validation
+                validerTransporteursBtn.style.display = 'none';
+            });
+        }
+        
+        // Le script de forçage d'affichage des transporteurs a été supprimé
+        console.log('Affichage des transporteurs réels depuis la base de données');
+    });
+</script>
+{% endblock %}

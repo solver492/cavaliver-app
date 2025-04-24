@@ -1,0 +1,375 @@
+/* Thème pour les prestations de déménagement */
+
+/* Couleurs du thème */
+:root {
+    --primary-color: #3a7bd5;
+    --secondary-color: #00d2ff;
+    --accent-color: #FF5722;
+    --accent-secondary: #FF9800;
+    --success-color: #27ae60;
+    --light-bg: #f9f9f9;
+    --dark-text: #333;
+    --light-text: #fff;
+    --border-color: #e0e0e0;
+}
+
+/* Style global de la page */
+.prestation-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.page-title h1 {
+    font-size: 1.8rem;
+    color: var(--dark-text);
+    margin: 0;
+}
+
+.page-title h1 i {
+    color: var(--primary-color);
+    margin-right: 10px;
+}
+
+/* Icônes spécifiques au déménagement */
+.icon-demenagement {
+    color: var(--accent-color);
+    margin-right: 8px;
+}
+
+/* Boutons de type de prestation */
+#btn-standard.active, #btn-groupage.active {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-color: var(--primary-color);
+    color: var(--light-text);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Section clients supplémentaires */
+#clients-supplementaires {
+    max-width: 800px;
+    margin: 0 auto 20px;
+    border: none;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+#clients-supplementaires .card {
+    border: none;
+    margin-bottom: 0;
+}
+
+#clients-supplementaires .card-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: var(--light-text);
+    padding: 12px 15px;
+    border-bottom: none;
+    position: relative;
+    overflow: hidden;
+}
+
+#clients-supplementaires h6 {
+    font-weight: 600;
+    margin: 0;
+    font-size: 1rem;
+}
+
+#clients-supplementaires .card-body {
+    padding: 15px;
+    background-color: var(--light-bg);
+}
+
+/* Bouton ajouter client */
+#ajouter-client {
+    background: linear-gradient(135deg, var(--success-color), #2ecc71);
+    color: var(--light-text);
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#ajouter-client:hover {
+    background: linear-gradient(135deg, #2ecc71, var(--success-color));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+#ajouter-client i {
+    margin-right: 8px;
+    font-size: 0.9rem;
+}
+
+/* Clients supplémentaires */
+.client-supplementaire {
+    margin-top: 15px;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.client-supplementaire .card {
+    border: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.client-supplementaire .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.client-supplementaire .card-header {
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+    color: var(--light-text);
+    border-bottom: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+}
+
+.client-supplementaire .card-body {
+    padding: 15px;
+    background-color: #fff;
+}
+
+.client-supplementaire .form-group {
+    margin-bottom: 0;
+}
+
+.client-supplementaire label {
+    display: block;
+    margin-bottom: 8px;
+    color: #555;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.client-supplementaire select {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px 12px;
+    width: 100%;
+    font-size: 0.95rem;
+    color: var(--dark-text);
+    background-color: var(--light-bg);
+    transition: all 0.3s ease;
+}
+
+.client-supplementaire select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    outline: none;
+}
+
+.client-supplementaire .btn-remove-client {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.client-supplementaire .btn-remove-client:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Animation pour les transitions */
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-10px); }
+}
+
+/* Style pour les étapes */
+.etape-container {
+    border-left: 3px solid var(--primary-color);
+    padding-left: 15px;
+    margin-bottom: 15px;
+    position: relative;
+}
+
+.etape-container:before {
+    content: '';
+    position: absolute;
+    left: -9px;
+    top: 0;
+    width: 15px;
+    height: 15px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+}
+
+.etape-container .card {
+    border: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.etape-container .card-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: var(--light-text);
+    padding: 10px 15px;
+}
+
+/* Style pour les observations */
+.observation-supplementaire {
+    background-color: var(--light-bg);
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.observation-supplementaire textarea {
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.observation-supplementaire .btn-outline-danger {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.observation-supplementaire .btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Style pour les transporteurs */
+.transporteur-card {
+    border: none;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    margin-bottom: 15px;
+}
+
+.transporteur-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.transporteur-card .card-header {
+    background: linear-gradient(135deg, #2980b9, #3498db);
+    color: white;
+    padding: 12px 15px;
+    font-weight: 500;
+}
+
+.transporteur-card .card-body {
+    padding: 15px;
+    background-color: white;
+}
+
+.transporteur-card .btn-select {
+    background: linear-gradient(135deg, var(--success-color), #2ecc71);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.transporteur-card .btn-select:hover {
+    background: linear-gradient(135deg, #2ecc71, var(--success-color));
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Style pour les véhicules */
+.vehicule-card {
+    border: none;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    margin-bottom: 15px;
+}
+
+.vehicule-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.vehicule-card .card-header {
+    background: linear-gradient(135deg, #e67e22, #f39c12);
+    color: white;
+    padding: 12px 15px;
+    font-weight: 500;
+}
+
+.vehicule-card .card-body {
+    padding: 15px;
+    background-color: white;
+}
+
+.vehicule-card .btn-select {
+    background: linear-gradient(135deg, var(--success-color), #2ecc71);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.vehicule-card .btn-select:hover {
+    background: linear-gradient(135deg, #2ecc71, var(--success-color));
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .page-title {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .page-title a {
+        margin-top: 10px;
+    }
+    
+    .client-supplementaire .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .client-supplementaire .btn-remove-client {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-share me-2"></i>Partager l'agenda "{{ agenda.nom }}"
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if commerciaux %}
+                        <form method="POST" action="{{ url_for('calendrier.partager_agenda', agenda_id=agenda.id) }}">
+                            <div class="mb-4">
+                                <label for="user_id" class="form-label">Sélectionner un commercial :</label>
+                                <select name="user_id" id="user_id" class="form-select" required>
+                                    <option value="">Choisir un commercial...</option>
+                                    {% for commercial in commerciaux %}
+                                        <option value="{{ commercial.id }}">{{ commercial.prenom }} {{ commercial.nom }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="text-end">
+                                <a href="{{ url_for('calendrier.liste_agendas') }}" class="btn btn-secondary me-2">
+                                    <i class="bi bi-x-circle me-1"></i>Annuler
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-share me-1"></i>Partager
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Aucun commercial disponible pour le partage.
+                        </div>
+                        <div class="text-end">
+                            <a href="{{ url_for('calendrier.liste_agendas') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Retour
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

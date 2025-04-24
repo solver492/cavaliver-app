@@ -1,0 +1,185 @@
+/**
+ * Corrections CSS complètes pour tous les problèmes d'affichage du calendrier
+ * Version 2.0
+ */
+
+/* ----- STRUCTURE DE BASE ----- */
+body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+main.main-content {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 60px; /* Espace pour le footer */
+}
+
+/* ----- CONFIGURATION DU CALENDRIER ----- */
+.calendar-fullscreen {
+    width: 100%;
+    height: auto !important;
+    min-height: 550px;
+    max-height: none !important;
+    overflow: visible !important;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+/* Rendre le calendrier scrollable pour voir toutes les heures */
+.fc-scroller {
+    overflow-y: auto !important;
+    max-height: 600px !important;
+}
+
+.fc-scroller-liquid-absolute {
+    position: static !important;
+}
+
+/* Désactiver les barres de défilement horizontales */
+.fc-scroller {
+    overflow-x: hidden !important;
+}
+
+/* ----- CORRECTION DE LA VUE SEMAINE ET JOUR ----- */
+/* Afficher toutes les heures dans la vue */
+.fc-timegrid-slots table {
+    height: auto !important;
+}
+
+.fc-timegrid-slot {
+    height: 2.7em !important;
+}
+
+.fc-timegrid-body {
+    min-height: 600px !important;
+}
+
+/* ----- CORRECTION DES ÉVÉNEMENTS ----- */
+/* Style des événements en vue TimeGrid */
+.fc-timegrid-event {
+    max-height: 100% !important;
+    overflow: hidden !important;
+    border-left: 4px solid rgba(0,0,0,0.2) !important;
+}
+
+/* Style des événements en vue Liste */
+.fc-list-event {
+    transition: background-color 0.2s ease !important;
+}
+
+/* Meilleure visibilité du texte au survol dans la vue planning */
+.fc-list-event:hover {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.fc-list-event:hover td {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Garantir que le texte reste lisible au survol */
+.fc-list-event:hover .fc-list-event-title,
+.fc-list-event:hover .fc-list-event-time,
+.fc-list-event:hover td {
+    color: #000 !important;
+    font-weight: 500 !important;
+}
+
+/* Couleurs spécifiques par statut avec meilleure lisibilité */
+.event-en-attente:hover td {
+    background-color: rgba(255, 193, 7, 0.3) !important;
+    color: #000 !important;
+}
+
+.event-confirmee:hover td {
+    background-color: rgba(23, 162, 184, 0.3) !important;
+    color: #000 !important;
+}
+
+.event-en-cours:hover td {
+    background-color: rgba(0, 123, 255, 0.3) !important;
+    color: #000 !important;
+}
+
+.event-terminee:hover td {
+    background-color: rgba(40, 167, 69, 0.3) !important;
+    color: #000 !important;
+}
+
+.event-annulee:hover td {
+    background-color: rgba(220, 53, 69, 0.3) !important;
+    color: #000 !important;
+}
+
+.event-refusee:hover td {
+    background-color: rgba(108, 117, 125, 0.3) !important;
+    color: #000 !important;
+}
+
+/* Améliorer la visibilité du point de statut */
+.fc-list-event-dot {
+    border-width: 6px !important;
+    margin-right: 8px !important;
+}
+
+/* Limiter les titres longs */
+.fc-event-title, .fc-event-title-container {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-weight: 500 !important;
+}
+
+/* ----- BOUTONS ET CONTRÔLES ----- */
+.fc-header-toolbar {
+    padding: 5px !important;
+    margin-bottom: 5px !important;
+}
+
+.fc-button-group {
+    margin-right: 0 !important;
+}
+
+.fc-button {
+    padding: 0.2em 0.4em !important;
+    font-size: 0.85em !important;
+}
+
+/* ----- RESPONSIVE ----- */
+@media (max-height: 800px) {
+    .calendar-fullscreen {
+        min-height: 500px;
+    }
+    
+    .fc-timegrid-slot {
+        height: 2.2em !important;
+    }
+    
+    .fc-timegrid-body {
+        min-height: 500px !important;
+    }
+    
+    .fc-scroller {
+        max-height: 500px !important;
+    }
+}
+
+@media (max-height: 600px) {
+    .calendar-fullscreen {
+        min-height: 400px;
+    }
+    
+    .fc-timegrid-slot {
+        height: 2em !important;
+    }
+    
+    .fc-timegrid-body {
+        min-height: 400px !important;
+    }
+    
+    .fc-scroller {
+        max-height: 400px !important;
+    }
+}

@@ -1,0 +1,167 @@
+.quick-access-bubble {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 900;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+    cursor: move;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.quick-access-bubble.dragging {
+    opacity: 0.8;
+    cursor: grabbing;
+}
+
+.quick-access-bubble.animated {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.quick-access-bubble .bubble-toggle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    pointer-events: auto;
+    position: relative;
+    z-index: 901;
+    background: #0d6efd;
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+    transition: all 0.3s ease;
+    font-size: 1.5rem;
+}
+
+.quick-access-bubble .bubble-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(13, 110, 253, 0.6);
+    background: #0b5ed7;
+}
+
+.quick-access-bubble .bubble-content {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    background: white;
+    pointer-events: auto;
+    z-index: 902;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    min-width: 280px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.quick-access-bubble.active .bubble-content {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.quick-access-bubble .quick-access-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.quick-access-bubble .quick-access-buttons a {
+    width: 100%;
+    text-align: left;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    font-weight: 500;
+    color: white;
+}
+
+.quick-access-bubble .quick-access-buttons a:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.quick-access-bubble .quick-access-buttons i {
+    width: 24px;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+/* Animation de pulsation */
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4); }
+    50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(13, 110, 253, 0.6); }
+    100% { transform: scale(1); box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4); }
+}
+
+/* Animation de rebond */
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-10px); }
+    60% { transform: translateY(-5px); }
+}
+
+.quick-access-bubble .bubble-toggle {
+    animation: pulse 2s infinite;
+}
+
+.quick-access-bubble.active .bubble-toggle {
+    animation: none;
+    transform: rotate(45deg);
+    background: #dc3545;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+}
+
+/* Styles pour les boutons spécifiques */
+.quick-access-bubble .quick-access-buttons a.btn-success {
+    background: linear-gradient(145deg, #28a745, #218838);
+}
+
+.quick-access-bubble .quick-access-buttons a.btn-info {
+    background: linear-gradient(145deg, #17a2b8, #138496);
+}
+
+.quick-access-bubble .quick-access-buttons a.btn-warning {
+    background: linear-gradient(145deg, #ffc107, #e0a800);
+    color: #212529;
+}
+
+.quick-access-bubble .quick-access-buttons a.btn-primary {
+    background: linear-gradient(145deg, #0d6efd, #0b5ed7);
+}
+
+.quick-access-bubble .quick-access-buttons a.btn-secondary {
+    background: linear-gradient(145deg, #6c757d, #5a6268);
+}
+
+/* Animation d'entrée pour les boutons */
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.quick-access-bubble.active .quick-access-buttons a {
+    animation: slideIn 0.3s forwards;
+    opacity: 0;
+}
+
+.quick-access-bubble.active .quick-access-buttons a:nth-child(1) { animation-delay: 0.05s; }
+.quick-access-bubble.active .quick-access-buttons a:nth-child(2) { animation-delay: 0.1s; }
+.quick-access-bubble.active .quick-access-buttons a:nth-child(3) { animation-delay: 0.15s; }
+.quick-access-bubble.active .quick-access-buttons a:nth-child(4) { animation-delay: 0.2s; }

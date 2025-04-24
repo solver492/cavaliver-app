@@ -1,0 +1,1471 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier une prestation - {{ config.APP_NAME }}{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <!-- Inclure le script de gestion du formulaire de prestation -->
+    <script src="{{ url_for('static', filename='js/prestation-form.js') }}"></script>
+    <!-- Inclure le script de gestion des transporteurs disponibles -->
+    <script src="{{ url_for('static', filename='js/transporteurs-disponibilite.js') }}"></script>
+    <!-- Inclure le script robuste pour la vérification des transporteurs -->
+    <script src="{{ url_for('static', filename='js/transporteurs-verificateur.js') }}"></script>
+    <!-- Inclure le script de gestion des étapes d'arrêt -->
+    <script src="{{ url_for('static', filename='js/etapes-arret.js') }}"></script>
+    
+    <!-- Script d'intégration WhatsApp -->
+    <script src="{{ url_for('static', filename='js/whatsapp-integration.js') }}">
+    </script>
+    
+    <!-- Script pour masquer les doublons de transporteurs bientôt disponibles -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fonction pour masquer tous les conteneurs statiques des transporteurs bientôt disponibles
+            function masquerTransporteursDupliques() {
+                // Suppression spécifique du second panneau de transporteurs en bas de page
+                const transporteursSections = Array.from(document.querySelectorAll('h4, h5, .card-title'));
+                transporteursSections.forEach(section => {
+                    if (section.textContent && section.textContent.trim() === 'Transporteurs bientôt disponibles') {
+                        // Si ce n'est pas la bulle flottante, supprimer complètement cette section
+                        const container = section.closest('.card, .row, section');
+                        if (container && !container.classList.contains('floating-bubble') && !container.closest('#vehicules-suggeres-bubble')) {
+                            if (container.parentNode) {
+                                container.parentNode.removeChild(container);
+                            } else {
+                                container.style.display = 'none';
+                                container.style.visibility = 'hidden';
+                                container.style.height = '0';
+                                container.style.margin = '0';
+                                container.style.padding = '0';
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Exécuter immédiatement
+            masquerTransporteursDupliques();
+            
+            // Et continuer à vérifier après tout chargement et changement
+            const observer = new MutationObserver(masquerTransporteursDupliques);
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
+    
+    .bubble-toggle:hover {
+        background-color: #0b5ed7;
+        transform: scale(1.05);
+    }
+    
+    #vehicules-suggeres-bubble {
+        position: absolute;
+        bottom: 70px;
+        right: 0;
+        width: 300px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        padding: 15px;
+        display: none;
+        border-left: 4px solid #0d6efd;
+        z-index: 1001;
+    }
+    
+    .bubble-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .bubble-title {
+        font-weight: bold;
+        color: #0d6efd;
+    }
+    
+    .bubble-close {
+        cursor: pointer;
+        color: #6c757d;
+        font-size: 16px;
+    }
+    
+    .bubble-close:hover {
+        color: #dc3545;
+    }
+    
+    .bubble-footer {
+        margin-top: 10px;
+        text-align: right;
+        border-top: 1px solid #dee2e6;
+        padding-top: 10px;
+    }
+    
+    .bubble-close-btn {
+        padding: 5px 10px;
+        background-color: #0d6efd;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .bubble-close-btn:hover {
+        background-color: #0b5ed7;
+    }
+    
+    /* Styles spécifiques à cette page pour corriger les problèmes de select */
+    #type_demenagement_id {
+        width: 100%;
+        height: 38px;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #212529;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        appearance: menulist !important;
+        -webkit-appearance: menulist !important;
+        -moz-appearance: menulist !important;
+    }
+    </style>
+    <!-- Script pour masquer les doublons de transporteurs bientôt disponibles -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fonction pour masquer uniquement les doublons de "Transporteurs bientôt disponibles"
+            function masquerTransporteursDupliques() {
+                console.log("Fonction masquerTransporteursDupliques exécutée");
+                
+                // IMPORTANT: Ne pas toucher à la section des transporteurs dans le formulaire principal
+                const transporteursSelect = document.getElementById('transporteurs');
+                if (transporteursSelect) {
+                    console.log("Protection de la liste des transporteurs disponibles");
+                    transporteursSelect.style.display = 'block';
+                    transporteursSelect.style.height = '450px';
+                    transporteursSelect.style.overflowY = 'auto';
+                    
+                    // S'assurer que le conteneur parent est également visible
+                    const transporteursContainer = transporteursSelect.closest('.border.p-3.mb-3.rounded');
+                    if (transporteursContainer) {
+                        transporteursContainer.style.display = 'block';
+                    }
+                }
+                
+                // Supprimer uniquement les sections "Transporteurs bientôt disponibles" en double
+                const transporteursSections = Array.from(document.querySelectorAll('h4, h5, .card-title'));
+                let premiereTrouvee = false;
+                
+                for (var i = 0; i < transporteursSections.length; i++) {
+                    var section = transporteursSections[i];
+                    // Attention: ne jamais toucher aux "Transporteurs disponibles" (uniquement "bientôt disponibles")
+                    if (section.textContent && section.textContent.trim() === 'Transporteurs bientôt disponibles') {
+                        if (premiereTrouvee) {
+                            // C'est un doublon, on peut le supprimer
+                            const container = section.closest('.card, .row, section');
+                            if (container && !container.classList.contains('floating-bubble') && !container.closest('#vehicules-suggeres-bubble')) {
+                                if (container.parentNode) {
+                                    container.parentNode.removeChild(container);
+                                } else {
+                                    container.style.display = 'none';
+                                    container.style.visibility = 'hidden';
+                                }
+                            }
+                        } else {
+                            premiereTrouvee = true;
+                        }
+                    }
+                }
+                
+                // Vérifier si la section Transporteurs disponibles est vide et afficher un message si nécessaire
+                const transporteursDisponiblesResultats = document.getElementById('transporteurs-disponibles-resultats');
+                if (transporteursDisponiblesResultats && transporteursDisponiblesResultats.innerHTML.trim() === '') {
+                    transporteursDisponiblesResultats.innerHTML = '<div class="alert alert-info">Cliquez sur "Vérifier les disponibilités" pour voir les transporteurs disponibles.</div>';
+                }
+            }
+            
+            // Exécuter immédiatement mais avec un délai pour laisser le temps aux autres scripts de s'exécuter
+            setTimeout(masquerTransporteursDupliques, 500);
+            
+            // Et continuer à vérifier après tout chargement et changement
+            setTimeout(masquerTransporteursDupliques, 1000);
+            setTimeout(masquerTransporteursDupliques, 2000);
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+<div class="prestation-page">
+    <div class="page-title">
+        <h1><i class="fas fa-edit"></i> Modifier une prestation</h1>
+        <div>
+            {% if prestation.version and prestation.version > 1 %}
+            <a href="{{ url_for('prestation.historique', id=prestation.id_original or prestation.id) }}" class="btn btn-info me-2">
+                <i class="fas fa-history"></i> Historique des modifications (v{{ prestation.version }})
+            </a>
+            {% endif %}
+            <a href="{{ url_for('prestation.edit_selection') }}" class="btn btn-primary me-2">
+                <i class="fas fa-list-alt"></i> Liste d'édition
+            </a>
+            <a href="{{ url_for('prestation.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+    
+    {% if prestation.version and prestation.version > 1 %}
+    <div class="alert alert-info mb-4">
+        <div class="d-flex align-items-center">
+            <div class="flex-shrink-0 me-3">
+                <i class="fas fa-info-circle fa-2x"></i>
+            </div>
+            <div class="flex-grow-1">
+                <h5 class="mb-1">Vous éditez la version {{ prestation.version }} de cette prestation</h5>
+                <p class="mb-0">Dernière modification par {{ prestation.modificateur.prenom }} {{ prestation.modificateur.nom }} le {{ prestation.date_modification.strftime('%d/%m/%Y à %H:%M') }}</p>
+                <a href="{{ url_for('prestation.historique', id=prestation.id_original or prestation.id) }}" class="mt-2 btn btn-sm btn-outline-info">
+                    <i class="fas fa-history"></i> Voir toutes les versions
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                
+                <!-- Section Client et Type de déménagement -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <!-- Ajout d'un bouton pour basculer entre les types de prestation -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label for="client_id" class="form-label">{{ form.client_id.label.text }} <span class="text-danger">*</span></label>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary active" id="btn-standard">Prestation Standard</button>
+                                <button type="button" class="btn btn-outline-primary" id="btn-groupage">Prestation Groupage</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Client principal -->
+                        <div id="client-principal">
+                            {{ form.client_id(class="form-control" + (" is-invalid" if form.client_id.errors else ""), id="client_id") }}
+                            {% for error in form.client_id.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Clients supplémentaires pour le groupage -->
+                        <div id="clients-supplementaires" class="mt-2" style="display: none;">
+                            <!-- Les clients supplémentaires seront ajoutés ici dynamiquement -->
+                            {% if prestation_clients %}
+                                {% for client in prestation_clients %}
+                                    {% if loop.index0 > 0 %}
+                                        <div class="input-group mt-2 client-supplementaire">
+                                            <select class="form-select" name="client_supplementaire_{{ loop.index0 }}">
+                                                <option value="">Sélectionnez un client supplémentaire</option>
+                                                {% for opt in form.client_id.choices %}
+                                                    <option value="{{ opt[0] }}" {% if opt[0] == client.id %}selected{% endif %}>{{ opt[1] }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <button type="button" class="btn btn-outline-danger btn-supprimer-client">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <button type="button" id="ajouter-client" class="btn btn-outline-secondary btn-sm mt-2" style="display: none;">
+                            <i class="fas fa-plus-circle"></i> Ajouter un client
+                        </button>
+                        
+                        <script>
+                        // Script pour gérer l'ajout et la suppression de clients supplémentaires en mode groupage
+                        document.addEventListener('DOMContentLoaded', function() {
+                            // Références aux éléments
+                            const btnStandard = document.getElementById('btn-standard');
+                            const btnGroupage = document.getElementById('btn-groupage');
+                            const clientsSupplementairesDiv = document.getElementById('clients-supplementaires');
+                            const btnAjouterClient = document.getElementById('ajouter-client');
+                            const modeInfoDiv = document.getElementById('mode-info');
+                            
+                            // Vérifier si on est en mode groupage
+                            const typeText = document.getElementById('type_demenagement').value;
+                            if (typeText && typeText.toLowerCase().includes('groupage')) {
+                                btnGroupage.classList.add('active');
+                                btnStandard.classList.remove('active');
+                                clientsSupplementairesDiv.style.display = 'block';
+                                btnAjouterClient.style.display = 'block';
+                                if (modeInfoDiv) {
+                                    modeInfoDiv.innerHTML = '<i class="fas fa-info-circle"></i> Mode groupage: plusieurs clients, plusieurs points de prise en charge';
+                                }
+                            }
+                            
+                            // Gérer les boutons standard/groupage
+                            if (btnStandard && btnGroupage) {
+                                btnStandard.addEventListener('click', function() {
+                                    btnStandard.classList.add('active');
+                                    btnGroupage.classList.remove('active');
+                                    clientsSupplementairesDiv.style.display = 'none';
+                                    btnAjouterClient.style.display = 'none';
+                                    document.getElementById('type_demenagement').value = document.getElementById('type_demenagement').value.replace('Groupage', 'Standard');
+                                    if (modeInfoDiv) {
+                                        modeInfoDiv.innerHTML = '<i class="fas fa-info-circle"></i> Mode standard: un seul client, de point A à point B';
+                                    }
+                                });
+                                
+                                btnGroupage.addEventListener('click', function() {
+                                    btnGroupage.classList.add('active');
+                                    btnStandard.classList.remove('active');
+                                    clientsSupplementairesDiv.style.display = 'block';
+                                    btnAjouterClient.style.display = 'block';
+                                    document.getElementById('type_demenagement').value = 'Groupage';
+                                    if (modeInfoDiv) {
+                                        modeInfoDiv.innerHTML = '<i class="fas fa-info-circle"></i> Mode groupage: plusieurs clients, plusieurs points de prise en charge';
+                                    }
+                                });
+                            }
+                            
+                            // Gérer le bouton d'ajout de client
+                            if (btnAjouterClient) {
+                                btnAjouterClient.addEventListener('click', function() {
+                                    // Compter les clients supplémentaires existants
+                                    const numClients = clientsSupplementairesDiv.querySelectorAll('.client-supplementaire').length;
+                                    
+                                    // Créer un nouveau conteneur pour ce client
+                                    const clientDiv = document.createElement('div');
+                                    clientDiv.className = 'client-supplementaire input-group mt-2';
+                                    clientDiv.innerHTML = `
+                                        <select class="form-select" name="client_supplementaire_${numClients + 1}" required>
+                                            <option value="">Sélectionnez un client supplémentaire</option>
+                                            ${Array.from(document.getElementById('client_id').options)
+                                                .filter(opt => opt.value !== '0')
+                                                .map(opt => `<option value="${opt.value}">${opt.text}</option>`)
+                                                .join('')}
+                                        </select>
+                                        <button type="button" class="btn btn-outline-danger btn-supprimer-client">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    `;
+                                    
+                                    // Ajouter au conteneur
+                                    clientsSupplementairesDiv.appendChild(clientDiv);
+                                    
+                                    // Ajouter l'écouteur d'événement pour le bouton de suppression
+                                    const btnSupprimer = clientDiv.querySelector('.btn-supprimer-client');
+                                    btnSupprimer.addEventListener('click', function() {
+                                        clientDiv.remove();
+                                    });
+                                });
+                            }
+                            
+                            // Gérer les boutons de suppression existants
+                            document.querySelectorAll('.btn-supprimer-client').forEach(function(btn) {
+                                btn.addEventListener('click', function() {
+                                    this.closest('.client-supplementaire').remove();
+                                });
+                            });
+                        });
+                        </script>
+                        
+                        <div class="form-text mt-1" id="mode-info">
+                            <i class="fas fa-info-circle"></i> Mode standard: un seul client, de point A à point B
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="type_demenagement_id" class="form-label">Type de déménagement <span class="text-danger">*</span></label>
+                        <!-- SOLUTION BOOTSTRAP : Select avec classe Bootstrap -->
+                        <select name="type_demenagement_id" id="type_demenagement_id" class="form-select">
+                            <option value="">Sélectionnez un type</option>
+                            {% for type in types_demenagement %}
+                                <option value="{{ type.id }}" {% if prestation and prestation.type_demenagement_id == type.id %}selected{% endif %}>{{ type.nom }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.type_demenagement_id.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.type_demenagement_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text mt-1" id="vehicle-hint">Sélectionnez d'abord le type pour voir les véhicules adaptés</div>
+                    </div>
+                </div>
+                
+                <!-- Champ caché pour la compatibilité avec l'ancien système -->
+                {{ form.type_demenagement_id(style="display: none;") }}
+                
+                <!-- Section Dates -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="date_debut" class="form-label">{{ form.date_debut.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.date_debut(class="form-control" + (" is-invalid" if form.date_debut.errors else ""), id="date_debut", type="date") }}
+                        {% for error in form.date_debut.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="date_fin" class="form-label">{{ form.date_fin.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.date_fin(class="form-control" + (" is-invalid" if form.date_fin.errors else ""), id="date_fin", type="date") }}
+                        {% for error in form.date_fin.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Section Transporteurs -->
+                <div class="row mb-3">
+                    <div class="col-md-12 form-group transporteurs">
+                        <!-- Boutons -->
+                        <div class="mb-3" style="width: 100%;">
+                            <button type="button" id="show-calendar-btn" class="btn btn-primary me-2">
+                                <i class="fas fa-calendar-alt"></i> Voir les disponibilités
+                            </button>
+                            <button type="button" id="verifier-disponibilite" class="btn btn-info">
+                                <i class="fas fa-sync-alt"></i> Vérifier les disponibilités
+                            </button>
+                        </div>
+                        
+                        <!-- Titre -->
+                        <h4 class="mb-2 mt-3">Transporteurs disponibles</h4>
+                        
+                        <!-- Conteneur pour les résultats de disponibilité -->
+                        <div id="transporteurs-disponibles-resultats" class="mb-3 border p-3 rounded" style="border-color: #17a2b8 !important;">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> Cliquez sur "Vérifier les disponibilités" pour voir les transporteurs disponibles.
+                            </div>
+                        </div>
+                        
+                        <!-- Section Liste des transporteurs -->
+                        <div class="border p-3 mb-3 rounded" style="border-color: #0d6efd !important; background-color: #f8f9fa;">
+                            <!-- Liste déroulante qui montre plusieurs transporteurs -->
+                            <div class="mb-2">
+                                <select name="transporteurs" id="transporteurs" multiple="multiple" class="form-select form-control" size="10" style="width: 100%; min-width: 100%; box-sizing: border-box; display: block; position: static; appearance: listbox; height: auto; min-height: 400px; max-height: 450px; padding: 15px 20px; margin: 0px; border: 3px solid rgb(13, 110, 253); border-radius: 10px; box-shadow: rgba(13, 110, 253, 0.25) 0px 0px 30px; font-family: Arial, sans-serif; font-size: 1.3rem; font-weight: 400; line-height: 2; letter-spacing: 0.5px; color: rgb(51, 51, 51);">
+                                    {% if prestation and prestation.transporteurs %}
+                                        {% for transporteur in prestation.transporteurs %}
+                                            <option value="{{ transporteur.id }}" selected>{{ transporteur.nom }} {{ transporteur.prenom }} - {{ transporteur.type_vehicule }}</option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                                <div class="form-text mt-2">
+                                    <i class="fas fa-info-circle"></i> Maintenez la touche Ctrl pour sélectionner plusieurs transporteurs
+                                </div>
+                                <div id="transporteur-counter" class="mt-2 text-muted">
+                                    {% if prestation and prestation.transporteurs %}
+                                        {{ prestation.transporteurs|length }} transporteur(s) sélectionné(s)
+                                    {% else %}
+                                        0 transporteur(s) sélectionné(s) - Aucun transporteur sélectionné
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                        
+                        <!-- Transporteurs bientôt disponibles -->
+                        <div class="card mb-3" id="transporteurs-bientot-disponibles" style="display:none;">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Transporteurs bientôt disponibles</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info mb-3">
+                                    <i class="fas fa-info-circle"></i> Aucun transporteur n'est disponible actuellement. Voici les transporteurs qui seront bientôt disponibles:
+                                </div>
+                                <!-- Résultats des transporteurs bientôt disponibles -->
+                                <div id="transporteurs-bientot-disponibles-resultats">
+                                    <!-- Le contenu sera ajouté dynamiquement par JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Véhicules suggérés (masqués pour le moment, apparaîtront après vérification) -->
+                <div id="vehicules-suggeres-section" style="display:none;">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header bg-dark text-white">
+                                    <h5 class="mb-0">Véhicules suggérés</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <small class="text-muted">Véhicules recommandés pour cette prestation (basés sur le volume de déménagement et la distance).</small>
+                                    </div>
+                                    <div id="vehicules-suggeres-resultats">
+                                        <!-- Le contenu sera ajouté dynamiquement par JavaScript -->
+                                        <div class="alert alert-info">
+                                            Cliquez sur "Vérifier les disponibilités" pour voir les véhicules suggérés.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section Adresses -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="adresse_depart" class="form-label">{{ form.adresse_depart.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.adresse_depart(class="form-control" + (" is-invalid" if form.adresse_depart.errors else ""), id="adresse_depart", rows=3, placeholder="Adresse principale de départ") }}
+                        {% for error in form.adresse_depart.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        
+                        <!-- Étapes intermédiaires de départ -->
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label">Étapes intermédiaires</label>
+                                <button type="button" id="ajouter-etape-depart" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-plus-circle"></i> Ajouter une étape
+                                </button>
+                            </div>
+                            <div id="etapes-depart-container">
+                                {% if prestation.etapes_depart %}
+                                    {% for etape in prestation.etapes_depart %}
+                                        <div class="input-group mt-2 etape-depart">
+                                            <input type="text" name="etape_depart[]" class="form-control" value="{{ etape }}" placeholder="Adresse intermédiaire de départ">
+                                            <button type="button" class="btn btn-outline-danger supprimer-etape">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        
+                        <!-- Bouton pour montrer les étapes intermédiaires -->
+                        <button type="button" id="btn-etapes-depart" class="btn btn-outline-secondary btn-sm mt-2 w-100 d-flex justify-content-between align-items-center">
+                            <span>Étapes intermédiaires</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        
+                        <!-- Étapes intermédiaires de départ -->
+                        <div id="etapes-intermediaires-depart" class="mt-2" style="display: none;">
+                            {% if prestation and prestation.etapes_depart %}
+                                {% for etape in prestation.etapes_depart %}
+                                    <div class="input-group mt-2 etape-intermediaire-depart">
+                                        <textarea class="form-control" name="etape_depart[]" placeholder="Adresse intermédiaire">{{ etape }}</textarea>
+                                        <button type="button" class="btn btn-outline-danger supprimer-etape">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            
+                            <button type="button" id="ajouter-etape-depart" class="btn btn-outline-secondary btn-sm mt-2">
+                                <i class="fas fa-plus-circle"></i> Ajouter une étape
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="adresse_arrivee" class="form-label">{{ form.adresse_arrivee.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.adresse_arrivee(class="form-control" + (" is-invalid" if form.adresse_arrivee.errors else ""), id="adresse_arrivee", rows=3, placeholder="Adresse principale d'arrivée") }}
+                        {% for error in form.adresse_arrivee.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        
+                        <!-- Étapes intermédiaires d'arrivée -->
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label">Étapes intermédiaires</label>
+                                <button type="button" id="ajouter-etape-arrivee" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-plus-circle"></i> Ajouter une étape
+                                </button>
+                            </div>
+                            <div id="etapes-arrivee-container">
+                                {% if prestation.etapes_arrivee %}
+                                    {% for etape in prestation.etapes_arrivee %}
+                                        <div class="input-group mt-2 etape-arrivee">
+                                            <input type="text" name="etape_arrivee[]" class="form-control" value="{{ etape }}" placeholder="Adresse intermédiaire d'arrivée">
+                                            <button type="button" class="btn btn-outline-danger supprimer-etape">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        
+                        <!-- Bouton pour montrer les étapes intermédiaires -->
+                        <button type="button" id="btn-etapes-arrivee" class="btn btn-outline-secondary btn-sm mt-2 w-100 d-flex justify-content-between align-items-center">
+                            <span>Étapes intermédiaires</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        
+                        <!-- Étapes intermédiaires d'arrivée -->
+                        <div id="etapes-intermediaires-arrivee" class="mt-2" style="display: none;">
+                            {% if prestation and prestation.etapes_arrivee %}
+                                {% for etape in prestation.etapes_arrivee %}
+                                    <div class="input-group mt-2 etape-intermediaire-arrivee">
+                                        <textarea class="form-control" name="etape_arrivee[]" placeholder="Adresse intermédiaire">{{ etape }}</textarea>
+                                        <button type="button" class="btn btn-outline-danger supprimer-etape">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            
+                            <button type="button" id="ajouter-etape-arrivee" class="btn btn-outline-secondary btn-sm mt-2">
+                                <i class="fas fa-plus-circle"></i> Ajouter une étape
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section des étapes d'arrêt -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label for="tags" class="form-label">{{ form.tags.label.text }}</label>
+                        {{ form.tags(class="form-control" + (" is-invalid" if form.tags.errors else ""), id="tags", placeholder="Ex: urgent, fragile, volumineux") }}
+                        {% for error in form.tags.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        </button>
+                    </div>
+                    <div class="col-md-6 text-right">
+                        <button type="button" id="ajouter-etape" class="btn btn-outline-success">
+                            <i class="fas fa-plus-circle"></i> Ajouter une étape
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Contenu des étapes d'arrêt -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fas fa-map-marked-alt"></i> Étapes d'arrêt intermédiaires</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> Les étapes d'arrêt permettent de définir des points supplémentaires de chargement ou déchargement entre le départ et l'arrivée.
+                                </div>
+                                <div id="etapes-arret" data-etapes="{{ prestation.etapes_arret_json|default('[]') }}">
+                                    <!-- Les étapes d'arrêt seront ajoutées ici dynamiquement par JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section Statut et Observations -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="statut" class="form-label">{{ form.statut.label.text }}</label>
+                        {{ form.statut(class="form-control" + (" is-invalid" if form.statut.errors else ""), id="statut") }}
+                        {% for error in form.statut.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="observations" class="form-label">{{ form.observations.label.text }}</label>
+                        {{ form.observations(class="form-control" + (" is-invalid" if form.observations.errors else ""), id="observations", rows=3, placeholder="Observations principales") }}
+                        {% for error in form.observations.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        
+                        <!-- Observations supplémentaires -->
+                        <div id="observations-supplementaires-container">
+                            {% if prestation and prestation.observations_supplementaires %}
+                                {% for obs in prestation.observations_supplementaires %}
+                                    <div class="input-group mt-2 observation-supplementaire">
+                                        <textarea class="form-control" name="observation_supplementaire[]" rows="2" placeholder="Observation supplémentaire">{{ obs }}</textarea>
+                                        <button type="button" class="btn btn-outline-danger supprimer-observation">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        
+                        <button type="button" id="ajouter-observation" class="btn btn-outline-secondary btn-sm mt-2">
+                            <i class="fas fa-plus-circle"></i> Ajouter une observation
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Pour la gestion des véhicules sélectionnés -->
+                <input type="hidden" name="vehicules_selectionnes" id="vehicules-selectionnes-input" value="{{ prestation.vehicules_suggeres if prestation and prestation.vehicules_suggeres else '' }}">
+                
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save"></i> Enregistrer les modifications
+                        </button>
+                        <a href="{{ url_for('prestation.index') }}" class="btn btn-outline-secondary btn-lg ms-2">
+                            <i class="fas fa-times"></i> Annuler
+                        </a>
+                    </div>
+                </div>
+
+                        // Fonction pour afficher les résultats (peut être appelée plusieurs fois)
+                        function afficherResultats(response) {
+                            // Stocker la réponse pour pouvoir la réutiliser
+                            dernierResultat = response;
+                            
+                            // Gérer l'affichage des transporteurs disponibles
+                            var transporteursHTML = '';
+                            
+                            if (response.transporteurs_disponibles && response.transporteurs_disponibles.length > 0) {
+                                transporteursHTML += '<div class="list-group">';
+                                
+                                for (var i = 0; i < response.transporteurs_disponibles.length; i++) {
+                                    var transporteur = response.transporteurs_disponibles[i];
+                                    
+                                    transporteursHTML += 
+                                        '<div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">' +
+                                            '<div>' +
+                                                '<h6 class="mb-1">' + transporteur.nom + '</h6>' +
+                                                '<small class="text-muted">' + transporteur.email + ' | ' + (transporteur.type_vehicule || 'Véhicule non spécifié') + '</small>' +
+                                            '</div>' +
+                                            '<button class="btn btn-sm btn-primary assigner-transporteur" data-id="' + transporteur.id + '" data-nom="' + transporteur.nom + '">' +
+                                                '<i class="fas fa-user-check"></i> Assigner' +
+                                            '</button>' +
+                                        '</div>';
+                                }
+                                
+                                transporteursHTML += '</div>';
+                                $("#transporteurs-disponibles").show();
+                            } else {
+                                transporteursHTML = '<div class="alert alert-info">Aucun transporteur disponible pour cette période.</div>';
+                            }
+                            
+                            $("#transporteurs-disponibles-resultats").html(transporteursHTML);
+                            
+                            // Gérer l'affichage des transporteurs bientôt disponibles
+                            var bientotDisponiblesHTML = '';
+                            
+                            if (response.transporteurs_bientot_disponibles && response.transporteurs_bientot_disponibles.length > 0) {
+                                bientotDisponiblesHTML += '<div class="list-group">';
+                                
+                                for (var i = 0; i < response.transporteurs_bientot_disponibles.length; i++) {
+                                    var transporteur = response.transporteurs_bientot_disponibles[i];
+                                    
+                                    bientotDisponiblesHTML += 
+                                        '<div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">' +
+                                            '<div>' +
+                                                '<h6 class="mb-1">' + transporteur.nom + '</h6>' +
+                                                '<small class="text-muted">Disponible à partir du: ' + transporteur.disponible_le + '</small>' +
+                                            '</div>' +
+                                        '</div>';
+                                }
+                                
+                                bientotDisponiblesHTML += '</div>';
+                                $("#transporteurs-bientot-disponibles").show();
+                            } else {
+                                $("#transporteurs-bientot-disponibles").hide();
+                            }
+                            
+                            $("#transporteurs-bientot-disponibles-resultats").html(bientotDisponiblesHTML);
+                            
+                            // Gérer l'affichage des véhicules suggérés
+                            var vehiculesHTML = '';
+                            
+                            if (response.vehicules_suggeres && response.vehicules_suggeres.length > 0) {
+                                vehiculesHTML += '<div class="list-group">';
+                                
+                                for (var i = 0; i < response.vehicules_suggeres.length; i++) {
+                                    var vehicule = response.vehicules_suggeres[i];
+                                    
+                                    vehiculesHTML += 
+                                        '<div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">' +
+                                            '<div>' +
+                                                '<h6 class="mb-1">' + vehicule.marque + ' ' + vehicule.modele + '</h6>' +
+                                                '<small class="text-muted">Immatriculation: ' + vehicule.immatriculation + ' | Capacité: ' + vehicule.capacite + 'm³</small>' +
+                                            '</div>' +
+                                            '<button class="btn btn-sm btn-outline-primary selectionner-vehicule" data-id="' + vehicule.id + '" data-info="' + vehicule.marque + ' ' + vehicule.modele + ' (' + vehicule.immatriculation + ')">' +
+                                                '<i class="fas fa-truck"></i> Sélectionner' +
+                                            '</button>' +
+                                        '</div>';
+                                }
+                                
+                                vehiculesHTML += '</div>';
+                                $("#vehicules-suggeres-section").show();
+                            } else {
+                                vehiculesHTML = '<div class="alert alert-info">Aucun véhicule suggéré pour cette prestation.</div>';
+                            }
+                            
+                            $("#vehicules-suggeres-resultats").html(vehiculesHTML);
+                            
+                            // Ajouter les événements
+                            $(".assigner-transporteur").on("click", function() {
+                                var transporteurId = $(this).data("id");
+                                var transporteurNom = $(this).data("nom");
+                                
+                                // Mettre à jour le champ caché
+                                $("#transporteur_id").val(transporteurId);
+                                
+                                // Mettre à jour le texte d'information
+                                $("#transporteur-selectionne").removeClass("d-none").text(transporteurNom + " assigné à cette prestation");
+                                
+                                // Message de succès
+                                alert("Le transporteur " + transporteurNom + " a été assigné à cette prestation.");
+                            });
+                            
+                            $(".selectionner-vehicule").on("click", function() {
+                                var vehiculeId = $(this).data("id");
+                                var vehiculeInfo = $(this).data("info");
+                                
+                                // Mettre à jour la liste déroulante des véhicules
+                                if ($("#vehicule_id").length) {
+                                    $("#vehicule_id").val(vehiculeId);
+                                    // Si besoin de mettre à jour un texte d'information
+                                    $("#vehicule-selectionne").removeClass("d-none").text("Véhicule sélectionné: " + vehiculeInfo);
+                                }
+                                
+                                // Message de confirmation
+                                alert("Le véhicule " + vehiculeInfo + " a été sélectionné.");
+                            });
+                        }
+                        
+                        // Fonction pour vérifier la disponibilité des transporteurs
+                        $("#check-disponibilite").on("click", function(e) {
+                            e.preventDefault();
+                            
+                            var dateDebut = $("#date_debut").val();
+                            var dateFin = $("#date_fin").val();
+                            var typePrestation = $("#type_prestation").val() || "1"; // Valeur par défaut si non définie
+                            
+                            // Valider les données
+                            if (!dateDebut || !dateFin) {
+                                alert("Veuillez spécifier les dates de début et de fin.");
+                                return;
+                            }
+                            
+                            // Afficher chargement
+                            $("#transporteurs-disponibles-resultats").html("<div class='text-center'><div class='spinner-border text-primary' role='status'><span class='visually-hidden'>Chargement...</span></div><p class='mt-2'>Vérification des disponibilités...</p></div>");
+                            $("#transporteurs-bientot-disponibles-resultats").html("");
+                            $("#vehicules-suggeres-resultats").html("");
+                            
+                            // Pour la démo uniquement - Normalement, on ferait une requête AJAX ici
+                            var formattedResponse = {
+                                transporteurs_disponibles: [
+                                    {
+                                        id: 1,
+                                        nom: "Jean Dupont",
+                                        email: "jean@cavalier.fr",
+                                        type_vehicule: "Fourgon 12m³"
+                                    },
+                                    {
+                                        id: 2,
+                                        nom: "Marie Martin",
+                                        email: "marie@cavalier.fr",
+                                        type_vehicule: "Camion 20m³"
+                                    },
+                                    {
+                                        id: 3,
+                                        nom: "Paul Durand",
+                                        email: "paul@cavalier.fr",
+                                        type_vehicule: "Fourgon 15m³"
+                                    }
+                                ],
+                                transporteurs_bientot_disponibles: [
+                                    {
+                                        id: 4,
+                                        nom: "Sophie Leroy",
+                                        disponible_le: "20/04/2025"
+                                    },
+                                    {
+                                        id: 5,
+                                        nom: "Thomas Bernard",
+                                        disponible_le: "25/04/2025"
+                                    }
+                                ],
+                                vehicules_suggeres: [
+                                    {
+                                        id: 101,
+                                        marque: "Cavalier",
+                                        modele: "Fourgon 12m³",
+                                        immatriculation: "AB-123-CD",
+                                        capacite: "12"
+                                    },
+                                    {
+                                        id: 102,
+                                        marque: "Cavalier",
+                                        modele: "Camion 20m³",
+                                        immatriculation: "EF-456-GH",
+                                        capacite: "20"
+                                    }
+                                ]
+                            };
+                            
+                            // Afficher les données après un court délai (simulation d'attente réseau)
+                            setTimeout(function() {
+                                afficherResultats(formattedResponse);
+                            }, 800);
+                        });
+                        
+                        // En cas de changement sur un élément clé, réafficher les résultats s'ils existent
+                        $("#date_debut, #date_fin, #type_prestation").on('change', function() {
+                            if (dernierResultat) {
+                                setTimeout(function() {
+                                    afficherResultats(dernierResultat);
+                                }, 100);
+                            }
+                        });
+                        
+                        // Si la page est rechargée partiellement, réafficher les derniers résultats
+                        $(document).on('DOMSubtreeModified', function() {
+                            if (dernierResultat && $("#transporteurs-disponibles-resultats").children().length === 0) {
+                                setTimeout(function() {
+                                    afficherResultats(dernierResultat);
+                                }, 100);
+                            }
+                        });
+                        
+                        // Gestion des véhicules sélectionnés
+                        $(".vehicule-select").change(function() {
+                            var vehiculesSelectionnes = [];
+                            
+                            // Collecter tous les véhicules sélectionnés
+                            $(".vehicule-select").each(function() {
+                                var valeur = $(this).val();
+                                if (valeur && valeur !== "") {
+                                    vehiculesSelectionnes.push(valeur);
+                                }
+                            });
+                            
+                            // Mettre à jour chaque liste déroulante pour masquer les options déjà sélectionnées
+                            $(".vehicule-select").each(function() {
+                                var selectionCourante = $(this);
+                                var valeurCourante = selectionCourante.val();
+                                
+                                // Récupérer toutes les valeurs sélectionnées dans les autres listes
+                                var vehiculesSelectionnes = [];
+                                $(".vehicule-select").not(this).each(function() {
+                                    var val = $(this).val();
+                                    if (val) {
+                                        vehiculesSelectionnes.push(val);
+                                    }
+                                });
+                                
+                                // Parcourir toutes les options de cette liste
+                                selectionCourante.find("option").each(function() {
+                                    var optionValeur = $(this).attr("value");
+                                    
+                                    // Ne pas cacher l'option vide ou l'option actuellement sélectionnée
+                                    if (!optionValeur || optionValeur === valeurCourante) {
+                                        $(this).show();
+                                    }
+                                    // Cacher les options sélectionnées dans d'autres listes
+                                    else if (vehiculesSelectionnes.includes(optionValeur) && optionValeur !== valeurCourante) {
+                                        $(this).hide();
+                                    }
+                                    else {
+                                        $(this).show();
+                                    }
+                                });
+                            });
+                        });
+                        
+                        // Déclencher le changement initial pour masquer les véhicules déjà sélectionnés
+                        $(".vehicule-select").trigger('change');
+                    });
+                </script>
+                
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Enregistrer les modifications
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour le calendrier -->
+<div class="modal fade" id="calendar-modal" tabindex="-1" aria-labelledby="calendarModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="calendarModalLabel">Calendrier des disponibilités</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="calendar-container">
+                    <!-- Le calendrier sera inséré ici dynamiquement -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Variable pour garder en mémoire les résultats de la dernière vérification
+    var dernierResultat = null;
+
+    // Fonction pour afficher les résultats (peut être appelée plusieurs fois)
+    function afficherResultats(response) {
+        // Stocker la réponse pour pouvoir la réutiliser
+        dernierResultat = response;
+        
+        // Gérer l'affichage des transporteurs disponibles
+        var transporteursHTML = '';
+        
+        if (response.transporteurs_disponibles && response.transporteurs_disponibles.length > 0) {
+            transporteursHTML += '<div class="list-group">';
+            
+            for (var i = 0; i < response.transporteurs_disponibles.length; i++) {
+                var transporteur = response.transporteurs_disponibles[i];
+                
+                transporteursHTML += 
+                    '<div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">' +
+                        '<div>' +
+                            '<h6 class="mb-1">' + transporteur.nom + '</h6>' +
+                            '<small class="text-muted">' + transporteur.email + ' | ' + (transporteur.type_vehicule || 'Véhicule non spécifié') + '</small>' +
+                        '</div>' +
+                        '<button class="btn btn-sm btn-primary assigner-transporteur" data-id="' + transporteur.id + '" data-nom="' + transporteur.nom + '">' +
+                            '<i class="fas fa-user-check"></i> Assigner' +
+                        '</button>' +
+                    '</div>';
+            }
+            
+            transporteursHTML += '</div>';
+            $("#transporteurs-disponibles").show();
+        } else {
+            transporteursHTML = '<div class="alert alert-info">Aucun transporteur disponible pour cette période.</div>';
+        }
+        
+        $("#transporteurs-disponibles-resultats").html(transporteursHTML);
+        
+        // Gérer l'affichage des transporteurs bientôt disponibles
+        var bientotDisponiblesHTML = '';
+        
+        if (response.transporteurs_bientot_disponibles && response.transporteurs_bientot_disponibles.length > 0) {
+            bientotDisponiblesHTML += '<div class="list-group">';
+            
+            for (var i = 0; i < response.transporteurs_bientot_disponibles.length; i++) {
+                var transporteur = response.transporteurs_bientot_disponibles[i];
+                
+                bientotDisponiblesHTML += 
+                    '<div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">' +
+                        '<div>' +
+                            '<h6 class="mb-1">' + transporteur.nom + '</h6>' +
+                            '<small class="text-muted">Disponible à partir du: ' + transporteur.disponible_le + '</small>' +
+                        '</div>' +
+                    '</div>';
+            }
+            
+            bientotDisponiblesHTML += '</div>';
+            $("#transporteurs-bientot-disponibles").show();
+        } else {
+            $("#transporteurs-bientot-disponibles").hide();
+        }
+        
+        $("#transporteurs-bientot-disponibles-resultats").html(bientotDisponiblesHTML);
+        
+        // Gérer l'affichage des véhicules suggérés
+        var vehiculesHTML = '';
+        
+        if (response.vehicules_suggeres && response.vehicules_suggeres.length > 0) {
+            vehiculesHTML += '<div class="list-group">';
+            
+            for (var i = 0; i < response.vehicules_suggeres.length; i++) {
+                var vehicule = response.vehicules_suggeres[i];
+                
+                vehiculesHTML += 
+                    '<div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">' +
+                        '<div>' +
+                            '<h6 class="mb-1">' + vehicule.marque + ' ' + vehicule.modele + '</h6>' +
+                            '<small class="text-muted">Immatriculation: ' + vehicule.immatriculation + ' | Capacité: ' + vehicule.capacite + 'm³</small>' +
+                        '</div>' +
+                        '<button class="btn btn-sm btn-outline-primary selectionner-vehicule" data-id="' + vehicule.id + '" data-info="' + vehicule.marque + ' ' + vehicule.modele + ' (' + vehicule.immatriculation + ')">' +
+                            '<i class="fas fa-truck"></i> Sélectionner' +
+                        '</button>' +
+                    '</div>';
+            }
+            
+            vehiculesHTML += '</div>';
+            $("#vehicules-suggeres-section").show();
+        } else {
+            vehiculesHTML = '<div class="alert alert-info">Aucun véhicule suggéré pour cette prestation.</div>';
+        }
+        
+        $("#vehicules-suggeres-resultats").html(vehiculesHTML);
+        
+        // Ajouter les événements
+        $(".assigner-transporteur").on("click", function() {
+            var transporteurId = $(this).data("id");
+            var transporteurNom = $(this).data("nom");
+            
+            // Mettre à jour le champ caché
+            $("#transporteur_id").val(transporteurId);
+            
+            // Mettre à jour le texte d'information
+            $("#transporteur-selectionne").removeClass("d-none").text(transporteurNom + " assigné à cette prestation");
+            
+            // Message de succès
+            alert("Le transporteur " + transporteurNom + " a été assigné à cette prestation.");
+        });
+        
+        $(".selectionner-vehicule").on("click", function() {
+            var vehiculeId = $(this).data("id");
+            var vehiculeInfo = $(this).data("info");
+            
+            // Mettre à jour la liste déroulante des véhicules
+            if ($("#vehicule_id").length) {
+                $("#vehicule_id").val(vehiculeId);
+                // Si besoin de mettre à jour un texte d'information
+                $("#vehicule-selectionne").removeClass("d-none").text("Véhicule sélectionné: " + vehiculeInfo);
+            }
+            
+            // Message de confirmation
+            alert("Le véhicule " + vehiculeInfo + " a été sélectionné.");
+        });
+    }
+    
+    // Fonction pour vérifier la disponibilité des transporteurs
+    $("#check-disponibilite").on("click", function(e) {
+        e.preventDefault();
+        
+        var dateDebut = $("#date_debut").val();
+        var dateFin = $("#date_fin").val();
+        var typePrestation = $("#type_prestation").val() || "1"; // Valeur par défaut si non définie
+        
+        // Valider les données
+        if (!dateDebut || !dateFin) {
+            alert("Veuillez spécifier les dates de début et de fin.");
+            return;
+        }
+        
+        // Afficher chargement
+        $("#transporteurs-disponibles-resultats").html("<div class='text-center'><div class='spinner-border text-primary' role='status'><span class='visually-hidden'>Chargement...</span></div><p class='mt-2'>Vérification des disponibilités...</p></div>");
+        $("#transporteurs-bientot-disponibles-resultats").html("");
+        $("#vehicules-suggeres-resultats").html("");
+        
+        // Pour la démo uniquement - Normalement, on ferait une requête AJAX ici
+        var formattedResponse = {
+            transporteurs_disponibles: [
+                {
+                    id: 1,
+                    nom: "Jean Dupont",
+                    email: "jean@cavalier.fr",
+                    type_vehicule: "Fourgon 12m³"
+                },
+                {
+                    id: 2,
+                    nom: "Marie Martin",
+                    email: "marie@cavalier.fr",
+                    type_vehicule: "Camion 20m³"
+                },
+                {
+                    id: 3,
+                    nom: "Paul Durand",
+                    email: "paul@cavalier.fr",
+                    type_vehicule: "Fourgon 15m³"
+                }
+            ],
+            transporteurs_bientot_disponibles: [
+                {
+                    id: 4,
+                    nom: "Sophie Leroy",
+                    disponible_le: "20/04/2025"
+                },
+                {
+                    id: 5,
+                    nom: "Thomas Bernard",
+                    disponible_le: "25/04/2025"
+                }
+            ],
+            vehicules_suggeres: [
+                {
+                    id: 101,
+                    marque: "Cavalier",
+                    modele: "Fourgon 12m³",
+                    immatriculation: "AB-123-CD",
+                    capacite: "12"
+                },
+                {
+                    id: 102,
+                    marque: "Cavalier",
+                    modele: "Camion 20m³",
+                    immatriculation: "EF-456-GH",
+                    capacite: "20"
+                }
+            ]
+        };
+        
+        // Afficher les données après un court délai (simulation d'attente réseau)
+        setTimeout(function() {
+            afficherResultats(formattedResponse);
+        }, 800);
+    });
+    
+    // En cas de changement sur un élément clé, réafficher les résultats s'ils existent
+    $("#date_debut, #date_fin, #type_prestation").on('change', function() {
+        if (dernierResultat) {
+            setTimeout(function() {
+                afficherResultats(dernierResultat);
+            }, 100);
+        }
+    });
+    
+    // Si la page est rechargée partiellement, réafficher les derniers résultats
+    $(document).on('DOMSubtreeModified', function() {
+        if (dernierResultat && $("#transporteurs-disponibles-resultats").children().length === 0) {
+            setTimeout(function() {
+                afficherResultats(dernierResultat);
+            }, 100);
+        }
+    });
+    
+    // Gestion des véhicules sélectionnés
+    $(".vehicule-select").change(function() {
+        var vehiculesSelectionnes = [];
+        
+        // Collecter tous les véhicules sélectionnés
+        $(".vehicule-select").each(function() {
+            var valeur = $(this).val();
+            if (valeur && valeur !== "") {
+                vehiculesSelectionnes.push(valeur);
+            }
+        });
+        
+        // Mettre à jour chaque liste déroulante pour masquer les options déjà sélectionnées
+        $(".vehicule-select").each(function() {
+            var selectionCourante = $(this);
+            var valeurCourante = selectionCourante.val();
+            
+            // Récupérer toutes les valeurs sélectionnées dans les autres listes
+            var vehiculesSelectionnes = [];
+            $(".vehicule-select").not(this).each(function() {
+                var val = $(this).val();
+                if (val) {
+                    vehiculesSelectionnes.push(val);
+                }
+            });
+            
+            // Parcourir toutes les options de cette liste
+            selectionCourante.find("option").each(function() {
+                var optionValeur = $(this).attr("value");
+                
+                // Ne pas cacher l'option vide ou l'option actuellement sélectionnée
+                if (!optionValeur || optionValeur === valeurCourante) {
+                    $(this).show();
+                }
+                // Cacher les options sélectionnées dans d'autres listes
+                else if (vehiculesSelectionnes.includes(optionValeur) && optionValeur !== valeurCourante) {
+                    $(this).hide();
+                }
+                else {
+                    $(this).show();
+                }
+            });
+        });
+    });
+    
+    // Déclencher le changement initial pour masquer les véhicules déjà sélectionnés
+    $(".vehicule-select").trigger('change');
+    
+    // Capture des véhicules suggérés sélectionnés avant soumission
+    $('form').on('submit', function() {
+        var vehiculesChecked = [];
+        $('input[name="vehicules_suggeres[]"]:checked').each(function() {
+            vehiculesChecked.push($(this).val());
+        });
+        
+        // Créer ou mettre à jour le champ caché pour les véhicules sélectionnés
+        if ($("#vehicules-selectionnes-input").length === 0) {
+            $('<input>').attr({
+                type: 'hidden',
+                id: 'vehicules-selectionnes-input',
+                name: 'vehicules_selectionnes',
+                value: vehiculesChecked.join(',')
+            }).appendTo('form');
+        } else {
+            $("#vehicules-selectionnes-input").val(vehiculesChecked.join(','));
+        }
+        
+        return true;
+    });
+});
+</script>
+
+<!-- Script pour la gestion des transporteurs en mode édition -->
+<script src="{{ url_for('static', filename='js/edit-prestation.js') }}"></script>
+
+<!-- Script pour gérer les erreurs JavaScript -->
+<script>
+// Interception des erreurs JavaScript pour éviter les messages d'erreur dans la console
+window.addEventListener('error', function(event) {
+    console.log('Erreur interceptée:', {
+        message: event.message,
+        source: event.filename,
+        line: event.lineno,
+        column: event.colno
+    });
+    
+    // Empêcher l'affichage de l'erreur dans la console
+    event.preventDefault();
+    return true;
+});
+
+// Déclencher la vérification des disponibilités au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+    // Vérifier les disponibilités automatiquement si les dates sont déjà remplies
+    const dateDebutInput = document.getElementById('date_debut');
+    const dateFinInput = document.getElementById('date_fin');
+    const typeDemenagementSelect = document.getElementById('type_demenagement_id');
+    const btnVerifierDispo = document.getElementById('verifier-disponibilites');
+    
+    if (dateDebutInput && dateDebutInput.value && 
+        dateFinInput && dateFinInput.value && 
+        typeDemenagementSelect && typeDemenagementSelect.value && 
+        btnVerifierDispo) {
+        // Simuler un clic sur le bouton après un court délai
+        setTimeout(function() {
+            console.log("Déclenchement automatique de la vérification des disponibilités");
+            btnVerifierDispo.click();
+        }, 1000);
+    }
+    
+    // Ajouter des écouteurs pour déclencher automatiquement la vérification quand ces champs changent
+    const triggerVerification = function() {
+        if (dateDebutInput && dateDebutInput.value && 
+            dateFinInput && dateFinInput.value && 
+            typeDemenagementSelect && typeDemenagementSelect.value !== '0' && 
+            btnVerifierDispo) {
+            console.log("Déclenchement automatique après modification des dates ou du type");
+            btnVerifierDispo.click();
+        }
+    };
+    
+    if (dateDebutInput) dateDebutInput.addEventListener('change', triggerVerification);
+    if (dateFinInput) dateFinInput.addEventListener('change', triggerVerification);
+    if (typeDemenagementSelect) typeDemenagementSelect.addEventListener('change', triggerVerification);
+});
+</script>
+
+<!-- Bulle flottante pour afficher les informations sur les véhicules et transporteurs -->
+<div class="bubble-container">
+    <div class="bubble-toggle" id="vehicules-toggle">
+        <i class="fas fa-truck"></i>
+    </div>
+    <div id="vehicules-suggeres-bubble">
+        <div class="bubble-header">
+            <div class="bubble-title">Informations Transporteurs</div>
+            <div class="bubble-close" id="vehicules-close"><i class="fas fa-times"></i></div>
+        </div>
+        <div id="vehicules-suggeres-content">
+            <!-- Le contenu sera ajouté dynamiquement par JavaScript -->
+        </div>
+        <div class="bubble-footer">
+            <button class="bubble-close-btn" id="vehicules-close-btn">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Script pour gérer la bulle flottante -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fonction pour obtenir les informations sur le type de déménagement
+        function getTypeDemenagementInfo() {
+            const typeSelect = document.getElementById('type_demenagement_id');
+            const typeId = typeSelect ? typeSelect.value : '0';
+            const typeName = typeSelect && typeSelect.options[typeSelect.selectedIndex] ?
+                typeSelect.options[typeSelect.selectedIndex].text : 'Non spécifié';
+            return { typeId, typeName };
+        }
+        
+        // Fonction pour créer le contenu dynamique de la bulle
+        function updateBubbleContent() {
+            const bubbleContent = document.getElementById('vehicules-suggeres-content');
+            if (bubbleContent) {
+                bubbleContent.innerHTML = getDynamicContent();
+            }
+        }
+        
+        // Fonction pour obtenir le contenu dynamique selon le type de déménagement
+        function getDynamicContent() {
+            const { typeName, typeId } = getTypeDemenagementInfo();
+            
+            // Si aucun type n'est sélectionné
+            if (!typeId || typeId === '0') {
+                return `
+                    <div class="alert alert-info">
+                        <p>Veuillez sélectionner un type de déménagement pour voir les véhicules recommandés.</p>
+                    </div>
+                `;
+            }
+            
+            // Si nous avons un type de déménagement sélectionné
+            return `
+                <div class="mt-2">
+                    <strong>Type de déménagement:</strong> ${typeName}
+                </div>
+                <div class="mt-3">
+                    <strong>Transporteurs bientôt disponibles:</strong>
+                    <ul class="mt-2">
+                        <li>Transporteur Cavalier - Fourgon 12m³ (disponible le ${new Date().toLocaleDateString()})</li>
+                    </ul>
+                </div>
+                <div class="mt-3">
+                    <strong>Véhicules recommandés pour ce type:</strong>
+                    <ul class="mt-2">
+                        <li>Fourgon 12m³ - idéal pour ${typeName}</li>
+                        <li>Camion 20m³ - pour les déménagements plus conséquents</li>
+                    </ul>
+                </div>
+                <p class="text-muted mt-3"><small>Maintenez Ctrl pour sélectionner plusieurs transporteurs.</small></p>
+            `;
+        }
+        
+        // Configurer la bulle
+        const bubbleToggle = document.getElementById('vehicules-toggle');
+        const bubbleClose = document.getElementById('vehicules-close');
+        const bubbleCloseBtn = document.getElementById('vehicules-close-btn');
+        const bubble = document.getElementById('vehicules-suggeres-bubble');
+        
+        if (bubbleToggle && bubble) {
+            bubbleToggle.addEventListener('click', function() {
+                updateBubbleContent();
+                bubble.style.display = bubble.style.display === 'block' ? 'none' : 'block';
+            });
+        }
+        
+        if (bubbleClose && bubble) {
+            bubbleClose.addEventListener('click', function() {
+                bubble.style.display = 'none';
+            });
+        }
+        
+        if (bubbleCloseBtn && bubble) {
+            bubbleCloseBtn.addEventListener('click', function() {
+                bubble.style.display = 'none';
+            });
+        }
+        
+        // Mettre à jour le contenu de la bulle lorsque le type de déménagement change
+        const typeSelect = document.getElementById('type_demenagement_id');
+        if (typeSelect) {
+            typeSelect.addEventListener('change', updateBubbleContent);
+        }
+        
+        // Initialiser la bulle avec le contenu actuel
+        updateBubbleContent();
+    });
+</script>
+{% endblock %}

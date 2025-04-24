@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}Documents{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="page-title">Gestion des Documents</h1>
+      <p class="text-muted">Gérez tous vos documents en un seul endroit.</p>
+    </div>
+    <div class="col-auto">
+      <a href="{{ url_for('documents.add') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Nouveau Document
+      </a>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">
+        <i class="fas fa-filter"></i> Filtres
+      </h5>
+    </div>
+    <div class="card-body">
+      <form method="get" action="{{ url_for('documents.index') }}">
+        <div class="row">
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label class="form-label">Type de document</label>
+              <select name="type" class="form-select">
+                <option value="">Tous les types</option>
+                <option value="contrat">Contrat</option>
+                <option value="facture">Facture</option>
+                <option value="rapport">Rapport</option>
+                <option value="autre">Autre</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label class="form-label">Statut</label>
+              <select name="statut" class="form-select">
+                <option value="">Tous les statuts</option>
+                <option value="Actif">Actif</option>
+                <option value="Archivé">Archivé</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label class="form-label">Date (du)</label>
+              <input type="date" name="date_debut" class="form-control">
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label class="form-label">Date (au)</label>
+              <input type="date" name="date_fin" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">Recherche par mots-clés</label>
+              <input type="text" name="query" class="form-control" placeholder="Nom, tags, notes...">
+            </div>
+          </div>
+          <div class="col-md-6 text-end mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-search"></i> Rechercher
+            </button>
+            <a href="{{ url_for('documents.index') }}" class="btn btn-outline-secondary">
+              <i class="fas fa-sync"></i> Réinitialiser
+            </a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Liste des documents -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="fas fa-file-alt"></i> Documents ({{ documents|length }})
+      </h5>
+      <div>
+        <button class="btn btn-sm btn-outline-secondary" id="toggle-view" data-view="grid">
+          <i class="fas fa-list"></i> Vue Liste
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      {% if documents %}
+        <!-- Vue grille par défaut -->
+        <div class="row row-cols-1 row-cols-md-3 g-4" id="grid-view">
+          {% for document in documents %}
+            <div class="col">
+              <div class="card h-100">
+                <div class="card-header">
+                  <h5 class="card-title mb-0">{{ document.nom }}</h5>
+                </div>
+                <div class="card-body">
+                  <p class="card-text">
+                    <span class="badge bg-primary">{{ document.type or 'Non spécifié' }}</span>
+                    <span class="badge bg-{% if document.statut == 'Actif' %}success{% else %}secondary{% endif %}">{{ document.statut }}</span>
+                  </p>
+                  <p class="card-text">
+                    <small>Ajouté le: {{ document.date_upload.strftime('%d/%m/%Y') }}</small>
+                  </p>
+                  {% if document.tags %}
+                    <p class="card-text">
+                      {% for tag in document.tags.split(',') %}
+                        <span class="badge bg-info">{{ tag.strip() }}</span>
+                      {% endfor %}
+                    </p>
+                  {% endif %}
+                </div>
+                <div class="card-footer">
+                  <div class="btn-group w-100">
+                    <a href="{{ url_for('documents.view', id=document.id) }}" class="btn btn-sm btn-primary">
+                      <i class="fas fa-eye"></i> Voir
+                    </a>
+                    <a href="{{ url_for('documents.edit', id=document.id) }}" class="btn btn-sm btn-warning">
+                      <i class="fas fa-edit"></i> Modifier
+                    </a>
+                    <button class="btn btn-sm btn-danger" onclick="confirmDelete('{{ url_for('documents.delete', id=document.id) }}')">
+                      <i class="fas fa-trash"></i> Supprimer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        
+        <!-- Vue liste (masquée par défaut) -->
+        <div class="table-responsive" id="list-view" style="display: none;">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Type</th>
+                <th>Taille</th>
+                <th>Date d'ajout</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for document in documents %}
+                <tr>
+                  <td>{{ document.nom }}</td>
+                  <td>{{ document.type or 'Non spécifié' }}</td>
+                  <td>{{ (document.taille / 1024)|round(2) }} KB</td>
+                  <td>{{ document.date_upload.strftime('%d/%m/%Y') }}</td>
+                  <td>
+                    <span class="badge bg-{% if document.statut == 'Actif' %}success{% else %}secondary{% endif %}">
+                      {{ document.statut }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="btn-group">
+                      <a href="{{ url_for('documents.view', id=document.id) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-eye"></i>
+                      </a>
+                      <a href="{{ url_for('documents.edit', id=document.id) }}" class="btn btn-sm btn-warning">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      <button class="btn btn-sm btn-danger" onclick="confirmDelete('{{ url_for('documents.delete', id=document.id) }}')">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i> Aucun document trouvé.
+          <a href="{{ url_for('documents.add') }}" class="alert-link">Ajouter un document</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Gestion du changement de vue (grille/liste)
+    const toggleViewBtn = document.getElementById('toggle-view');
+    const gridView = document.getElementById('grid-view');
+    const listView = document.getElementById('list-view');
+    
+    if (toggleViewBtn) {
+      toggleViewBtn.addEventListener('click', function() {
+        const currentView = this.getAttribute('data-view');
+        
+        if (currentView === 'grid') {
+          gridView.style.display = 'none';
+          listView.style.display = 'block';
+          this.innerHTML = '<i class="fas fa-th"></i> Vue Grille';
+          this.setAttribute('data-view', 'list');
+        } else {
+          gridView.style.display = 'flex';
+          listView.style.display = 'none';
+          this.innerHTML = '<i class="fas fa-list"></i> Vue Liste';
+          this.setAttribute('data-view', 'grid');
+        }
+      });
+    }
+    
+    // Fonction de confirmation de suppression
+    window.confirmDelete = function(url) {
+      if (confirm('Êtes-vous sûr de vouloir supprimer ce document ? Cette action est irréversible.')) {
+        window.location.href = url;
+      }
+    };
+  });
+</script>
+{% endblock %}

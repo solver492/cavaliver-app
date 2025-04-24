@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-3">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h1 class="display-5">Détails du Stockage - {{ stockage.reference }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Tableau de bord</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('stockage.index') }}">Stockages</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ stockage.reference }}</li>
+                </ol>
+            </nav>
+            <div class="btn-toolbar mb-2 mb-md-0 float-right">
+                <div class="btn-group mr-2">
+                    <a href="{{ url_for('stockage.edit', id=stockage.id) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit"></i> Modifier
+                    </a>
+                    <a href="{{ url_for('stockage.create_invoice', id=stockage.id) }}" class="btn btn-sm btn-warning">
+                        <i class="fas fa-file-invoice-dollar"></i> Créer une facture
+                    </a>
+                    <a href="{{ url_for('stockage.toggle_archive', id=stockage.id) }}" class="btn btn-sm btn-secondary"
+                       onclick="return confirm('Êtes-vous sûr de vouloir {{ 'restaurer' if stockage.archive else 'archiver' }} ce stockage?')">
+                        <i class="fas fa-{{ 'undo' if stockage.archive else 'archive' }}"></i> {{ 'Restaurer' if stockage.archive else 'Archiver' }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-info-circle"></i> Informations générales
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-borderless">
+                            <tbody>
+                                <tr>
+                                    <th>Référence:</th>
+                                    <td>{{ stockage.reference }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Client:</th>
+                                    <td>
+                                        <a href="{{ url_for('client.edit', id=stockage.client.id) }}">
+                                            {{ stockage.client.nom }} {{ stockage.client.prenom }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Statut:</th>
+                                    <td>
+                                        <span class="badge badge-{{ {'Actif':'success', 'En attente':'warning', 'Terminé':'secondary'}[stockage.statut] }}">
+                                            {{ stockage.statut }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Date de début:</th>
+                                    <td>{{ stockage.date_debut.strftime('%d/%m/%Y') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Date de fin:</th>
+                                    <td>{{ stockage.date_fin.strftime('%d/%m/%Y') if stockage.date_fin else 'Indéfinie' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Emplacement:</th>
+                                    <td>{{ stockage.emplacement }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Créé le:</th>
+                                    <td>{{ stockage.date_creation.strftime('%d/%m/%Y à %H:%M') }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-money-bill-wave"></i> Informations financières
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-borderless">
+                            <tbody>
+                                <tr>
+                                    <th>Montant mensuel:</th>
+                                    <td>{{ stockage.montant_mensuel|round(2) }} €</td>
+                                </tr>
+                                <tr>
+                                    <th>Caution:</th>
+                                    <td>{{ stockage.caution|round(2) if stockage.caution else '0.00' }} €</td>
+                                </tr>
+                                <tr>
+                                    <th>Coût total à ce jour:</th>
+                                    <td>{{ cout_total|round(2) }} €</td>
+                                </tr>
+                                <tr>
+                                    <th>Durée totale:</th>
+                                    <td>
+                                        {% set duree = (stockage.date_fin or stockage.date_creation).date() - stockage.date_debut.date() %}
+                                        {% set jours = duree.days %}
+                                        {% if jours < 30 %}
+                                            {{ jours }} jour{% if jours > 1 %}s{% endif %}
+                                        {% else %}
+                                            {% set mois = (jours / 30)|int %}
+                                            {% set jours_restants = jours % 30 %}
+                                            {{ mois }} mois{% if mois > 1 %}s{% endif %}
+                                            {% if jours_restants > 0 %}
+                                                et {{ jours_restants }} jour{% if jours_restants > 1 %}s{% endif %}
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            {% if stockage.observations %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-white">
+                    <i class="fas fa-sticky-note"></i> Observations
+                </div>
+                <div class="card-body">
+                    {{ stockage.observations|nl2br }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-boxes"></i> Articles stockés
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Article</th>
+                                    <th>Catégorie</th>
+                                    <th>Dimensions</th>
+                                    <th>Volume</th>
+                                    <th>Poids</th>
+                                    <th>Quantité</th>
+                                    <th>Valeur déclarée</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in articles %}
+                                <tr{% if item.article.fragile %} class="table-warning"{% endif %}>
+                                    <td>
+                                        {{ item.article.nom }}
+                                        {% if item.article.fragile %}
+                                            <span class="badge badge-danger">Fragile</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.article.categorie }}</td>
+                                    <td>{{ item.article.dimensions or '-' }}</td>
+                                    <td>{{ item.article.volume|round(2) if item.article.volume else '-' }} m³</td>
+                                    <td>{{ item.article.poids|round(2) if item.article.poids else '-' }} kg</td>
+                                    <td>{{ item.quantite }}</td>
+                                    <td>{{ item.article.valeur_declaree|round(2) if item.article.valeur_declaree else '-' }} €</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center">Aucun article dans ce stockage.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="bg-light font-weight-bold">
+                                <tr>
+                                    <td colspan="3" class="text-right">Totaux:</td>
+                                    <td>{{ stockage.volume_total|round(2) if stockage.volume_total else '0.00' }} m³</td>
+                                    <td>{{ stockage.poids_total|round(2) if stockage.poids_total else '0.00' }} kg</td>
+                                    <td>{{ articles|sum(attribute='quantite') }}</td>
+                                    <td>{{ articles|sum(attribute='article.valeur_declaree')|round(2) }} €</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <i class="fas fa-truck"></i> Prestations associées
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Type</th>
+                                            <th>Statut</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for prestation in stockage.prestations %}
+                                        <tr>
+                                            <td>{{ prestation.date_debut.strftime('%d/%m/%Y') }}</td>
+                                            <td>{{ prestation.type_demenagement }}</td>
+                                            <td>
+                                                <span class="badge badge-{{ {'En attente':'warning', 'Confirmée':'info', 'En cours':'primary', 'Terminée':'success', 'Annulée':'danger'}[prestation.statut] }}">
+                                                    {{ prestation.statut }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="{{ url_for('prestation.edit', id=prestation.id) }}" class="btn btn-sm btn-info">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-center">Aucune prestation associée.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header bg-warning text-white">
+                            <i class="fas fa-file-invoice-dollar"></i> Factures associées
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Numéro</th>
+                                            <th>Date</th>
+                                            <th>Montant</th>
+                                            <th>Statut</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for facture in stockage.factures %}
+                                        <tr>
+                                            <td>
+                                                <a href="{{ url_for('facture.edit', id=facture.id) }}">
+                                                    {{ facture.numero }}
+                                                </a>
+                                            </td>
+                                            <td>{{ facture.date_emission.strftime('%d/%m/%Y') }}</td>
+                                            <td>{{ facture.montant_ttc|round(2) }} €</td>
+                                            <td>
+                                                <span class="badge badge-{{ {'En attente':'warning', 'Payée':'success', 'Retard':'danger', 'Annulée':'secondary'}[facture.statut] }}">
+                                                    {{ facture.statut }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td colspan="4" class="text-center">Aucune facture associée.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

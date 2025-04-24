@@ -1,0 +1,359 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer une prestation - {{ config.APP_NAME }}{% endblock %}
+
+{% block styles %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/prestation-theme.css') }}">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s;
+        }
+
+        .fade-out {
+            animation: fadeOut 0.3s;
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        .client-supplementaire {
+            transition: all 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        /* Style pour le sélecteur de type de prestation */
+        .prestation-type-selector {
+            position: relative;
+            z-index: 10;
+        }
+
+        .form-switch-lg {
+            min-height: 2.5rem;
+            padding-left: 4.5em;
+        }
+
+        .form-switch-lg .form-check-input {
+            height: 2rem;
+            width: 3.5rem;
+            border-radius: 2rem;
+            cursor: pointer;
+        }
+
+        .form-check-label {
+            position: relative;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .standard-label, .groupage-label {
+            position: absolute;
+            transition: all 0.3s ease;
+        }
+
+        .standard-label {
+            left: -4.2rem;
+            opacity: 1;
+            color: #0d6efd;
+        }
+
+        .groupage-label {
+            right: -4.2rem;
+            opacity: 0.5;
+            color: #6c757d;
+        }
+
+        .form-check-input:checked ~ .form-check-label .standard-label {
+            opacity: 0.5;
+            color: #6c757d;
+        }
+
+        .form-check-input:checked ~ .form-check-label .groupage-label {
+            opacity: 1;
+            color: #0d6efd;
+        }
+
+        .form-check-input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+    </style>
+{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <!-- Inclure le script de gestion du formulaire de prestation -->
+    <script src="{{ url_for('static', filename='js/prestation-form.js') }}"></script>
+    <!-- Inclure le script de gestion des transporteurs disponibles -->
+    <script src="{{ url_for('static', filename='js/transporteurs-disponibilite.js') }}"></script>
+    <!-- Inclure le script d'amélioration du widget de transporteurs -->
+    <script src="{{ url_for('static', filename='js/transporteurs-widget.js') }}"></script>
+    <!-- Inclure le script pour assurer le bon fonctionnement du bouton d'enregistrement -->
+    <script src="{{ url_for('static', filename='js/prestation-submit.js') }}"></script>
+    <!-- Inclure le script pour supprimer la bulle des transporteurs bientôt disponibles -->
+    <script src="{{ url_for('static', filename='js/supprimer-bulle-transporteurs.js') }}"></script>
+    <!-- Inclure les styles pour le widget de transporteurs -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/transporteurs-widget.css') }}">
+    <link href="{{ url_for('static', filename='css/lib/fullcalendar.min.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="prestation-page">
+    <div class="page-title d-flex justify-content-between align-items-center">
+        <h1><i class="fas fa-plus"></i> Créer une prestation</h1>
+        <div class="d-flex align-items-center gap-3">
+            <div class="prestation-type-selector">
+                <div class="form-check form-switch form-switch-lg">
+                    <input class="form-check-input" type="checkbox" id="prestation-type-switch">
+                    <label class="form-check-label" for="prestation-type-switch">
+                        <span class="standard-label">Standard</span>
+                        <span class="groupage-label">Groupage</span>
+                    </label>
+                    <input type="hidden" name="type_demenagement" id="type_demenagement_hidden" value="Standard">
+                    <input type="hidden" name="mode_groupage" value="false">
+                </div>
+            </div>
+            <a href="{{ url_for('prestation.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour à la liste
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                {{ form.hidden_tag() }}
+
+                <div id="mode-info" class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i> Mode standard: un seul client, un point de départ et un point d'arrivée
+                </div>
+
+                <!-- Section Client -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="mb-0"><i class="fas fa-user"></i> {{ form.client_id.label.text }} <span class="text-danger">*</span></h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Client principal -->
+                                <div id="client-principal">
+                                    {{ form.client_id(class="form-control" + (" is-invalid" if form.client_id.errors else ""), id="client_id") }}
+                                    {% for error in form.client_id.errors %}
+                                        <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clients supplémentaires pour le groupage -->
+                    <div class="col-md-6" id="section-clients-supplementaires" style="display: none;">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="fas fa-users"></i> Clients supplémentaires</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info mb-3">
+                                    <i class="fas fa-info-circle"></i> En mode groupage, vous pouvez ajouter plusieurs clients pour une même prestation.
+                                </div>
+                                <div id="clients-supplementaires">
+                                    <!-- Les clients supplémentaires seront ajoutés ici dynamiquement -->
+                                </div>
+                                <button type="button" id="ajouter-client" class="btn btn-primary mt-3 w-100">
+                                    <i class="fas fa-plus-circle me-2"></i> Ajouter un client supplémentaire
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Dates et Type -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="date_debut" class="form-label">{{ form.date_debut.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.date_debut(class="form-control" + (" is-invalid" if form.date_debut.errors else ""), id="date_debut", type="date") }}
+                        {% for error in form.date_debut.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="date_fin" class="form-label">{{ form.date_fin.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.date_fin(class="form-control" + (" is-invalid" if form.date_fin.errors else ""), id="date_fin", type="date") }}
+                        {% for error in form.date_fin.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Section Type de déménagement -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="type_demenagement_id" class="form-label">Type de déménagement <span class="text-danger">*</span></label>
+                        <select name="type_demenagement_id" id="type_demenagement_id" class="form-select">
+                            <option value="">Sélectionnez un type</option>
+                            {% for type in types_demenagement %}
+                                <option value="{{ type.id }}">{{ type.nom }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if form.type_demenagement_id.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.type_demenagement_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Section Adresses -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="adresse_depart" class="form-label">{{ form.adresse_depart.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.adresse_depart(class="form-control" + (" is-invalid" if form.adresse_depart.errors else ""), id="adresse_depart", rows=3, placeholder="Adresse principale de départ") }}
+                        {% for error in form.adresse_depart.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+
+                        <!-- Étapes supplémentaires pour le départ -->
+                        <div id="etapes-depart-container" class="mt-2">
+                            <!-- Les étapes supplémentaires seront ajoutées ici dynamiquement -->
+                        </div>
+                        <button type="button" id="ajouter-etape-depart" class="btn btn-outline-secondary btn-sm mt-2">
+                            <i class="fas fa-plus-circle"></i> Ajouter une étape
+                        </button>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="adresse_arrivee" class="form-label">{{ form.adresse_arrivee.label.text }} <span class="text-danger">*</span></label>
+                        {{ form.adresse_arrivee(class="form-control" + (" is-invalid" if form.adresse_arrivee.errors else ""), id="adresse_arrivee", rows=3, placeholder="Adresse principale d'arrivée") }}
+                        {% for error in form.adresse_arrivee.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+
+                        <!-- Étapes supplémentaires pour l'arrivée -->
+                        <div id="etapes-arrivee-container" class="mt-2">
+                            <!-- Les étapes supplémentaires seront ajoutées ici dynamiquement -->
+                        </div>
+                        <button type="button" id="ajouter-etape-arrivee" class="btn btn-outline-secondary btn-sm mt-2">
+                            <i class="fas fa-plus-circle"></i> Ajouter une étape
+                        </button>
+                    </div>
+                </div>
+
+
+                <!-- Informations supplémentaires -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="montant" class="form-label">{{ form.montant.label.text }}</label>
+                        {{ form.montant(class="form-control" + (" is-invalid" if form.montant.errors else ""), id="montant", type="number", step="0.01") }}
+                        {% for error in form.montant.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="priorite" class="form-label">{{ form.priorite.label.text }}</label>
+                        {{ form.priorite(class="form-control" + (" is-invalid" if form.priorite.errors else ""), id="priorite") }}
+                        {% for error in form.priorite.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="statut" class="form-label">{{ form.statut.label.text }}</label>
+                        {{ form.statut(class="form-control" + (" is-invalid" if form.statut.errors else ""), id="statut") }}
+                        {% for error in form.statut.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="societe" class="form-label">{{ form.societe.label.text }}</label>
+                        {{ form.societe(class="form-control" + (" is-invalid" if form.societe.errors else ""), id="societe") }}
+                        {% for error in form.societe.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Section Observations -->
+                <div class="mb-4">
+                    <label for="observations" class="form-label">{{ form.observations.label.text }}</label>
+                    {{ form.observations(class="form-control summernote-editor" + (" is-invalid" if form.observations.errors else ""), id="observations", rows=4, placeholder="Observation principale") }}
+                    {% for error in form.observations.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+
+                    <!-- Observations supplémentaires -->
+                    <div id="observations-supplementaires" class="mt-2">
+                        <!-- Les observations supplémentaires seront ajoutées ici dynamiquement -->
+                    </div>
+                    <button type="button" id="ajouter-observation" class="btn btn-outline-secondary btn-sm mt-2">
+                        <i class="fas fa-plus-circle"></i> Ajouter une observation
+                    </button>
+                </div>
+
+                <!-- Section Tags -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label for="tags" class="form-label">{{ form.tags.label.text }}</label>
+                        {{ form.tags(class="form-control" + (" is-invalid" if form.tags.errors else ""), id="tags") }}
+                        {% for error in form.tags.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Ex: urgent, fragile, volumineux</div>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('prestation.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Retour à la liste
+                    </a>
+                    <button type="submit" id="submit-button" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/lib/fullcalendar.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/lib/fullcalendar-fr.js') }}"></script>
+<script src="{{ url_for('static', filename='js/prestations.js') }}"></script>
+<script src="{{ url_for('static', filename='js/transporteur-calendrier.js') }}"></script>
+<script src="{{ url_for('static', filename='js/vehicule-suggestions-fixed.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bubble-fix.js') }}"></script>
+<script src="{{ url_for('static', filename='js/summernote-initializer.js') }}"></script>
+<script src="{{ url_for('static', filename='js/etapes-supplementaires.js') }}"></script>
+<script src="{{ url_for('static', filename='js/prestation-documents.js') }}"></script>
+<script src="{{ url_for('static', filename='js/boutons-reparation.js') }}"></script>
+<script src="{{ url_for('static', filename='js/groupage-fix-v2.js') }}"></script>
+<script src="{{ url_for('static', filename='js/transporteurs-widget-final.js') }}"></script>
+<script src="{{ url_for('static', filename='js/prestation-type-switcher.js') }}"></script>
+<script src="{{ url_for('static', filename='js/adapter-type-prestation.js') }}"></script>
+<script src="{{ url_for('static', filename='js/debug-prestation.js') }}"></script>
+<script>
+    // Pas besoin d'initialiser manuellement, le script s'auto-initialise
+    // document.addEventListener('DOMContentLoaded', function() {
+    //     initEtapesSupplementaires();
+    // });
+</script>
+{% endblock %}

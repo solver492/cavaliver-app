@@ -1,0 +1,373 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - {{ config.APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="facture-view-page">
+    <div class="page-title">
+        <h1><i class="fas fa-file-invoice-dollar"></i> Facture {{ facture.numero }}</h1>
+        <div class="btn-group">
+            <a href="{{ url_for('facture.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Retour à la liste
+            </a>
+            <a href="{{ url_for('facture.edit', id=facture.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Modifier
+            </a>
+            <button onclick="window.print()" class="btn btn-info">
+                <i class="fas fa-print"></i> Imprimer
+            </button>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Informations de facture -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Informations générales</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-details">
+                        <tr>
+                            <th width="40%">Numéro de facture</th>
+                            <td>{{ facture.numero }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date d'émission</th>
+                            <td>{{ facture.date_emission.strftime('%d/%m/%Y') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Date d'échéance</th>
+                            <td>{{ facture.date_echeance.strftime('%d/%m/%Y') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Statut</th>
+                            <td>
+                                <span class="badge status-{{ facture.statut|lower|replace(' ', '-') }}">
+                                    {{ facture.statut }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Mode de paiement</th>
+                            <td>{{ facture.mode_paiement or 'Non défini' }}</td>
+                        </tr>
+                        {% if facture.societe %}
+                        <tr>
+                            <th>Société</th>
+                            <td>{{ facture.societe }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Montants -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-money-bill-wave"></i> Montants</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-details">
+                        <tr>
+                            <th width="40%">Montant HT</th>
+                            <td>{{ facture.montant_ht }} €</td>
+                        </tr>
+                        <tr>
+                            <th>Taux TVA</th>
+                            <td>{{ facture.taux_tva }} %</td>
+                        </tr>
+                        <tr>
+                            <th>Montant TVA</th>
+                            <td>{{ ((facture.montant_ttc|default(0)) - (facture.montant_ht|default(0)))|round(2) }} €</td>
+                        </tr>
+                        <tr>
+                            <th>Montant TTC</th>
+                            <td><strong>{{ facture.montant_ttc }} €</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Montant de l'acompte</th>
+                            <td>{{ facture.montant_acompte|default(0) }} €</td>
+                        </tr>
+                        <tr>
+                            <th>Reste à payer</th>
+                            <td><strong>{{ ((facture.montant_ttc|default(0)) - (facture.montant_acompte|default(0)))|round(2) }} €</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Commission commerciale -->
+            {% if current_user.is_admin or current_user.id == facture.commercial_id %}
+            <div class="card mb-4">
+                <div class="card-header bg-purple text-white">
+                    <h5 class="mb-0"><i class="fas fa-percentage"></i> Commission commerciale</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-details">
+                        <tr>
+                            <th width="40%">Commercial</th>
+                            <td>{{ facture.commercial.nom if facture.commercial else 'Non défini' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Montant TTC de la commission</th>
+                            <td>{{ facture.commission_montant|default(0) }} €</td>
+                        </tr>
+                        <tr>
+                            <th>Pourcentage de commission</th>
+                            <td>{{ facture.commission_pourcentage|default(0) }} %</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Informations client et prestation -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-user"></i> Client</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-details">
+                        <tr>
+                            <th width="40%">Nom</th>
+                            <td>
+                                <a href="{{ url_for('client.details', id=client.id) }}">
+                                    {{ client.nom }} {{ client.prenom }}
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Email</th>
+                            <td>{{ client.email or 'Non défini' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Téléphone</th>
+                            <td>{{ client.telephone or 'Non défini' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Adresse</th>
+                            <td>
+                                {{ client.adresse or 'Non définie' }}
+                                {% if client.code_postal or client.ville %}
+                                    <br>{{ client.code_postal or '' }} {{ client.ville or '' }}
+                                {% endif %}
+                                {% if client.pays %}
+                                    <br>{{ client.pays }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
+            {% if prestation %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-truck-moving"></i> Prestation associée</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-details">
+                        <tr>
+                            <th width="40%">Type</th>
+                            <td>{{ prestation.type_demenagement }}</td>
+                        </tr>
+                        <tr>
+                            <th>Période</th>
+                            <td>Du {{ prestation.date_debut.strftime('%d/%m/%Y') }} au {{ prestation.date_fin.strftime('%d/%m/%Y') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Adresse de départ</th>
+                            <td>{{ prestation.adresse_depart }}</td>
+                        </tr>
+                        <tr>
+                            <th>Adresse d'arrivée</th>
+                            <td>{{ prestation.adresse_arrivee }}</td>
+                        </tr>
+                        <tr>
+                            <th>Statut</th>
+                            <td>
+                                <span class="badge status-{{ prestation.statut|lower|replace(' ', '-') }}">
+                                    {{ prestation.statut }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Détails</th>
+                            <td>
+                                <a href="{{ url_for('prestation.view', id=prestation.id) }}" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-eye"></i> Voir la prestation
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Documents associés -->
+    <div class="row" id="documents">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-file-pdf"></i> Documents de facturation</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Documents attachés</h6>
+                            {% if facture.fichiers %}
+                                <ul class="list-group">
+                                {% for fichier in facture.fichiers %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="far fa-file-pdf text-danger"></i>
+                                            <span>{{ fichier.nom_fichier }}</span>
+                                            <small class="text-muted ms-2">({{ fichier.type_fichier }})</small>
+                                        </div>
+                                        <div>
+                                            <a href="{{ url_for('facture.download_file', fichier_id=fichier.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            {% if current_user.is_admin %}
+                                            <button class="btn btn-sm btn-outline-danger delete-file" data-file-id="{{ fichier.id }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="text-muted">Aucun document attaché à cette facture.</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Ajouter un document</h6>
+                            <form action="{{ url_for('facture.upload_file', facture_id=facture.id) }}" method="post" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label for="file" class="form-label">Sélectionner un fichier PDF</label>
+                                    <input type="file" name="file" id="file" class="form-control" accept=".pdf" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="type_fichier" class="form-label">Type de document</label>
+                                    <select name="type_fichier" id="type_fichier" class="form-select" required>
+                                        <option value="facture_client">Facture client</option>
+                                        <option value="facture_commission">Facture de commission</option>
+                                        <option value="acompte">Acompte</option>
+                                        <option value="autre">Autre document</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-upload"></i> Téléverser
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notes -->
+    {% if facture.notes %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-sticky-note"></i> Notes</h5>
+                </div>
+                <div class="card-body">
+                    <p>{{ facture.notes|replace('\n', '<br>')|safe }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Section impression uniquement -->
+    <div class="d-none d-print-block mt-5">
+        <div class="row">
+            <div class="col-6">
+                <h4>{{ config.COMPANY_FULL_NAME }}</h4>
+                <p>
+                    {{ config.COMPANY_ADDRESS }}<br>
+                    Tél: {{ config.COMPANY_PHONE }}<br>
+                    Email: {{ config.COMPANY_EMAIL }}<br>
+                    SIRET: {{ config.COMPANY_SIRET }}
+                </p>
+            </div>
+            <div class="col-6 text-end">
+                <h4>Conditions de paiement</h4>
+                <p>
+                    Date d'échéance: {{ facture.date_echeance.strftime('%d/%m/%Y') }}<br>
+                    Mode de paiement: {{ facture.mode_paiement or 'Non défini' }}
+                </p>
+            </div>
+        </div>
+        <hr>
+        <p class="text-center mt-5">Merci pour votre confiance!</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_styles %}
+<style>
+    @media print {
+        .page-title, nav, footer, .btn, .sidebar {
+            display: none !important;
+        }
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        .card {
+            border: none !important;
+        }
+        .card-header {
+            background-color: #f8f9fa !important;
+            color: #212529 !important;
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+    }
+    .table-details th, .table-details td {
+        padding: 8px;
+    }
+    .badge.status-en-attente {
+        background-color: #ffc107;
+    }
+    .badge.status-payée {
+        background-color: #28a745;
+    }
+    .badge.status-retard {
+        background-color: #dc3545;
+    }
+    .badge.status-annulée {
+        background-color: #6c757d;
+    }
+    .bg-purple {
+        background-color: #6f42c1;
+    }
+</style>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestionnaire pour les boutons de suppression de fichiers
+    const deleteButtons = document.querySelectorAll('.delete-file');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce fichier ?')) {
+                const fileId = this.getAttribute('data-file-id');
+                window.location.href = "{{ url_for('facture.delete_file', facture_id=facture.id) }}?file_id=" + fileId;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
