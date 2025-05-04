@@ -132,6 +132,36 @@
                     {% endif %}
                     <p>Version actuelle: v{{ evenement.version or 1 }}</p>
                 </div>
+            </div>f versions %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Version</th>
+                                        <th>Date de modification</th>
+                                        <th>Titre</th>
+                                        <th>Type</th>
+                                        <th>Observations</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for version in versions %}
+                                    <tr>
+                                        <td>v{{ version.version }}</td>
+                                        <td>{{ version.date_modification.strftime('%d/%m/%Y %H:%M') }}</td>
+                                        <td>{{ version.titre }}</td>
+                                        <td>{{ version.type_evenement }}</td>
+                                        <td>{{ version.observations|default('')|string|truncate(50) if version.observations is not none else '' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">L'historique des versions sera disponible après la première modification.</p>
+                    {% endif %}
+                    <p>Version actuelle: v{{ evenement.version or 1 }}</p>
+                </div>
             </div>
             
             <!-- Section Documents -->

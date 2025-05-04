@@ -1120,6 +1120,59 @@ def assigner_prestation_direct():
 @calendrier_bp.route('/evenements/<int:evenement_id>/traiter-modification', methods=['POST'])
 @login_required
 def traiter_modification_evenement(evenement_id):
+    """Traite le formulaire de modification d'un événement et gère le versionnage."""
+    evenement = Evenement.query.get_or_404(evenement_id)
+    agenda = Agenda.query.get_or_404(evenement.agenda_id)
+    
+    # Vérifier que l'utilisateur a le droit de modifier cet événement
+    if agenda.user_id != current_user.id and current_user not in agenda.utilisateurs_partages:
+        flash("Vous n'avez pas les droits pour modifier cet événement.", 'danger')
+        return redirect(url_for('calendrier.voir_agenda', agenda_id=agenda.id))
+    
+    try:
+        # Créer une version de l'événement avant modification
+        version = EvenementVersion(
+            evenement_id=evenement.id,
+            version=evenement.version or 1,
+            titre=evenement.titre,
+            type_evenement=evenement.type_evenement,
+            date_debut=evenement.date_debut,
+            date_fin=evenement.date_fin,
+            observations=evenement.observations,
+            modifie_par=current_user.id,
+            date_modification=datetime.now()
+        )
+        db.session.add(version)
+        
+        # Récupérer les données du formulaire
+        titre = request.form.get('titre')
+        date_debut = datetime.fromisoformat(request.form.get('date_debut'))
+        date_fin_str = request.form.get('date_fin')
+        date_fin = datetime.fromisoformat(date_fin_str) if date_fin_str and date_fin_str.strip() else None
+        type_evenement = request.form.get('type_evenement')
+        observations = request.form.getlist('observations[]')
+        observations = [obs for obs in observations if obs and obs.strip()]
+        observations_text = '|||'.join(observations) if observations else None
+        
+        # Mettre à jour l'événement
+        evenement.titre = titre
+        evenement.date_debut = date_debut
+        evenement.date_fin = date_fin
+        evenement.type_evenement = type_evenement
+        evenement.observations = observations_text
+        
+        # Incrémenter la version
+        evenement.version = (evenement.version or 1) + 1
+        
+        db.session.commit()
+        flash('Événement modifié avec succès!', 'success')
+        
+        return redirect(url_for('calendrier.voir_agenda', agenda_id=agenda.id))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erreur lors de la modification: {str(e)}', 'danger')
+        return redirect(url_for('calendrier.modifier_evenement_page', evenement_id=evenement_id))
     """Traite le formulaire de modification d'un événement et redirige vers la page de l'agenda."""
     evenement = Evenement.query.get_or_404(evenement_id)
     agenda = Agenda.query.get_or_404(evenement.agenda_id)
