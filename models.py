@@ -356,10 +356,8 @@ class Evenement(db.Model):
             'date_fin': self.date_fin.isoformat() if self.date_fin else None,
             'observations': self.observations,
             'archive': self.archive,
-            'user_id': self.user_id,
             'agenda_id': self.agenda_id,
-            'prestation_id': self.prestation_id,
-            'version': self.version
+            'prestation_id': self.prestation_id
         }
 
 class PrestationVersion(db.Model):
