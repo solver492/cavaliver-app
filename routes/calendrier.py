@@ -11,7 +11,7 @@ import logging
 from extensions import db
 from models import Prestation, Stockage, Agenda, Document, Evenement, User, TypeVehicule, EvenementVersion
 
-calendrier_bp = Blueprint('calendrier', __name__)
+calendrier_bp = Blueprint('calendrier', __name__, url_prefix='/calendrier')
 
 @calendrier_bp.app_template_filter('format_date')
 def format_date(date):
@@ -39,6 +39,8 @@ def liste_agendas():
         return render_template(
             'calendrier/agendas.html',
             agendas=agendas,
+            agendas_propres=len(agendas_propres),
+            agendas_partages=len(agendas_partages),
             form=form,
             now=datetime.utcnow,
             Evenement=Evenement,
@@ -245,9 +247,10 @@ def voir_agenda(agenda_id):
                 'title': evt.titre,
                 'start': evt.date_debut.isoformat(),
                 'end': evt.date_fin.isoformat() if evt.date_fin else None,
+                'observations': evt.observations,
                 'type': evt.type_evenement,
-                'backgroundColor': agenda.couleur,
-                'borderColor': agenda.couleur,
+                'backgroundColor': '#3498db',
+                'borderColor': '#3498db',
                 'textColor': '#ffffff',
                 'extendedProps': {
                     'type': evt.type_evenement,
@@ -289,7 +292,7 @@ def voir_agenda(agenda_id):
 
         return render_template('calendrier/agenda_detail.html', 
                             agenda=agenda, 
-                            evenements=events_data,
+                            evenements= events_data,
                             prestations=prestations,
                             config=current_app.config)
     except Exception as e:
@@ -377,13 +380,24 @@ def creer_evenement(agenda_id):
         if request.form.get('date_fin'):
             date_fin = datetime.fromisoformat(request.form.get('date_fin'))
 
+        # Gérer les observations comme une liste
+        observations = request.form.getlist('observations[]')
+        if not observations:
+            observations = [request.form.get('observations')] if request.form.get('observations') else []
+        
+        # Filtrer les observations vides
+        observations = [obs for obs in observations if obs and obs.strip()]
+        
+        # Joindre les observations avec le séparateur spécial
+        observations_text = '|||'.join(observations)
+
         evenement = Evenement(
             agenda_id=agenda_id,
             titre=request.form.get('titre'),
             type_evenement=request.form.get('type_evenement'),
             date_debut=date_debut,
             date_fin=date_fin,
-            observations=request.form.get('observations'),
+            observations=observations_text,
             user_id=current_user.id
         )
         db.session.add(evenement)
@@ -422,13 +436,15 @@ def supprimer_document(doc_id):
 @login_required
 def voir_details_evenement(event_id):
     evt = Evenement.query.get_or_404(event_id)
+    # Convertir les observations en liste
+    observations = evt.observations.split('|||') if evt.observations else []
     return jsonify({
         'id': evt.id,
         'titre': evt.titre,
         'type_evenement': evt.type_evenement,
         'date_debut': evt.date_debut.strftime('%d/%m/%Y %H:%M'),
         'date_fin': evt.date_fin.strftime('%d/%m/%Y %H:%M') if evt.date_fin else None,
-        'observations': evt.observations,
+        'observations': observations,
         'prestation': {'reference': evt.prestation.reference} if evt.prestation else None
     })
 
@@ -506,6 +522,25 @@ def assigner_prestation(event_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
 
+@calendrier_bp.route('/agendas/<int:agenda_id>/evenements', methods=['GET'])
+@login_required
+def get_evenements(agenda_id):
+    evenements = Evenement.query.filter_by(
+        agenda_id=agenda_id,
+        user_id=current_user.id
+    ).all()
+    
+    events_data = [{
+        'id': evt.id,
+        'title': evt.titre,
+        'start': evt.date_debut.isoformat(),
+        'end': evt.date_fin.isoformat() if evt.date_fin else None,
+        'archive': evt.archive,
+        'backgroundColor': '#FF0000' if evt.archive else '#3498db'
+    } for evt in evenements]
+    
+    return jsonify({'success': True, 'evenements': events_data})
+
 @calendrier_bp.route('/agendas/<int:agenda_id>/evenements/<int:event_id>/desarchiver', methods=['POST'])
 @login_required
 def desarchiver_evenement(agenda_id, event_id):
@@ -561,10 +596,31 @@ def modifier_evenement(evenement_id):
         evenement.type_evenement = request.form.get('type_evenement')
         evenement.date_debut = date_debut
         evenement.date_fin = date_fin
-        evenement.observations = request.form.get('observations')
+        
+        # Gérer les observations comme une liste
+        observations = request.form.getlist('observations[]')
+        if not observations:
+            observations = [request.form.get('observations')] if request.form.get('observations') else []
+        
+        # Filtrer les observations vides
+        observations = [obs for obs in observations if obs and obs.strip()]
+        
+        # Joindre les observations avec le séparateur spécial
+        evenement.observations = " ||| ".join(observations) if observations else None
         
         db.session.commit()
-        return jsonify({'success': True})
+
+        evenement_afficher = Evenement.query.get_or_404(evenement_id)
+        agenda = Agenda.query.get_or_404(evenement.agenda_id)
+        
+        versions = EvenementVersion.query.filter_by(evenement_id=evenement.id).order_by(EvenementVersion.version.desc()).all()
+        
+        return render_template(
+        'calendrier/modifier_evenement.html',
+        evenement=evenement_afficher,
+        agenda=agenda,
+        versions=versions
+        )
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
@@ -677,7 +733,12 @@ def get_prestation_evenement(evenement_id):
                     'adresse_depart': evenement.prestation.adresse_depart,
                     'adresse_arrivee': evenement.prestation.adresse_arrivee,
                     'type_demenagement': evenement.prestation.type_demenagement,
-                    'statut': evenement.prestation.statut
+                    'statut': evenement.prestation.statut,
+                    'montant': evenement.prestation.montant,
+                    'societe': evenement.prestation.societe,
+                    'date_creation': evenement.prestation.date_creation.strftime('%d/%m/%Y'),
+                    'tags': evenement.prestation.tags,
+                    'mode_groupage': evenement.prestation.mode_groupage
                 }
             })
         return jsonify({'success': False, 'message': 'Aucune prestation assignée à cet événement'}), 404
@@ -814,7 +875,17 @@ def api_modifier_evenement(evenement_id):
         if 'type_evenement' in data:
             evenement.type_evenement = data['type_evenement']
         if 'observations' in data:
-            evenement.observations = data['observations']
+            # Convertir en liste si ce n'est pas déjà le cas
+            observations_list = data['observations']
+            if not isinstance(observations_list, list):
+                observations_list = [observations_list]
+            
+            # Filtrer les observations vides
+            observations_list = [obs for obs in observations_list if obs and obs.strip()]
+            
+            # Joindre les observations avec le séparateur spécial
+            observations_text = '|||'.join(observations_list)
+            evenement.observations = observations_text
             
         # Incrémenter la version
         evenement.version = (evenement.version or 1) + 1
@@ -829,7 +900,7 @@ def api_modifier_evenement(evenement_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-@calendrier_bp.route('/api/evenements/<int:evenement_id>/observations', methods=['PATCH'])
+@calendrier_bp.route('/api/evenements/<int:evenement_id>/observations', methods=['POST'])
 @login_required
 def api_modifier_observations(evenement_id):
     try:
@@ -837,16 +908,26 @@ def api_modifier_observations(evenement_id):
         data = request.json
         
         if 'observations' in data:
-            # Joindre toutes les observations avec un séparateur
-            evenement.observations = '\n---\n'.join(data['observations'])
-            db.session.commit()
+            # Convertir en liste si ce n'est pas déjà le cas
+            observations_list = data['observations']
+            if not isinstance(observations_list, list):
+                observations_list = [observations_list]
             
-            return jsonify({
-                'success': True,
-                'observations': evenement.observations
-            })
+            # Filtrer les observations vides
+            observations_list = [obs for obs in observations_list if obs and obs.strip()]
             
-        return jsonify({'success': False, 'error': 'Observations manquantes'})
+            # Joindre les observations avec le séparateur spécial ou mettre à None si pas d'observations
+            evenement.observations = '|||'.join(observations_list) if observations_list else None
+            
+        # Incrémenter la version
+        evenement.version = (evenement.version or 1) + 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'version': evenement.version
+        })
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -1025,50 +1106,6 @@ def assigner_prestation_direct():
         flash(f'Erreur lors de l\'assignation: {str(e)}', 'danger')
         return redirect(url_for('calendrier.voir_agenda', agenda_id=agenda_id))
 
-@calendrier_bp.route('/evenements/<int:evenement_id>/modifier', methods=['GET', 'POST'])
-@login_required
-def modifier_evenement_page(evenement_id):
-    """Page dédiée à la modification d'un événement avec historique des versions."""
-    evenement = Evenement.query.get_or_404(evenement_id)
-    agenda = Agenda.query.get_or_404(evenement.agenda_id)
-    
-    # Vérifier que l'utilisateur a le droit de modifier cet événement
-    if agenda.user_id != current_user.id and current_user not in agenda.utilisateurs_partages:
-        flash("Vous n'avez pas les droits pour modifier cet événement.", 'danger')
-        return redirect(url_for('calendrier.voir_agenda', agenda_id=agenda.id))
-    
-    if request.method == 'POST':
-        try:
-            # Récupérer les données du formulaire
-            titre = request.form.get('titre')
-            date_debut = datetime.fromisoformat(request.form.get('date_debut'))
-            date_fin_str = request.form.get('date_fin')
-            date_fin = datetime.fromisoformat(date_fin_str) if date_fin_str else None
-            type_evenement = request.form.get('type_evenement')
-            observations = request.form.get('observations')
-            
-            # Mettre à jour l'événement
-            evenement.titre = titre
-            evenement.date_debut = date_debut
-            evenement.date_fin = date_fin
-            evenement.type_evenement = type_evenement
-            evenement.observations = observations
-            
-            # Incrémenter la version
-            evenement.version = (evenement.version or 1) + 1
-            
-            # Mettre à jour la date de modification
-            evenement.date_modification = datetime.now()
-            
-            db.session.commit()
-            
-            flash('Événement modifié avec succès!', 'success')
-            return redirect(url_for('calendrier.voir_agenda', agenda_id=agenda.id))
-            
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Erreur lors de la modification: {str(e)}', 'danger')
-    
     # Récupérer l'historique des versions
     versions = EvenementVersion.query.filter_by(evenement_id=evenement.id).order_by(EvenementVersion.version.desc()).all()
     
@@ -1099,7 +1136,15 @@ def traiter_modification_evenement(evenement_id):
         date_fin_str = request.form.get('date_fin')
         date_fin = datetime.fromisoformat(date_fin_str) if date_fin_str and date_fin_str.strip() else None
         type_evenement = request.form.get('type_evenement')
-        observations = request.form.get('observations')
+        
+        # Récupérer toutes les observations (format array)
+        observations = request.form.getlist('observations[]')
+        
+        # Filtrer les observations vides
+        observations = [obs for obs in observations if obs and obs.strip()]
+        
+        # Joindre les observations avec le séparateur spécial
+        observations_text = '|||'.join(observations) if observations else None
         
         # Créer une version de l'événement avant modification
         version = EvenementVersion(
@@ -1120,7 +1165,7 @@ def traiter_modification_evenement(evenement_id):
         evenement.date_debut = date_debut
         evenement.date_fin = date_fin
         evenement.type_evenement = type_evenement
-        evenement.observations = observations
+        evenement.observations = observations_text
         
         # Incrémenter la version
         evenement.version = (evenement.version or 1) + 1
@@ -1137,6 +1182,29 @@ def traiter_modification_evenement(evenement_id):
     
     # Rediriger vers la page de l'agenda dans tous les cas
     return redirect(url_for('calendrier.voir_agenda', agenda_id=agenda.id))
+
+@calendrier_bp.route('/evenements/<int:evenement_id>/modifier', methods=['GET'])
+@login_required
+def modifier_evenement_page(evenement_id):
+    """Page dédiée à la modification d'un événement."""
+    evenement = Evenement.query.get_or_404(evenement_id)
+    agenda = Agenda.query.get_or_404(evenement.agenda_id)
+    
+    # Vérifier que l'utilisateur a le droit de modifier cet événement
+    if agenda.user_id != current_user.id and current_user not in agenda.utilisateurs_partages:
+        flash("Vous n'avez pas les droits pour modifier cet événement.", 'danger')
+        return redirect(url_for('calendrier.voir_agenda', agenda_id=agenda.id))
+    
+    # Récupérer l'historique des versions
+    versions = EvenementVersion.query.filter_by(evenement_id=evenement.id).order_by(EvenementVersion.version.desc()).all()
+    
+    # Pour l'affichage GET, préparer les données
+    return render_template(
+        'calendrier/modifier_evenement.html',
+        evenement=evenement,
+        agenda=agenda,
+        versions=versions
+    )
 
 @calendrier_bp.route('/evenements/<int:evenement_id>/ajouter-document', methods=['POST'])
 @login_required

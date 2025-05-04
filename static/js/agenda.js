@@ -80,7 +80,8 @@ function updateAgendaEvents(agendaId) {
             
             container.innerHTML = '';
             if (events.length === 0) {
-                container.innerHTML = '<li class="text-muted">Aucun événement programmé</li>';
+                alert(events.length);
+                container.innerHTML = '<li class="text-muted">Aucune événement programmé</li>';
                 return;
             }
             

@@ -15,17 +15,24 @@
     </div>
 
     <div class="row">
+    <script>
+        let agendasData = [];
+    </script>
         {% for agenda in agendas %}
+         
         <div class="col-md-4 mb-4">
             <div class="agenda-card" data-type="{{ agenda.type_agenda }}" data-color="{{ agenda.couleur }}">
                 <div class="agenda-header agenda-type-{{ agenda.type_agenda }}">
                     <div class="d-flex justify-content-between align-items-center p-3">
                         <div>
+                           
                             <h5 class="mb-0">
                                 {% if not est_proprietaire(agenda) %}
                                     <i class="bi bi-share-fill text-primary me-2" title="Agenda partagé"></i>
                                 {% endif %}
+                                
                                 {{ agenda.nom }}
+                                
                             </h5>
                             {% if not est_proprietaire(agenda) %}
                                 <small class="text-muted">
@@ -84,12 +91,25 @@
                                 {% endfor %}
                             {% else %}
                                 <li class="text-muted text-center py-3">
-                                    Aucun événement programmé
+                                    {% set max_events = 3 %}
+                                    {% for evenement in agenda.evenements %}
+                                    {% if loop.index <= max_events %}
+                                    {{ evenement.titre }}<br>
+                                    {% else %}
+                                        .
+                                    {% endif %}
+                                    {% endfor %}
+                                    
                                 </li>
                             {% endif %}
                         {% else %}
                             <li class="text-muted text-center py-3">
-                                Aucun événement programmé
+                                    {% set max_events = 3 %}
+                                    {% for evenement in agenda.evenements %}
+                                    {% if loop.index <= max_events %}
+                                    {{ evenement.titre }}<br>
+                                    {% endif %}
+                                    {% endfor %}
                             </li>
                         {% endif %}
                     </ul>

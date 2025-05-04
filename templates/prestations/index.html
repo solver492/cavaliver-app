@@ -146,6 +146,9 @@
                                         <a href="{{ url_for('prestation.edit', id=prestation.id) }}" class="btn btn-outline-primary" title="Modifier">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <a href="{{ url_for('prestation.print_prestation', id=prestation.id) }}" class="btn btn-outline-secondary" title="Imprimer" target="_blank">
+                                            <i class="fas fa-print"></i>
+                                        </a>
                                         <a href="{{ url_for('prestation.toggle_archive', id=prestation.id) }}" 
                                            class="btn btn-outline-{{ 'success' if prestation.archive else 'warning' }}" 
                                            title="{{ 'Désarchiver' if prestation.archive else 'Archiver' }}">

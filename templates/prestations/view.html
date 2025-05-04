@@ -15,6 +15,9 @@
             <a href="{{ url_for('prestation.edit', id=prestation.id) }}" class="btn btn-primary">
                 <i class="fas fa-edit"></i> Modifier
             </a>
+            <a href="{{ url_for('prestation.print_prestation', id=prestation.id) }}" class="btn btn-secondary" target="_blank">
+                <i class="fas fa-print"></i> Imprimer
+            </a>
             <a href="{{ url_for('prestation.historique', id=prestation.id) }}" class="btn btn-info">
                 <i class="fas fa-history"></i> Historique des versions
             </a>
@@ -336,8 +339,8 @@
     </div>
     {% endif %}
 
-    <!-- Données de débogage (visible uniquement pour les administrateurs) -->
-    {% if current_user.role == 'admin' %}
+    <!-- Données de débogage (masquées pour tous les utilisateurs) -->
+    {% if false %}
     <div class="card mt-4 border-dark">
         <div class="card-header bg-dark text-white">
             <h5 class="mb-0">
@@ -457,11 +460,12 @@
 {% endblock %}
 
 {% block page_scripts %}
+{% if current_user.role == 'superadmin' %}
 <script src="{{ url_for('static', filename='js/debug-prestation.js') }}"></script>
-<!-- Scripts de forçage d'affichage supprimés pour permettre l'affichage des données réelles -->
 <script src="{{ url_for('static', filename='js/debug-etapes-data.js') }}"></script>
+{% endif %}
+<!-- Scripts de forçage d'affichage supprimés pour permettre l'affichage des données réelles -->
 
-<!-- Données de la prestation exposées pour JavaScript -->
 <script type="application/json" id="prestation-data">
 {
     "id": {{ prestation.id }},

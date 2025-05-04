@@ -573,9 +573,11 @@ function voirDetails(eventId) {
 document.addEventListener('DOMContentLoaded', function() {
     // Récupérer les événements supprimés du sessionStorage
     let deletedEvents = JSON.parse(sessionStorage.getItem('deletedEvents') || '[]');
+
     
     // Filtrer les événements pour exclure ceux qui ont été supprimés
     let allEvents = {{ evenements|tojson|safe }};
+    
     let filteredEvents = allEvents.filter(event => !deletedEvents.includes(event.id.toString()));
     
     var calendarEl = document.getElementById('calendar');
@@ -608,7 +610,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 html: `
                     <div class="fc-content">
                         <div class="fc-title">${arg.event.title}</div>
-                        ${arg.event.extendedProps.type ? `<div class="fc-type">${arg.event.extendedProps.type}</div>` : ''}
+                        ${arg.event.extendedProps.observations ? `<div class="fc-type">${arg.event.extendedProps.observations}</div>` : ''}
                     </div>
                 `
             };
@@ -1152,6 +1154,15 @@ function voirPrestation() {
                 document.getElementById('prestationDateFin').textContent = prestation.date_fin;
                 document.getElementById('prestationAdresseDepart').textContent = prestation.adresse_depart;
                 document.getElementById('prestationAdresseArrivee').textContent = prestation.adresse_arrivee;
+                document.getElementById('prestationMontant').textContent = prestation.montant;
+                document.getElementById('prestationSociete').textContent = prestation.societe;
+                if(prestation.mode_groupage){
+                    const elementgroupage = document.getElementById('prestationModeGroupage');
+                    elementgroupage.textContent = 'ModeGroupage';
+                    elementgroupage.style.fontWeight = 'bold';
+                }
+                document.getElementById('prestationTags').textContent = prestation.tags;
+                document.getElementById('prestationDateCreation').textContent = prestation.date_creation;
 
                 // Gérer le statut avec une couleur appropriée
                 const statutElement = document.getElementById('prestationStatut');
@@ -1195,23 +1206,54 @@ function voirPrestation() {
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+
+                 <div class="row mt-3">
+                    <div class="col-md-3">
+                        <p><strong>Date de création:</strong></p>
+                        <p class="ms-3" id="prestationDateCreation"></p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Tags:</strong></p>
+                        <p class="ms-3" id="prestationTags"></p>
+                    </div>
+                    <div class="col-md-3">
+                        <p class="ms-3" id="prestationModeGroupage"></p>
+                    </div>
+                    <div class="col-md-3">
+                        <p><strong>Statut:</strong> <span id="prestationStatut" class="badge"></span></p>
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col-md-6">
                         <p><strong>Client:</strong> <span id="prestationClient"></span></p>
                         <p><strong>Type de déménagement:</strong> <span id="prestationType"></span></p>
-                        <p><strong>Statut:</strong> <span id="prestationStatut" class="badge"></span></p>
+                        
                     </div>
                     <div class="col-md-6">
                         <p><strong>Date de début:</strong> <span id="prestationDateDebut"></span></p>
                         <p><strong>Date de fin:</strong> <span id="prestationDateFin"></span></p>
                     </div>
                 </div>
+                
                 <div class="row mt-3">
-                    <div class="col-12">
+                    <div class="col-md-6">
                         <p><strong>Adresse de départ:</strong></p>
-                        <p class="ms-3" id="prestationAdresseDepart"></p>
+                        <p class="ms-3" id="prestationAdresseDepart"></p>    
+                    </div>
+                    <div class="col-md-6">
                         <p><strong>Adresse d'arrivée:</strong></p>
                         <p class="ms-3" id="prestationAdresseArrivee"></p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p><strong>Société:</strong></p>
+                        <p class="ms-3" id="prestationSociete"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Montant:</strong></p>
+                        <p class="ms-3" id="prestationMontant"></p>
                     </div>
                 </div>
             </div>
@@ -1298,6 +1340,15 @@ let prestationId = null;
 }
 .fc-daygrid-event-dot {
     display: none;
+}
+/* Change la couleur de fond au survol en rouge */
+.fc-event:hover {
+    background-color: #0044ff !important;
+}
+
+/* Pour la vue "liste" */
+.fc-list-event:hover td {
+    background-color: #0044ff !important;
 }
 </style>
 

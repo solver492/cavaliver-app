@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prestation {{ prestation.id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 0;
+            margin: 0;
+        }
+        .print-header {
+            position: relative;
+            margin-bottom: 30px;
+            padding: 20px;
+            text-align: center;
+        }
+        .logo-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 300px;
+            height: 300px;
+            text-align: left;
+        }
+        .logo-container img {
+            max-width: 75%;
+            max-height: 75%;
+            object-fit: contain;
+        }
+        @-moz-document url-prefix() {
+            /* Styles spécifiques pour Firefox */
+            .logo-container img {
+                width: 75%;
+                height: auto;
+            }
+        }
+        .company-name {
+            margin-top: 160px;
+            text-align: center;
+        }
+        .print-content {
+            padding: 20px;
+        }
+        .table-details {
+            width: 100%;
+            margin-bottom: 20px;
+            border-collapse: collapse;
+        }
+        .table-details th {
+            width: 200px;
+            text-align: left;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .table-details td {
+            padding: 8px;
+            border: 1px solid #dee2e6;
+        }
+        @media print {
+            @page {
+                size: A4;
+                margin: 1cm;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-content">
+        <!-- En-tête avec logo -->
+        <div class="print-header">
+            <div class="logo-container">
+                {% if prestation.societe == 'Cavalier' %}
+                    <img src="{{ url_for('static', filename='img/logos/cavalier.png') }}" alt="Logo 1">
+                {% elif prestation.societe == "L'écuyer" %}
+                    <img src="{{ url_for('static', filename='img/logos/lecuyer.png') }}" alt="Logo 2">
+                {% elif prestation.societe == 'Nassali' %}
+                    <img src="{{ url_for('static', filename='img/logos/nassali.png') }}" alt="Logo 3">
+                {% endif %}
+            </div>
+            <div class="company-name">
+                <h4>LA MAÎTRISE PAR LE SAVOIR-FAIRE</h4>
+                <p>Déménagement :: Transport :: Stockage</p>
+            </div>
+        </div>
+
+        <!-- Devis -->
+        <h2>Devis N° {{ prestation.id }}</h2>
+
+        <!-- Informations client -->
+        <table class="table-details">
+            <tr>
+                <th>Client</th>
+                <td>{{ prestation.client.nom }}</td>
+            </tr>
+            <tr>
+                <th>Email</th>
+                <td>{{ prestation.client.email }}</td>
+            </tr>
+            <tr>
+                <th>Téléphone</th>
+                <td>{{ prestation.client.telephone }}</td>
+            </tr>
+        </table>
+
+        <!-- Détails de la prestation -->
+        <h3>Détails de la prestation</h3>
+        <table class="table-details">
+            <tr>
+                <th>Type</th>
+                <td>{{ prestation.type_demenagement }}</td>
+            </tr>
+            <tr>
+                <th>Date de début</th>
+                <td>{{ prestation.date_debut.strftime('%d/%m/%Y') }}</td>
+            </tr>
+            <tr>
+                <th>Date de fin</th>
+                <td>{{ prestation.date_fin.strftime('%d/%m/%Y') }}</td>
+            </tr>
+            <tr>
+                <th>Adresse de départ</th>
+                <td>{{ prestation.adresse_depart }}</td>
+            </tr>
+            <tr>
+                <th>Adresse d'arrivée</th>
+                <td>{{ prestation.adresse_arrivee }}</td>
+            </tr>
+            <tr>
+                <th>Société</th>
+                <td>{{ prestation.societe}}</td>
+            </tr>
+        </table>
+
+        <!-- Montant -->
+        <h3>Montant</h3>
+        <table class="table-details">
+            <tr>
+                <th>Total HT</th>
+                <td>{{ "%.2f"|format(prestation.montant) }} €</td>
+            </tr>
+        </table>
+
+        <!-- Observations -->
+        {% if prestation.observations %}
+        <h3>Observations</h3>
+        {{ prestation.observations | safe }}
+        {% endif %}
+    </div>
+</body>
+<script>
+    window.onload = function() {
+        window.print();
+    };
+</script>
+</html>

@@ -1,10 +1,13 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session, current_app
+from flask import Blueprint, render_template, url_for, redirect, flash, request, send_file, make_response, session
 from flask import Blueprint, request, render_template, redirect, url_for, flash, current_app, abort
 from flask_login import login_required, current_user
 from datetime import datetime, timedelta
 from sqlalchemy import and_, or_, not_, text
 import json
 from sqlalchemy.exc import SQLAlchemyError
+import os
+from io import BytesIO
+from xhtml2pdf import pisa
 
 from extensions import db
 from models import Prestation, Client, User, TypeDemenagement, Vehicule, Notification
@@ -838,3 +841,44 @@ def confirm_delete(id):
         title='Confirmer la suppression',
         prestation=prestation
     )
+
+@prestation_bp.route('/print/<int:id>')
+@login_required
+def print_prestation(id):
+    prestation = Prestation.query.get_or_404(id)
+    
+    # Générer le HTML avec le domaine complet pour les images
+    html = render_template('prestations/print.html', 
+                         prestation=prestation,
+                         base_url=request.url_root)
+    
+    # Créer un buffer pour le PDF
+    pdf_buffer = BytesIO()
+    
+    try:
+        # Convertir HTML en PDF avec les options pour les images
+        pisa_status = pisa.CreatePDF(
+            html,
+            dest=pdf_buffer,
+            encoding='utf-8',
+            show_error_as_pdf=True,
+            path=request.url_root  # Ajouter le chemin de base pour les images
+        )
+        
+        # Vérifier si la conversion a réussi
+        if not pisa_status.err:
+            # Préparer la réponse
+            pdf_buffer.seek(0)
+            response = make_response(pdf_buffer.getvalue())
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = f'inline; filename=prestation_{id}.pdf'
+            return response
+        else:
+            # En cas d'erreur de conversion
+            flash("Erreur lors de la génération du PDF.", "error")
+            return html
+            
+    except Exception as e:
+        # En cas d'erreur, afficher la version HTML
+        flash("Impossible de générer le PDF. Affichage en HTML.", "warning")
+        return html

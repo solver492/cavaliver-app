@@ -14,7 +14,19 @@
         <div class="card-body p-0">
             {% if notifications %}
                 <div class="list-group list-group-flush">
+                    {# Créer un dictionnaire pour garder une seule notification par prestation_id #}
+                    {% set unique_notifications = {} %}
                     {% for notification in notifications %}
+                        {% if notification.prestation_id not in unique_notifications %}
+                            {% set _ = unique_notifications.update({notification.prestation_id: notification}) %}
+                        {% elif notification.date_creation > unique_notifications[notification.prestation_id].date_creation %}
+                            {# Garder la notification la plus récente #}
+                            {% set _ = unique_notifications.update({notification.prestation_id: notification}) %}
+                        {% endif %}
+                    {% endfor %}
+
+                    {# Afficher les notifications uniques #}
+                    {% for prestation_id, notification in unique_notifications.items() %}
                         <div class="list-group-item {% if notification.statut == 'non_lue' %}list-group-item-light border-start border-5 border-primary{% endif %} p-4">
                             <div class="d-flex w-100 justify-content-between align-items-start mb-3">
                                 <h5 class="mb-1">
@@ -37,25 +49,25 @@
                             </div>
                             
                             <div class="notification-message mb-4 text-dark">
-                                {{ notification.message|nl2br }}
+                                {{ notification.message | safe }}
                             </div>
                             
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="btn-group">
                                     {% if notification.prestation_id %}
                                         <a href="{{ url_for('prestation.view', id=notification.prestation_id) }}" 
-                                           class="btn btn-outline-secondary">
+                                        class="btn btn-outline-secondary">
                                             <i class="fas fa-eye me-1"></i> Détails
                                         </a>
                                         
                                         {% if current_user.role == 'transporteur' %}
                                             {% if notification.statut == 'non_lue' %}
                                                 <a href="{{ url_for('transporteur_prestations.accepter_notification', notification_id=notification.id) }}" 
-                                                   class="btn btn-success ms-2">
+                                                class="btn btn-success ms-2">
                                                     <i class="fas fa-check me-1"></i> Accepter
                                                 </a>
                                                 <a href="{{ url_for('transporteur_prestations.refuser_notification', notification_id=notification.id) }}" 
-                                                   class="btn btn-danger ms-2">
+                                                class="btn btn-danger ms-2">
                                                     <i class="fas fa-times me-1"></i> Refuser
                                                 </a>
                                             {% elif notification.statut == 'acceptee' %}

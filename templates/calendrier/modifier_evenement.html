@@ -9,7 +9,7 @@
                     <h5 class="card-title">Modifier l'événement</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="{{ url_for('calendrier.traiter_modification_evenement', evenement_id=evenement.id) }}">
+                    <form method="POST" action="{{ url_for('calendrier.modifier_evenement', evenement_id=evenement.id) }}">
                         <div class="mb-3">
                             <label class="form-label">Titre</label>
                             <input type="text" class="form-control" name="titre" value="{{ evenement.titre }}" required>
@@ -39,8 +39,43 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Observations</label>
-                            <textarea class="form-control" name="observations" rows="4">{{ evenement.observations }}</textarea>
+                            <div id="observations-container">
+                                {% if evenement.observations %}
+                                    {% for observation in evenement.observations.split('|||') %}
+                                        <div class="observation-entry mb-2">
+                                            <textarea class="form-control" name="observations[]" rows="2">{{ observation }}</textarea>
+                                            <button type="button" class="btn btn-danger btn-sm mt-1" onclick="removeObservation(this)">Supprimer</button>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="observation-entry mb-2">
+                                        <textarea class="form-control" name="observations[]" rows="2"></textarea>
+                                        <button type="button" class="btn btn-danger btn-sm mt-1" onclick="removeObservation(this)">Supprimer</button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <button type="button" class="btn btn-success btn-sm mt-2" onclick="addObservation()">Ajouter une observation</button>
                         </div>
+
+                        <script>
+                        function addObservation() {
+                            const container = document.getElementById('observations-container');
+                            const div = document.createElement('div');
+                            div.className = 'observation-entry mb-2';
+                            div.innerHTML = `
+                                <textarea class="form-control" name="observations[]" rows="2"></textarea>
+                                <button type="button" class="btn btn-danger btn-sm mt-1" onclick="removeObservation(this)">Supprimer</button>
+                            `;
+                            container.appendChild(div);
+                        }
+
+                        function removeObservation(button) {
+                            const entry = button.parentElement;
+                            if (document.getElementsByClassName('observation-entry').length > 1) {
+                                entry.remove();
+                            }
+                        }
+                        </script>
                         <div class="d-flex justify-content-between">
                             <a href="{{ url_for('calendrier.voir_agenda', agenda_id=agenda.id) }}" class="btn btn-secondary">Annuler</a>
                             <button type="submit" class="btn btn-primary">Enregistrer</button>
@@ -86,7 +121,7 @@
                                         <td>{{ version.date_modification.strftime('%d/%m/%Y %H:%M') }}</td>
                                         <td>{{ version.titre }}</td>
                                         <td>{{ version.type_evenement }}</td>
-                                        <td>{{ version.observations|truncate(50) }}</td>
+                                        <td>{{ version.observations|default('')|string|truncate(50) if version.observations is not none else '' }}</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
