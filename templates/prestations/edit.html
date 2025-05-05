@@ -9,45 +9,44 @@
         .fade-in {
             animation: fadeIn 0.5s;
         }
-        
+
         .fade-out {
             animation: fadeOut 0.3s;
             opacity: 0;
             transform: translateY(-10px);
         }
-        
+
         .client-supplementaire {
             transition: all 0.3s ease;
         }
-        
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
+
         @keyframes fadeOut {
             from { opacity: 1; transform: translateY(0); }
             to { opacity: 0; transform: translateY(-10px); }
         }
-        
-        /* Style pour le sélecteur de type de prestation */
+
         .prestation-type-selector {
             position: relative;
             z-index: 10;
         }
-        
+
         .form-switch-lg {
             min-height: 2.5rem;
             padding-left: 4.5em;
         }
-        
+
         .form-switch-lg .form-check-input {
             height: 2rem;
             width: 3.5rem;
             border-radius: 2rem;
             cursor: pointer;
         }
-        
+
         .form-check-label {
             position: relative;
             cursor: pointer;
@@ -56,53 +55,14 @@
             display: flex;
             align-items: center;
         }
-        
-        .standard-label, .groupage-label {
-            position: absolute;
-            transition: all 0.3s ease;
-        }
-        
-        .standard-label {
-            left: -4.2rem;
-            opacity: 1;
-            color: #0d6efd;
-        }
-        
-        .groupage-label {
-            right: -4.2rem;
-            opacity: 0.5;
-            color: #6c757d;
-        }
-        
-        .form-check-input:checked ~ .form-check-label .standard-label {
-            opacity: 0.5;
-            color: #6c757d;
-        }
-        
-        .form-check-input:checked ~ .form-check-label .groupage-label {
-            opacity: 1;
-            color: #0d6efd;
-        }
-        
-        .form-check-input:focus {
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-        }
     </style>
 {% endblock %}
 
 {% block head %}
     {{ super() }}
-    <!-- Inclure le script de gestion du formulaire de prestation -->
     <script src="{{ url_for('static', filename='js/prestation-form.js') }}"></script>
-    <!-- Inclure le script de gestion des transporteurs disponibles -->
-    <script src="{{ url_for('static', filename='js/transporteurs-disponibilite.js') }}"></script>
-    <!-- Inclure le script d'amélioration du widget de transporteurs -->
     <script src="{{ url_for('static', filename='js/transporteurs-widget.js') }}"></script>
-    <!-- Inclure le script pour assurer le bon fonctionnement du bouton d'enregistrement -->
     <script src="{{ url_for('static', filename='js/prestation-submit.js') }}"></script>
-    <!-- Inclure le script pour supprimer la bulle des transporteurs bientôt disponibles -->
-    <script src="{{ url_for('static', filename='js/supprimer-bulle-transporteurs.js') }}"></script>
-    <!-- Inclure les styles pour le widget de transporteurs -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/transporteurs-widget.css') }}">
     <link href="{{ url_for('static', filename='css/lib/fullcalendar.min.css') }}" rel="stylesheet">
 {% endblock %}
@@ -122,7 +82,7 @@
         <div class="card-body">
             <form method="POST" enctype="multipart/form-data">
                 {{ form.hidden_tag() }}
-                
+
                 <div id="mode-info" class="alert alert-info mb-3">
                     <i class="fas fa-info-circle me-2"></i> {% if prestation.est_groupage %}Mode groupage: plusieurs clients, plusieurs points de départ et d'arrivée{% else %}Mode standard: un seul client, un point de départ et un point d'arrivée{% endif %}
                 </div>
@@ -136,8 +96,7 @@
                             <div class="invalid-feedback">{{ error }}</div>
                         {% endfor %}
                     </div>
-                    
-                    <!-- Switch Mode Groupage -->
+
                     <div class="col-md-6">
                         <div class="form-check form-switch form-switch-lg mt-4">
                             {{ form.mode_groupage(class="form-check-input", id="mode_groupage") }}
@@ -190,162 +149,8 @@
                     </button>
                 </div>
 
-                <!-- Section Dates et Type -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="date_debut" class="form-label">{{ form.date_debut.label.text }} <span class="text-danger">*</span></label>
-                        {{ form.date_debut(class="form-control" + (" is-invalid" if form.date_debut.errors else ""), id="date_debut", type="date") }}
-                        {% for error in form.date_debut.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="date_fin" class="form-label">{{ form.date_fin.label.text }} <span class="text-danger">*</span></label>
-                        {{ form.date_fin(class="form-control" + (" is-invalid" if form.date_fin.errors else ""), id="date_fin", type="date") }}
-                        {% for error in form.date_fin.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <!-- Section Type de déménagement -->
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <label for="type_demenagement" class="form-label">Type de déménagement <span class="text-danger">*</span></label>
-                        {{ form.type_demenagement(class="form-select" + (" is-invalid" if form.type_demenagement.errors else ""), id="type_demenagement") }}
-                        {% if form.type_demenagement.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.type_demenagement.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Section Adresses -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="adresse_depart" class="form-label">{{ form.adresse_depart.label.text }} <span class="text-danger">*</span></label>
-                        {{ form.adresse_depart(class="form-control" + (" is-invalid" if form.adresse_depart.errors else ""), id="adresse_depart", rows=3, placeholder="Adresse principale de départ") }}
-                        {% for error in form.adresse_depart.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
-                        
-                        <!-- Étapes supplémentaires pour le départ -->
-                        <div id="etapes-depart-container" class="mt-2">
-                            <!-- Afficher les étapes existantes -->
-                            {% if prestation.etapes_depart %}
-                                {% for etape in prestation.etapes_depart.split('||') %}
-                                    {% if etape.strip() %}
-                                    <div class="input-group mt-2 etape-depart">
-                                        <input type="text" name="etape_depart[]" class="form-control" value="{{ etape }}" placeholder="Adresse intermédiaire de départ">
-                                        <button type="button" class="btn btn-outline-danger supprimer-etape">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </div>
-                                    {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-                        
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="adresse_arrivee" class="form-label">{{ form.adresse_arrivee.label.text }} <span class="text-danger">*</span></label>
-                        {{ form.adresse_arrivee(class="form-control" + (" is-invalid" if form.adresse_arrivee.errors else ""), id="adresse_arrivee", rows=3, placeholder="Adresse principale d'arrivée") }}
-                        {% for error in form.adresse_arrivee.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
-                        
-                        <!-- Étapes supplémentaires pour l'arrivée -->
-                        <div id="etapes-arrivee-container" class="mt-2">
-                            <!-- Afficher les étapes existantes -->
-                            {% if prestation.etapes_arrivee %}
-                                {% for etape in prestation.etapes_arrivee.split('||') %}
-                                    {% if etape.strip() %}
-                                    <div class="input-group mt-2 etape-arrivee">
-                                        <input type="text" name="etape_arrivee[]" class="form-control" value="{{ etape }}" placeholder="Adresse intermédiaire d'arrivée">
-                                        <button type="button" class="btn btn-outline-danger supprimer-etape">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </div>
-                                    {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-                        
-                    </div>
-                </div>
-
-
-
-                <!-- Informations supplémentaires -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="montant" class="form-label">{{ form.montant.label.text }}</label>
-                        {{ form.montant(class="form-control" + (" is-invalid" if form.montant.errors else ""), id="montant", type="number", step="0.01") }}
-                        {% for error in form.montant.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="priorite" class="form-label">{{ form.priorite.label.text }}</label>
-                        {{ form.priorite(class="form-control" + (" is-invalid" if form.priorite.errors else ""), id="priorite") }}
-                        {% for error in form.priorite.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="statut" class="form-label">{{ form.statut.label.text }}</label>
-                        {{ form.statut(class="form-control" + (" is-invalid" if form.statut.errors else ""), id="statut") }}
-                        {% for error in form.statut.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <label for="societe" class="form-label">{{ form.societe.label.text }}</label>
-                        {{ form.societe(class="form-control" + (" is-invalid" if form.societe.errors else ""), id="societe") }}
-                        {% for error in form.societe.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <!-- Section Observations -->
-                <div class="mb-4">
-                    <label for="observations" class="form-label">{{ form.observations.label.text }}</label>
-                    {{ form.observations(class="form-control summernote-editor" + (" is-invalid" if form.observations.errors else ""), id="observations", rows=4, placeholder="Observation principale") }}
-                    {% for error in form.observations.errors %}
-                        <div class="invalid-feedback">{{ error }}</div>
-                    {% endfor %}
-                    
-                    <!-- Observations supplémentaires -->
-                    <div id="observations-supplementaires" class="mt-2">
-                        <!-- Les observations supplémentaires seront ajoutées ici dynamiquement -->
-                    </div>
-                    <button type="button" id="ajouter-observation" class="btn btn-outline-secondary btn-sm mt-2">
-                        <i class="fas fa-plus-circle"></i> Ajouter une observation
-                    </button>
-                </div>
-
-                <!-- Section Tags -->
-                <div class="row mb-3">
-                    <div class="col-md-12">
-                        <label for="tags" class="form-label">{{ form.tags.label.text }}</label>
-                        {{ form.tags(class="form-control" + (" is-invalid" if form.tags.errors else ""), id="tags") }}
-                        {% for error in form.tags.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
-                        <div class="form-text">Ex: urgent, fragile, volumineux</div>
-                    </div>
-                </div>
+                <!-- Sections Date et Type -->
+                {% include 'prestations/_form_sections.html' %}
 
                 <!-- Boutons d'action -->
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
@@ -366,42 +171,20 @@
 <script src="{{ url_for('static', filename='js/lib/fullcalendar.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/lib/fullcalendar-fr.js') }}"></script>
 <script src="{{ url_for('static', filename='js/prestations.js') }}"></script>
-<script src="{{ url_for('static', filename='js/transporteur-calendrier.js') }}"></script>
-<script src="{{ url_for('static', filename='js/vehicule-suggestions-fixed.js') }}"></script>
-<script src="{{ url_for('static', filename='js/bubble-fix.js') }}"></script>
-<script src="{{ url_for('static', filename='js/summernote-initializer.js') }}"></script>
-<script src="{{ url_for('static', filename='js/etapes-supplementaires.js') }}"></script>
-<script src="{{ url_for('static', filename='js/prestation-documents.js') }}"></script>
-<script src="{{ url_for('static', filename='js/boutons-reparation.js') }}"></script>
-<!-- Commenté pour éviter les conflits -->
-<!-- <script src="{{ url_for('static', filename='js/groupage-fix-v2.js') }}"></script> -->
-<script src="{{ url_for('static', filename='js/transporteurs-widget-final.js') }}"></script>
-<script src="{{ url_for('static', filename='js/prestation-type-switcher.js') }}"></script>
-<script src="{{ url_for('static', filename='js/adapter-type-prestation.js') }}"></script>
-<script src="{{ url_for('static', filename='js/debug-prestation.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Éléments DOM
         const modeGroupageSwitch = document.getElementById('mode_groupage');
-        const modeDescription = document.getElementById('mode-description');
         const sectionClientsSupplementaires = document.getElementById('section-clients-supplementaires');
         const clientsList = document.getElementById('clients-list');
         const ajouterClientBtn = document.getElementById('ajouter-client-btn');
-        
-        console.log("Mode groupage switch:", modeGroupageSwitch);
-        console.log("Section clients supplémentaires:", sectionClientsSupplementaires);
-        console.log("Liste des clients:", clientsList);
-        console.log("Bouton ajouter client:", ajouterClientBtn);
-        
-        // Fonction pour créer un champ client
+
         function createClientField(clientId = '', montant = '') {
             const clientDiv = document.createElement('div');
             clientDiv.className = 'client-supplementaire mb-3 border-bottom pb-3 fade-in';
-            
+
             const row = document.createElement('div');
             row.className = 'row g-3';
 
-            // Colonne pour le select client
             const clientCol = document.createElement('div');
             clientCol.className = 'col-md-6';
 
@@ -414,7 +197,6 @@
             selectClient.name = 'clients_supplementaires[]';
             selectClient.required = true;
 
-            // Copier les options du select client principal
             const originalSelect = document.querySelector('select[name="client_id"]');
             if (originalSelect) {
                 const defaultOption = document.createElement('option');
@@ -424,7 +206,6 @@
 
                 originalSelect.querySelectorAll('option:not(:first-child)').forEach(option => {
                     const newOption = option.cloneNode(true);
-                    // Si un client_id est fourni, le sélectionner
                     if (clientId && newOption.value == clientId) {
                         newOption.selected = true;
                     }
@@ -432,7 +213,6 @@
                 });
             }
 
-            // Colonne pour le montant
             const montantCol = document.createElement('div');
             montantCol.className = 'col-md-5';
 
@@ -448,12 +228,10 @@
             montantInput.step = '0.01';
             montantInput.min = '0';
             montantInput.required = true;
-            // Si un montant est fourni, le définir
             if (montant) {
                 montantInput.value = montant;
             }
 
-            // Colonne pour le bouton de suppression
             const btnCol = document.createElement('div');
             btnCol.className = 'col-md-1 d-flex align-items-end';
 
@@ -468,7 +246,6 @@
                 }, 300);
             };
 
-            // Assembler les éléments
             clientCol.appendChild(clientLabel);
             clientCol.appendChild(selectClient);
 
@@ -485,67 +262,32 @@
             return clientDiv;
         }
 
-        // Fonction pour mettre à jour l'interface en fonction du mode groupage
         function updateGroupageUI(isGroupage) {
-            console.log("Mise à jour de l'interface pour le mode groupage:", isGroupage);
-            
-            if (modeDescription) {
-                modeDescription.textContent = isGroupage ? 
-                    'Mode groupage activé: Vous pouvez ajouter plusieurs clients à cette prestation.' : 
-                    'Mode standard: Un seul client pour cette prestation.';
-            }
-            
             if (sectionClientsSupplementaires) {
                 sectionClientsSupplementaires.style.display = isGroupage ? 'block' : 'none';
             }
         }
-        
-        // Initialiser le mode groupage
+
         if (modeGroupageSwitch) {
-            console.log("État initial du switch:", modeGroupageSwitch.checked);
-            
-            // Forcer l'initialisation correcte basée sur la valeur du modèle
             {% if prestation.mode_groupage %}
             if (!modeGroupageSwitch.checked) {
                 modeGroupageSwitch.checked = true;
             }
             {% endif %}
-            
+
             updateGroupageUI(modeGroupageSwitch.checked);
-            
+
             modeGroupageSwitch.addEventListener('change', function() {
-                console.log("Switch changé:", this.checked);
                 updateGroupageUI(this.checked);
             });
-        } else {
-            console.error("Le switch de mode groupage n'a pas été trouvé !");
         }
-        
-        // Ajouter un gestionnaire d'événements pour le bouton d'ajout de client
+
         if (ajouterClientBtn) {
             ajouterClientBtn.addEventListener('click', function() {
-                console.log("Ajout d'un nouveau client");
                 const newClientField = createClientField();
                 clientsList.appendChild(newClientField);
             });
-        } else {
-            console.error("Le bouton d'ajout de client n'a pas été trouvé !");
         }
-        
-        // Charger les clients supplémentaires existants
-        {% if prestation.mode_groupage and prestation.clients_supplementaires %}
-        updateGroupageUI(true);
-        console.log("Chargement des clients supplémentaires existants");
-        {% for client in prestation.clients_supplementaires %}
-            {% if client.id != prestation.client_id %}
-            const clientId{{ loop.index }} = {{ client.id }};
-            const montant{{ loop.index }} = {{ clients_montants.get(client.id, 0)|default(0) }};
-            console.log("Client:", clientId{{ loop.index }}, "Montant:", montant{{ loop.index }});
-            const clientField{{ loop.index }} = createClientField(clientId{{ loop.index }}, montant{{ loop.index }});
-            clientsList.appendChild(clientField{{ loop.index }});
-            {% endif %}
-        {% endfor %}
-        {% endif %}
     });
 </script>
 {% endblock %}
