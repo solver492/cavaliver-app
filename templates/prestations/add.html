@@ -354,11 +354,15 @@
                 const isAdmin = {{ 'true' if current_user.is_admin() else 'false' }};
                 const currentUserId = {{ current_user.id }};
 
-                originalSelect.querySelectorAll('option').forEach(option => {
+                Array.from(originalSelect.options).forEach(option => {
                     if (option.value) {
                         const commercialId = option.getAttribute('data-commercial-id');
+                        // Vérifier si l'utilisateur est admin ou si le client appartient au commercial
                         if (isAdmin || (commercialId && parseInt(commercialId) === currentUserId)) {
-                            const newOption = option.cloneNode(true);
+                            const newOption = document.createElement('option');
+                            newOption.value = option.value;
+                            newOption.textContent = option.textContent;
+                            newOption.setAttribute('data-commercial-id', commercialId);
                             clientSelect.appendChild(newOption);
                         }
                     }
