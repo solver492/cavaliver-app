@@ -338,6 +338,12 @@
             const clientCol = document.createElement('div');
             clientCol.className = 'col-md-6';
 
+            const selectClientContainer = document.createElement('div');
+            selectClientContainer.className = 'mb-3';
+            const selectLabel = document.createElement('label');
+            selectLabel.textContent = 'Client';
+            selectLabel.className = 'form-label';
+
             const selectClient = document.createElement('select');
             selectClient.className = 'form-select';
             selectClient.name = 'clients_supplementaires[]';
@@ -348,20 +354,20 @@
             if (originalSelect) {
                 const defaultOption = document.createElement('option');
                 defaultOption.value = '';
-                defaultOption.textContent = 'Sélectionnez un client';
+                defaultOption.textContent = 'Sélectionner un client';
                 selectClient.appendChild(defaultOption);
 
                 const isAdmin = {{ 'true' if current_user.is_admin() else 'false' }};
                 const currentUserId = {{ current_user.id }};
 
                 Array.from(originalSelect.options).forEach(option => {
-                    if (option.value && option.getAttribute('data-commercial-id')) {
-                        const commercialId = parseInt(option.getAttribute('data-commercial-id'));
-                        if (isAdmin || commercialId === currentUserId) {
+                    if (option.value) {
+                        const commercialId = option.getAttribute('data-commercial-id');
+                        if (isAdmin || (commercialId && parseInt(commercialId) === currentUserId)) {
                             const newOption = document.createElement('option');
                             newOption.value = option.value;
                             newOption.textContent = option.textContent;
-                            newOption.setAttribute('data-commercial-id', commercialId.toString());
+                            newOption.setAttribute('data-commercial-id', commercialId);
                             selectClient.appendChild(newOption);
                         }
                     }
