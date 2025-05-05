@@ -217,7 +217,7 @@
                         <div id="etapes-depart-container" class="mt-2">
                             <!-- Les étapes supplémentaires seront ajoutées ici dynamiquement -->
                         </div>
-                        
+
                     </div>
 
                     <div class="col-md-6">
@@ -231,7 +231,7 @@
                         <div id="etapes-arrivee-container" class="mt-2">
                             <!-- Les étapes supplémentaires seront ajoutées ici dynamiquement -->
                         </div>
-                        
+
                     </div>
                 </div>
 
@@ -336,7 +336,7 @@
         function createClientField() {
             const clientDiv = document.createElement('div');
             clientDiv.className = 'client-supplementaire mb-3 border-bottom pb-3 fade-in';
-            
+
             const row = document.createElement('div');
             row.className = 'row g-3';
 
@@ -364,9 +364,9 @@
                 const isAdmin = {{ 'true' if current_user.is_admin() else 'false' }};
                 const currentUserId = {{ current_user.id }};
                 originalSelect.querySelectorAll('option:not(:first-child)').forEach(option => {
-                    const clientOption = option.closest('option[data-commercial-id]');
-                    const commercialId = clientOption ? parseInt(clientOption.dataset.commercialId) : null;
-                    if (isAdmin || commercialId === currentUserId) {
+                    const client = originalSelect.querySelector(`option[value="${option.value}"]`);
+                    const commercialId = client ? client.getAttribute('data-commercial-id') : null;
+                    if (isAdmin || (commercialId && parseInt(commercialId) === currentUserId)) {
                         const newOption = option.cloneNode(true);
                         selectClient.appendChild(newOption);
                     }
@@ -408,16 +408,16 @@
             // Assembler les éléments
             clientCol.appendChild(clientLabel);
             clientCol.appendChild(selectClient);
-            
+
             montantCol.appendChild(montantLabel);
             montantCol.appendChild(montantInput);
-            
+
             btnCol.appendChild(deleteBtn);
-            
+
             row.appendChild(clientCol);
             row.appendChild(montantCol);
             row.appendChild(btnCol);
-            
+
             clientDiv.appendChild(row);
             return clientDiv;
         }
@@ -425,7 +425,7 @@
         if (modeGroupageSwitch) {
             modeGroupageSwitch.addEventListener('change', function() {
                 const isGroupage = this.checked;
-                
+
                 // Mettre à jour la description du mode
                 modeDescription.textContent = isGroupage 
                     ? 'Mode groupage: plusieurs clients, plusieurs points de départ et d\'arrivée'
