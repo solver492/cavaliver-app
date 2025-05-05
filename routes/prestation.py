@@ -96,9 +96,6 @@ def add():
             clients = Client.query.filter_by(archive=False).all()
         else:
             clients = Client.query.filter_by(commercial_id=current_user.id, archive=False).all()
-        
-        # Filtrer les doublons et trier par nom
-        clients = sorted(set(clients), key=lambda x: (x.nom, x.prenom))
         form.client_id.choices = [(c.id, f"{c.nom} {c.prenom}") for c in clients]
 
         # Charger les transporteurs
