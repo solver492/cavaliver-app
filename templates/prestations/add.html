@@ -153,19 +153,7 @@
 
                 <!-- Section Clients et Montants Supplémentaires -->
                 <div id="section-clients-supplementaires" class="d-none">
-                    <div class="card mb-3">
-                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Clients Supplémentaires</h5>
-                            <button type="button" class="btn btn-light btn-sm" id="ajouter-client">
-                                <i class="fas fa-plus"></i> Ajouter un client
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <div id="clients-supplementaires">
-                                <!-- Les clients seront ajoutés ici dynamiquement -->
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Les clients seront ajoutés ici dynamiquement -->
                 </div>
 
                 <!-- Section Dates et Type -->
@@ -403,7 +391,9 @@
             };
 
             // Assembler les éléments
-            clientCol.appendChild(clientSelect);
+            selectClientContainer.appendChild(selectLabel);
+            selectClientContainer.appendChild(selectClient);
+            clientCol.appendChild(selectClientContainer);
             montantCol.appendChild(montantInput);
             btnCol.appendChild(deleteBtn);
 
