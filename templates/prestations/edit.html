@@ -130,10 +130,12 @@
                                             <label class="form-label">Client Supplémentaire</label>
                                             <select class="form-select" name="clients_supplementaires[]" required>
                                                 <option value="">Sélectionnez un client</option>
-                                                {% for c in clients if current_user.is_admin() or c.commercial_id == current_user.id %}
-                                                <option value="{{ c.id }}" {% if c.id == client.id %}selected{% endif %}>
-                                                    {{ c.nom }} {{ c.prenom }}
-                                                </option>
+                                                {% for c in clients %}
+                                                    {% if current_user.is_admin() or c.commercial_id == current_user.id %}
+                                                    <option value="{{ c.id }}" {% if client and c.id == client.id %}selected{% endif %}>
+                                                        {{ c.nom }} {{ c.prenom }}
+                                                    </option>
+                                                    {% endif %}
                                                 {% endfor %}
                                             </select>
                                         </div>
