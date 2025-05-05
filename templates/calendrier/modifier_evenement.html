@@ -45,7 +45,7 @@
                             <label class="form-label">Observations</label>
                             <div id="observations-container">
                                 {% if evenement.observations %}
-                                    {% for observation in evenement.observations.split('|||') %}
+                                    {% for observation in evenement.observations.split('-*_ _*-') %}
                                         <div class="observation-entry mb-2">
                                             <textarea class="form-control" name="observations[]" rows="2">{{ observation }}</textarea>
                                             <button type="button" class="btn btn-danger btn-sm mt-1" onclick="removeObservation(this)">Supprimer</button>
