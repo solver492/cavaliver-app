@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 
 {% block title %}Modifier une prestation - {{ config.APP_NAME }}{% endblock %}
@@ -113,43 +114,48 @@
                 </div>
 
                 <!-- Section Clients Supplémentaires -->
-                <div id="section-clients-supplementaires" class="mb-4" style="display: {% if prestation.mode_groupage %}block{% else %}none{% endif %};">
-                    <h5 class="mb-3">Clients Supplémentaires</h5>
-                    <div id="clients-list">
-                        {% for client in prestation.clients_supplementaires %}
-                        <div class="client-supplementaire mb-3 border-bottom pb-3">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Client Supplémentaire</label>
-                                    <select class="form-select" name="clients_supplementaires[]" required>
-                                        <option value="">Sélectionnez un client</option>
-                                        {% for c in clients %}
-                                        <option value="{{ c.id }}" {% if c.id == client.id %}selected{% endif %}>
-                                            {{ c.nom }} {{ c.prenom }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
+                <div id="section-clients-supplementaires" style="display: {% if prestation.mode_groupage %}block{% else %}none{% endif %};">
+                    <div class="card mb-3">
+                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Clients Supplémentaires</h5>
+                            <button type="button" class="btn btn-light btn-sm" id="ajouter-client">
+                                <i class="fas fa-plus"></i> Ajouter un client
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="clients-supplementaires">
+                                {% for client in prestation.clients_supplementaires %}
+                                <div class="client-supplementaire mb-3 border-bottom pb-3">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Client Supplémentaire</label>
+                                            <select class="form-select" name="clients_supplementaires[]" required>
+                                                <option value="">Sélectionnez un client</option>
+                                                {% for c in clients %}
+                                                <option value="{{ c.id }}" {% if c.id == client.id %}selected{% endif %}>
+                                                    {{ c.nom }} {{ c.prenom }}
+                                                </option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label class="form-label">Montant</label>
+                                            <input type="number" class="form-control" name="montants_supplementaires[]" 
+                                                   placeholder="Montant" step="0.01" min="0" required value="{{ clients_montants.get(client.id, 0) }}">
+                                        </div>
+                                        <div class="col-md-1 d-flex align-items-end">
+                                            <button type="button" class="btn btn-danger" onclick="this.closest('.client-supplementaire').remove()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-5">
-                                    <label class="form-label">Montant</label>
-                                    <input type="number" class="form-control" name="montants_supplementaires[]" 
-                                           placeholder="Montant" step="0.01" min="0" required value="{{ clients_montants.get(client.id, 0) }}">
-                                </div>
-                                <div class="col-md-1 d-flex align-items-end">
-                                    <button type="button" class="btn btn-danger" onclick="this.closest('.client-supplementaire').remove()">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
+                                {% endfor %}
                             </div>
                         </div>
-                        {% endfor %}
                     </div>
-                    <button type="button" id="ajouter-client-btn" class="btn btn-outline-secondary">
-                        <i class="fas fa-plus"></i> Ajouter un client
-                    </button>
                 </div>
 
-                <!-- Sections Date et Type -->
                 {% include 'prestations/_form_sections.html' %}
 
                 <!-- Boutons d'action -->
@@ -175,13 +181,13 @@
     document.addEventListener('DOMContentLoaded', function() {
         const modeGroupageSwitch = document.getElementById('mode_groupage');
         const sectionClientsSupplementaires = document.getElementById('section-clients-supplementaires');
-        const clientsList = document.getElementById('clients-list');
-        const ajouterClientBtn = document.getElementById('ajouter-client-btn');
+        const clientsList = document.getElementById('clients-supplementaires');
+        const ajouterClientBtn = document.getElementById('ajouter-client');
 
-        function createClientField(clientId = '', montant = '') {
+        function createClientField() {
             const clientDiv = document.createElement('div');
             clientDiv.className = 'client-supplementaire mb-3 border-bottom pb-3 fade-in';
-
+            
             const row = document.createElement('div');
             row.className = 'row g-3';
 
@@ -206,9 +212,6 @@
 
                 originalSelect.querySelectorAll('option:not(:first-child)').forEach(option => {
                     const newOption = option.cloneNode(true);
-                    if (clientId && newOption.value == clientId) {
-                        newOption.selected = true;
-                    }
                     selectClient.appendChild(newOption);
                 });
             }
@@ -228,9 +231,6 @@
             montantInput.step = '0.01';
             montantInput.min = '0';
             montantInput.required = true;
-            if (montant) {
-                montantInput.value = montant;
-            }
 
             const btnCol = document.createElement('div');
             btnCol.className = 'col-md-1 d-flex align-items-end';
@@ -248,24 +248,18 @@
 
             clientCol.appendChild(clientLabel);
             clientCol.appendChild(selectClient);
-
+            
             montantCol.appendChild(montantLabel);
             montantCol.appendChild(montantInput);
-
+            
             btnCol.appendChild(deleteBtn);
-
+            
             row.appendChild(clientCol);
             row.appendChild(montantCol);
             row.appendChild(btnCol);
-
+            
             clientDiv.appendChild(row);
             return clientDiv;
-        }
-
-        function updateGroupageUI(isGroupage) {
-            if (sectionClientsSupplementaires) {
-                sectionClientsSupplementaires.style.display = isGroupage ? 'block' : 'none';
-            }
         }
 
         if (modeGroupageSwitch) {
@@ -275,10 +269,12 @@
             }
             {% endif %}
 
-            updateGroupageUI(modeGroupageSwitch.checked);
-
             modeGroupageSwitch.addEventListener('change', function() {
-                updateGroupageUI(this.checked);
+                if (this.checked) {
+                    sectionClientsSupplementaires.style.display = 'block';
+                } else {
+                    sectionClientsSupplementaires.style.display = 'none';
+                }
             });
         }
 

@@ -1,0 +1,117 @@
+
+<!-- Section Dates et Type -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="date_debut" class="form-label">{{ form.date_debut.label.text }} <span class="text-danger">*</span></label>
+        {{ form.date_debut(class="form-control" + (" is-invalid" if form.date_debut.errors else ""), id="date_debut", type="date") }}
+        {% for error in form.date_debut.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+    </div>
+
+    <div class="col-md-6">
+        <label for="date_fin" class="form-label">{{ form.date_fin.label.text }} <span class="text-danger">*</span></label>
+        {{ form.date_fin(class="form-control" + (" is-invalid" if form.date_fin.errors else ""), id="date_fin", type="date") }}
+        {% for error in form.date_fin.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Section Type de déménagement -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="type_demenagement" class="form-label">{{ form.type_demenagement.label.text }} <span class="text-danger">*</span></label>
+        {{ form.type_demenagement(class="form-control" + (" is-invalid" if form.type_demenagement.errors else ""), id="type_demenagement") }}
+        {% for error in form.type_demenagement.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Section Adresses -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="adresse_depart" class="form-label">{{ form.adresse_depart.label.text }} <span class="text-danger">*</span></label>
+        {{ form.adresse_depart(class="form-control" + (" is-invalid" if form.adresse_depart.errors else ""), id="adresse_depart", rows=3, placeholder="Adresse principale de départ") }}
+        {% for error in form.adresse_depart.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+
+        <!-- Étapes supplémentaires pour le départ -->
+        <div id="etapes-depart-container" class="mt-2">
+            <!-- Les étapes supplémentaires seront ajoutées ici dynamiquement -->
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <label for="adresse_arrivee" class="form-label">{{ form.adresse_arrivee.label.text }} <span class="text-danger">*</span></label>
+        {{ form.adresse_arrivee(class="form-control" + (" is-invalid" if form.adresse_arrivee.errors else ""), id="adresse_arrivee", rows=3, placeholder="Adresse principale d'arrivée") }}
+        {% for error in form.adresse_arrivee.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+
+        <!-- Étapes supplémentaires pour l'arrivée -->
+        <div id="etapes-arrivee-container" class="mt-2">
+            <!-- Les étapes supplémentaires seront ajoutées ici dynamiquement -->
+        </div>
+    </div>
+</div>
+
+<!-- Section Informations supplémentaires -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="priorite" class="form-label">{{ form.priorite.label.text }}</label>
+        {{ form.priorite(class="form-control" + (" is-invalid" if form.priorite.errors else ""), id="priorite") }}
+        {% for error in form.priorite.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+    </div>
+
+    <div class="col-md-6">
+        <label for="statut" class="form-label">{{ form.statut.label.text }}</label>
+        {{ form.statut(class="form-control" + (" is-invalid" if form.statut.errors else ""), id="statut") }}
+        {% for error in form.statut.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="societe" class="form-label">{{ form.societe.label.text }}</label>
+        {{ form.societe(class="form-control" + (" is-invalid" if form.societe.errors else ""), id="societe") }}
+        {% for error in form.societe.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Section Observations -->
+<div class="mb-4">
+    <label for="observations" class="form-label">{{ form.observations.label.text }}</label>
+    {{ form.observations(class="form-control summernote-editor" + (" is-invalid" if form.observations.errors else ""), id="observations", rows=4, placeholder="Observation principale") }}
+    {% for error in form.observations.errors %}
+        <div class="invalid-feedback">{{ error }}</div>
+    {% endfor %}
+
+    <!-- Observations supplémentaires -->
+    <div id="observations-supplementaires" class="mt-2">
+        <!-- Les observations supplémentaires seront ajoutées ici dynamiquement -->
+    </div>
+    <button type="button" id="ajouter-observation" class="btn btn-outline-secondary btn-sm mt-2">
+        <i class="fas fa-plus-circle"></i> Ajouter une observation
+    </button>
+</div>
+
+<!-- Section Tags -->
+<div class="row mb-3">
+    <div class="col-md-12">
+        <label for="tags" class="form-label">{{ form.tags.label.text }}</label>
+        {{ form.tags(class="form-control" + (" is-invalid" if form.tags.errors else ""), id="tags") }}
+        {% for error in form.tags.errors %}
+            <div class="invalid-feedback">{{ error }}</div>
+        {% endfor %}
+        <div class="form-text">Ex: urgent, fragile, volumineux</div>
+    </div>
+</div>
