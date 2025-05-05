@@ -338,37 +338,28 @@
             const clientCol = document.createElement('div');
             clientCol.className = 'col-md-6';
 
-            const selectClientContainer = document.createElement('div');
-            selectClientContainer.className = 'mb-3';
-            const selectLabel = document.createElement('label');
-            selectLabel.textContent = 'Client';
-            selectLabel.className = 'form-label';
+            const clientSelect = document.createElement('select');
+            clientSelect.className = 'form-select';
+            clientSelect.name = 'clients_supplementaires[]';
+            clientSelect.required = true;
 
-            const selectClient = document.createElement('select');
-            selectClient.className = 'form-select';
-            selectClient.name = 'clients_supplementaires[]';
-            selectClient.required = true;
-
-            // Get original options and filter
+            // Copier uniquement les options du client principal
             const originalSelect = document.querySelector('select[name="client_id"]');
             if (originalSelect) {
                 const defaultOption = document.createElement('option');
                 defaultOption.value = '';
-                defaultOption.textContent = 'Sélectionner un client';
-                selectClient.appendChild(defaultOption);
+                defaultOption.textContent = 'Sélectionnez un client';
+                clientSelect.appendChild(defaultOption);
 
                 const isAdmin = {{ 'true' if current_user.is_admin() else 'false' }};
                 const currentUserId = {{ current_user.id }};
 
-                Array.from(originalSelect.options).forEach(option => {
+                originalSelect.querySelectorAll('option').forEach(option => {
                     if (option.value) {
                         const commercialId = option.getAttribute('data-commercial-id');
                         if (isAdmin || (commercialId && parseInt(commercialId) === currentUserId)) {
-                            const newOption = document.createElement('option');
-                            newOption.value = option.value;
-                            newOption.textContent = option.textContent;
-                            newOption.setAttribute('data-commercial-id', commercialId);
-                            selectClient.appendChild(newOption);
+                            const newOption = option.cloneNode(true);
+                            clientSelect.appendChild(newOption);
                         }
                     }
                 });
@@ -403,9 +394,7 @@
             };
 
             // Assembler les éléments
-            selectClientContainer.appendChild(selectLabel);
-            selectClientContainer.appendChild(selectClient);
-            clientCol.appendChild(selectClientContainer);
+            clientCol.appendChild(clientSelect);
             montantCol.appendChild(montantInput);
             btnCol.appendChild(deleteBtn);
 
