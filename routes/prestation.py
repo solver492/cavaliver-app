@@ -84,209 +84,141 @@ def index():
 @prestation_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
-    if current_user.role == 'transporteur':
-        flash('Vous n\'avez pas l\'autorisation de créer des prestations.', 'danger')
-        return redirect(url_for('prestation.index'))
-
+    form = PrestationForm()
+    
     try:
-        # Récupérer les paramètres de l'URL (utilisés lors de la création depuis le calendrier)
-        planning_name = request.args.get('name', '')
-        planning_start_date = request.args.get('start_date', '')
-        planning_end_date = request.args.get('end_date', '')
-        planning_tags = request.args.get('tags', '')
+        # Charger les types de déménagement depuis la base de données
+        types_demenagement = TypeDemenagement.query.all()
+        form.type_demenagement.choices = [(t.id, t.nom) for t in types_demenagement]
 
-        # Créer le formulaire et pré-remplir certaines valeurs
-        form = PrestationForm()
+        # Charger les clients en fonction du rôle de l'utilisateur
+        if current_user.role in ['admin', 'superadmin']:
+            clients = Client.query.filter_by(archive=False).all()
+        else:
+            clients = Client.query.filter_by(commercial_id=current_user.id, archive=False).all()
+        form.client_id.choices = [(c.id, f"{c.nom} {c.prenom}") for c in clients]
 
-        # Peupler la liste des clients
-        clients = Client.query.filter_by(archive=False).order_by(Client.nom).all()
-        form.client_id.choices = [(0, 'Sélectionnez un client')] + [(c.id, f"{c.nom} {c.prenom}") for c in clients]
-
-        # Si le formulaire n'est pas encore soumis (méthode GET), pré-remplir avec les paramètres de l'URL
-        if request.method == 'GET':
-            # Extraire la description du nom du planning
-            if planning_name:
-                form.observations.data = f"Planning: {planning_name}\n\n{form.observations.data or ''}"
-
-            # Convertir et définir les dates si elles sont fournies
-            if planning_start_date:
-                try:
-                    start_date = datetime.strptime(planning_start_date, '%Y-%m-%d')
-                    form.date_debut.data = start_date
-                except ValueError:
-                    current_app.logger.warning(f"Format de date invalide pour start_date: {planning_start_date}")
-
-            if planning_end_date:
-                try:
-                    end_date = datetime.strptime(planning_end_date, '%Y-%m-%d')
-                    form.date_fin.data = end_date
-                except ValueError:
-                    current_app.logger.warning(f"Format de date invalide pour end_date: {planning_end_date}")
-
-            # Ajouter les tags
-            if planning_tags:
-                form.tags.data = planning_tags
-
-        # Remplacer la génération standard des choix de type de déménagement
-        all_types = TypeDemenagement.query.order_by(TypeDemenagement.nom).all()
-        form.type_demenagement_id.choices = [(0, 'Sélectionnez un type')] + [(t.id, t.nom) for t in all_types]
-
-        # Passer les types de déménagement directement au template
-        types_demenagement = [{'id': t.id, 'nom': t.nom} for t in all_types]
+        # Charger les transporteurs
+        transporteurs = User.query.filter(User.role.in_(['transporteur', 'admin'])).all()
+        form.transporteurs.choices = [(t.id, f"{t.nom} {t.prenom}") for t in transporteurs]
 
         if form.validate_on_submit():
-            # Validation des dates
-            if form.date_debut.data > form.date_fin.data:
-                flash('La date de fin doit être postérieure à la date de début.', 'danger')
-                return render_template(
-                    'prestations/add.html',
-                    title='Ajouter une Prestation',
-                    form=form,
-                    types_demenagement=types_demenagement
-                )
-
-            # Validation du client
-            client = Client.query.get(form.client_id.data)
-            if not client:
-                flash('Le client sélectionné n\'existe pas.', 'danger')
-                return render_template(
-                    'prestations/add.html',
-                    title='Ajouter une Prestation',
-                    form=form,
-                    types_demenagement=types_demenagement
-                )
-
-            # Validation du type de déménagement
-            type_dem = None
-            type_dem_id = form.type_demenagement_id.data
-            type_dem_name = ''
-
-            if type_dem_id and type_dem_id != 0:
-                type_dem = TypeDemenagement.query.get(type_dem_id)
-                if not type_dem:
-                    flash('Le type de déménagement sélectionné n\'existe pas.', 'danger')
-                    return render_template(
-                        'prestations/add.html',
-                        title='Ajouter une Prestation',
-                        form=form,
-                        types_demenagement=types_demenagement
-                    )
-                type_dem_name = type_dem.nom
-
-            # Créer la prestation avec les données du formulaire
-            prestation = Prestation(
-                client_id=form.client_id.data,
-                commercial_id=current_user.id,
-                date_debut=form.date_debut.data,
-                date_fin=form.date_fin.data,
-                adresse_depart=form.adresse_depart.data,
-                adresse_arrivee=form.adresse_arrivee.data,
-                type_demenagement=type_dem_name,
-                tags=form.tags.data or '',
-                societe=form.societe.data or '',
-                montant=form.montant.data or 0,
-                priorite=form.priorite.data,
-                statut=form.statut.data,
-                observations=form.observations.data or '',
-                type_demenagement_id=type_dem_id if type_dem_id and type_dem_id > 0 else None
-            )
-            
-            # Traiter les étapes supplémentaires de départ
-            etapes_depart = request.form.getlist('etape_depart[]')
-            if etapes_depart:
-                prestation.etapes_depart = '||'.join([etape for etape in etapes_depart if etape.strip()])
-                current_app.logger.info(f"Étapes de départ enregistrées: {prestation.etapes_depart}")
-            
-            # Traiter les étapes supplémentaires d'arrivée
-            etapes_arrivee = request.form.getlist('etape_arrivee[]')
-            if etapes_arrivee:
-                prestation.etapes_arrivee = '||'.join([etape for etape in etapes_arrivee if etape.strip()])
-                current_app.logger.info(f"Étapes d'arrivée enregistrées: {prestation.etapes_arrivee}")
-
-            # Vérifier si c'est une prestation de groupage (clients supplémentaires)
-            clients_supplementaires = request.form.getlist('clients_supplementaires[]')
-            if clients_supplementaires and len(clients_supplementaires) > 0:
-                prestation.mode_groupage = True
-                prestation.type_demenagement = 'Groupage'
-                current_app.logger.info(f"Mode groupage activé avec {len(clients_supplementaires)} clients supplémentaires")
+            try:
+                current_app.logger.info("Début de la création de la prestation")
                 
-                # Ajouter les clients supplémentaires
-                for client_id in clients_supplementaires:
-                    if client_id and client_id.isdigit():
-                        client = Client.query.get(int(client_id))
-                        if client:
-                            prestation.clients_supplementaires.append(client)
-                            current_app.logger.info(f"Client supplémentaire ajouté: {client.nom} {client.prenom}")
+                # Récupérer le type de déménagement
+                type_dem = TypeDemenagement.query.get(form.type_demenagement.data)
+                if not type_dem:
+                    raise ValueError("Type de déménagement invalide")
+                
+                current_app.logger.info(f"Type de déménagement trouvé: {type_dem.nom}")
 
-            # Add transporteurs
-            transporteurs_to_notify = []
-
-            # Vérifier d'abord si des transporteurs ont été sélectionnés via le widget et stockés dans la session
-            selected_transporteurs = session.get('selected_transporteurs', [])
-
-            if selected_transporteurs:
-                # Utiliser les transporteurs sélectionnés via le widget
-                for t_id in selected_transporteurs:
-                    transporteur = User.query.get(t_id)
-                    if transporteur and transporteur.role == 'transporteur':
-                        prestation.transporteurs.append(transporteur)
-                        transporteurs_to_notify.append(transporteur)
-
-                # Supprimer les transporteurs sélectionnés de la session
-                session.pop('selected_transporteurs', None)
-            elif form.transporteurs.data:
-                # Utiliser les transporteurs sélectionnés via le formulaire standard
-                for t_id in form.transporteurs.data:
-                    transporteur = User.query.get(t_id)
-                    if transporteur and transporteur.role == 'transporteur':
-                        prestation.transporteurs.append(transporteur)
-                        transporteurs_to_notify.append(transporteur)
-
-            db.session.add(prestation)
-            db.session.commit()
-
-            # Créer une notification pour tous les transporteurs actifs
-            transporteurs = User.query.filter_by(role='transporteur', statut='actif').all()
-            for transporteur in transporteurs:
-                notification = Notification(
-                    message=f"""🚛 Nouvelle prestation disponible:
-- ID: #{prestation.id}
-- Type: {prestation.type_demenagement}
-- Dates: du {prestation.date_debut.strftime('%d/%m/%Y')} au {prestation.date_fin.strftime('%d/%m/%Y')}
-- Client: {client.nom} {client.prenom}
-- Départ: {prestation.adresse_depart}
-- Arrivée: {prestation.adresse_arrivee}
-
-Veuillez indiquer votre disponibilité en acceptant ou refusant cette prestation.""",
-                    type='info',
-                    role_destinataire='transporteur',
-                    user_id=transporteur.id,
-                    prestation_id=prestation.id,
-                    statut='non_lue'
+                # Créer la prestation
+                prestation = Prestation(
+                    client_id=form.client_id.data,
+                    date_debut=form.date_debut.data,
+                    date_fin=form.date_fin.data,
+                    adresse_depart=form.adresse_depart.data,
+                    adresse_arrivee=form.adresse_arrivee.data,
+                    type_demenagement=type_dem.nom,
+                    type_demenagement_id=type_dem.id,
+                    observations=form.observations.data,
+                    mode_groupage=form.mode_groupage.data,
+                    montant=form.montant.data if form.montant.data else 0,
+                    date_creation=datetime.now(),
+                    statut=form.statut.data,
+                    tags=form.tags.data if form.tags.data else '',
+                    priorite=form.priorite.data,
+                    commercial_id=current_user.id,
+                    createur_id=current_user.id,
+                    societe=form.societe.data if form.societe.data else ''
                 )
-                db.session.add(notification)
 
-            db.session.commit()
+                current_app.logger.info("Prestation créée en mémoire")
 
-            # Notifier les transporteurs assignés
-            if transporteurs_to_notify:
-                notifier_transporteurs(prestation, transporteurs_to_notify)
+                # Récupérer les clients supplémentaires et leurs montants
+                clients_supplementaires = request.form.getlist('clients_supplementaires[]')
+                montants_supplementaires = request.form.getlist('montants_supplementaires[]')
+                
+                current_app.logger.info(f"Clients supplémentaires: {clients_supplementaires}")
+                current_app.logger.info(f"Montants supplémentaires: {montants_supplementaires}")
 
-            flash('Prestation ajoutée avec succès!', 'success')
-            return redirect(url_for('prestation.index'))
+                # Démarrer la transaction
+                db.session.add(prestation)
+                db.session.commit()
+                current_app.logger.info(f"Prestation ajoutée à la base de données avec l'ID: {prestation.id}")
 
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        current_app.logger.error(f"Erreur SQL lors de l'ajout de la prestation: {str(e)}")
-        flash('Une erreur est survenue lors de l\'ajout de la prestation.', 'danger')
+                # Gérer les clients supplémentaires en mode groupage
+                if form.mode_groupage.data and clients_supplementaires:
+                    current_app.logger.info("Mode groupage activé")
+                    
+                    # Supprimer d'abord toute association existante
+                    db.session.execute(
+                        text("DELETE FROM prestation_clients WHERE prestation_id = :pid"),
+                        {"pid": prestation.id}
+                    )
+                    
+                    # Vider la liste des clients supplémentaires
+                    prestation.clients_supplementaires = []
+                    db.session.commit()
+                    
+                    # Ajouter les nouveaux clients supplémentaires
+                    for i, client_id in enumerate(clients_supplementaires):
+                        if client_id and client_id.isdigit():
+                            client = Client.query.get(int(client_id))
+                            if client:
+                                montant = 0
+                                if i < len(montants_supplementaires) and montants_supplementaires[i].strip():
+                                    try:
+                                        montant = float(montants_supplementaires[i])
+                                    except ValueError as e:
+                                        current_app.logger.error(f"Erreur de conversion du montant: {str(e)}")
+                                        montant = 0
+
+                                current_app.logger.info(f"Ajout du client {client.id} avec montant {montant}")
+                                
+                                # Ajouter le client à la relation many-to-many
+                                prestation.clients_supplementaires.append(client)
+                                db.session.commit()
+                                
+                                # Mettre à jour le montant dans la table d'association
+                                try:
+                                    db.session.execute(
+                                        text("UPDATE prestation_clients SET montant = :m WHERE prestation_id = :pid AND client_id = :cid"),
+                                        {"pid": prestation.id, "cid": client.id, "m": montant}
+                                    )
+                                    db.session.commit()
+                                    current_app.logger.info(f"Montant ajouté pour le client {client.id}")
+                                except Exception as e:
+                                    current_app.logger.error(f"Erreur lors de l'ajout du montant: {str(e)}")
+                                    db.session.rollback()
+
+                # Gérer les transporteurs
+                if form.transporteurs.data:
+                    current_app.logger.info("Ajout des transporteurs")
+                    for transporteur_id in form.transporteurs.data:
+                        transporteur = User.query.get(transporteur_id)
+                        if transporteur:
+                            prestation.transporteurs.append(transporteur)
+                            current_app.logger.info(f"Transporteur {transporteur.id} ajouté")
+                    db.session.commit()
+
+                current_app.logger.info("Transaction validée avec succès")
+                flash('Prestation créée avec succès!', 'success')
+                return redirect(url_for('prestation.view', id=prestation.id))
+
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"Erreur détaillée lors de la création de la prestation: {str(e)}")
+                flash('Une erreur est survenue lors de la création de la prestation.', 'error')
+                return render_template('prestations/add.html', form=form, types_demenagement=types_demenagement)
+
     except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Erreur inattendue lors de l'ajout de la prestation: {str(e)}")
-        flash('Une erreur inattendue est survenue.', 'danger')
+        current_app.logger.error(f"Erreur lors du chargement du formulaire: {str(e)}")
+        flash('Une erreur est survenue lors du chargement du formulaire.', 'error')
 
     return render_template(
         'prestations/add.html',
-        title='Ajouter une Prestation',
         form=form,
         types_demenagement=types_demenagement
     )
@@ -294,164 +226,165 @@ Veuillez indiquer votre disponibilité en acceptant ou refusant cette prestation
 @prestation_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit(id):
-    # Récupérer la prestation existante
     prestation = Prestation.query.get_or_404(id)
-
-    # Vérifier les permissions
-    if current_user.role == 'transporteur' and current_user.id not in [t.id for t in prestation.transporteurs]:
-        flash('Vous n\'avez pas l\'autorisation de modifier cette prestation.', 'danger')
-        return redirect(url_for('prestation.index'))
-
-    # Créer le formulaire et le pré-remplir avec les données existantes
     form = PrestationForm(obj=prestation)
-
-    # Remplacer la génération standard des choix de type de déménagement
-    all_types = TypeDemenagement.query.order_by(TypeDemenagement.nom).all()
-    form.type_demenagement_id.choices = [(0, 'Sélectionnez un type')] + [(t.id, t.nom) for t in all_types]
-
-    # Passer les types de déménagement directement au template
-    types_demenagement = [{'id': t.id, 'nom': t.nom} for t in all_types]
-
-    # Peupler les clients dans le formulaire
-    clients = []
-    if current_user.is_admin():
-        clients = Client.query.order_by(Client.nom).all()
-    elif current_user.role == 'client':
-        clients = Client.query.filter_by(user_id=current_user.id).order_by(Client.nom).all()
+    
+    # Charger les types de déménagement depuis la base de données
+    types_demenagement = TypeDemenagement.query.all()
+    form.type_demenagement.choices = [(t.id, t.nom) for t in types_demenagement]
+    
+    # Pré-sélectionner le type de déménagement actuel
+    if prestation.type_demenagement_id:
+        form.type_demenagement.data = prestation.type_demenagement_id
+    
+    # Charger les clients en fonction du rôle de l'utilisateur
+    if current_user.role in ['admin', 'superadmin']:
+        clients = Client.query.filter_by(archive=False).all()
     else:
-        # Pour les commerciaux et autres rôles, montrer tous les clients
-        clients = Client.query.order_by(Client.nom).all()
-
-    form.client_id.choices = [(0, 'Sélectionnez un client')] + [(c.id, f"{c.nom} {c.prenom}") for c in clients]
-
-    # Populate transporteur dropdown
-    form.transporteurs.choices = [(u.id, f"{u.nom} {u.prenom} ({u.vehicule or 'Aucun véhicule'})") for u in 
-                                User.query.filter_by(role='transporteur', statut='actif').order_by(User.nom).all()]
-
+        clients = Client.query.filter_by(commercial_id=current_user.id, archive=False).all()
+    form.client_id.choices = [(c.id, f"{c.nom} {c.prenom}") for c in clients]
+    
+    # Charger les transporteurs
+    transporteurs = User.query.filter(User.role.in_(['transporteur', 'admin'])).all()
+    form.transporteurs.choices = [(t.id, f"{t.nom} {t.prenom}") for t in transporteurs]
+    
     # Pré-sélectionner les transporteurs actuels
-    if request.method == 'GET':
-        form.transporteurs.data = [t.id for t in prestation.transporteurs]
-
+    form.transporteurs.data = [t.id for t in prestation.transporteurs]
+    
+    # Récupérer les montants des clients supplémentaires
+    clients_montants = {}
+    if prestation.mode_groupage:
+        try:
+            result = db.session.execute(
+                text("SELECT client_id, montant FROM prestation_clients WHERE prestation_id = :pid"),
+                {"pid": prestation.id}
+            ).fetchall()
+            
+            for client_id, montant in result:
+                clients_montants[client_id] = montant
+            current_app.logger.info(f"Montants récupérés: {clients_montants}")
+        except Exception as e:
+            current_app.logger.error(f"Erreur lors de la récupération des montants: {str(e)}")
+    
     if form.validate_on_submit():
         try:
-            # Récupérer le type de déménagement si l'ID est valide
-            type_dem = None
-            type_dem_id = form.type_demenagement_id.data
-            type_dem_name = ''
-
-            if type_dem_id and type_dem_id != 0:
-                type_dem = TypeDemenagement.query.get(type_dem_id)
-                if type_dem:
-                    type_dem_name = type_dem.nom
-
-            # Mettre à jour les attributs de la prestation
-            form.populate_obj(prestation)
-
-            # Définir le type de déménagement manuellement
-            prestation.type_demenagement = type_dem_name
-
-            # Traiter les étapes supplémentaires de départ
-            etapes_depart = request.form.getlist('etape_depart[]')
-            if etapes_depart:
-                prestation.etapes_depart = '||'.join([etape for etape in etapes_depart if etape.strip()])
-                current_app.logger.info(f"Étapes de départ mises à jour: {prestation.etapes_depart}")
-            else:
-                prestation.etapes_depart = ''  # Effacer les étapes si aucune n'est fournie
+            current_app.logger.info(f"Début de la modification de la prestation {id}")
             
-            # Traiter les étapes supplémentaires d'arrivée
-            etapes_arrivee = request.form.getlist('etape_arrivee[]')
-            if etapes_arrivee:
-                prestation.etapes_arrivee = '||'.join([etape for etape in etapes_arrivee if etape.strip()])
-                current_app.logger.info(f"Étapes d'arrivée mises à jour: {prestation.etapes_arrivee}")
-            else:
-                prestation.etapes_arrivee = ''  # Effacer les étapes si aucune n'est fournie
-
-            # Vérifier si c'est une prestation de groupage (clients supplémentaires)
-            clients_supplementaires = request.form.getlist('clients_supplementaires[]')
-            if clients_supplementaires and len(clients_supplementaires) > 0:
-                prestation.mode_groupage = True
-                prestation.type_demenagement = 'Groupage'
-                current_app.logger.info(f"Mode groupage activé/maintenu avec {len(clients_supplementaires)} clients supplémentaires")
-                
-                # Réinitialiser les clients supplémentaires
-                prestation.clients_supplementaires = []
-                
-                # Ajouter les clients supplémentaires
-                for client_id in clients_supplementaires:
-                    if client_id and client_id.isdigit():
-                        client = Client.query.get(int(client_id))
-                        if client:
-                            prestation.clients_supplementaires.append(client)
-                            current_app.logger.info(f"Client supplémentaire ajouté/maintenu: {client.nom} {client.prenom}")
-            else:
-                # Si aucun client supplémentaire n'est sélectionné, désactiver le mode groupage
-                prestation.mode_groupage = False
-                if prestation.type_demenagement == 'Groupage':
-                    prestation.type_demenagement = type_dem_name or 'Standard'
-                prestation.clients_supplementaires = []
-                current_app.logger.info("Mode groupage désactivé, aucun client supplémentaire")
-
-            # Récupérer les transporteurs actuels avant modification
-            transporteurs_actuels = [t.id for t in prestation.transporteurs]
-
+            # Récupérer le type de déménagement
+            type_dem = TypeDemenagement.query.get(form.type_demenagement.data)
+            if not type_dem:
+                raise ValueError("Type de déménagement invalide")
+            
+            # Mettre à jour les champs de la prestation
+            prestation.client_id = form.client_id.data
+            prestation.date_debut = form.date_debut.data
+            prestation.date_fin = form.date_fin.data
+            prestation.adresse_depart = form.adresse_depart.data
+            prestation.adresse_arrivee = form.adresse_arrivee.data
+            prestation.type_demenagement = type_dem.nom
+            prestation.type_demenagement_id = type_dem.id
+            prestation.observations = form.observations.data
+            prestation.mode_groupage = form.mode_groupage.data
+            prestation.montant = form.montant.data if form.montant.data else 0
+            prestation.statut = form.statut.data
+            prestation.tags = form.tags.data if form.tags.data else ''
+            prestation.priorite = form.priorite.data
+            prestation.date_modification = datetime.now()
+            prestation.modificateur_id = current_user.id
+            prestation.societe = form.societe.data if form.societe.data else ''
+            
+            # Enregistrer les modifications de base
+            db.session.commit()
+            current_app.logger.info(f"Prestation {id} mise à jour")
+            
             # Gérer les transporteurs
             prestation.transporteurs = []
-            nouveaux_transporteurs = []
-            transporteurs_a_notifier = []
-
-            # Vérifier d'abord si des transporteurs ont été sélectionnés via le widget et stockés dans la session
-            selected_transporteurs = session.get('selected_transporteurs', [])
-
-            if selected_transporteurs:
-                # Utiliser les transporteurs sélectionnés via le widget
-                for t_id in selected_transporteurs:
-                    transporteur = User.query.get(t_id)
-                    if transporteur and transporteur.role == 'transporteur':
+            db.session.commit()
+            
+            if form.transporteurs.data:
+                for transporteur_id in form.transporteurs.data:
+                    transporteur = User.query.get(transporteur_id)
+                    if transporteur:
                         prestation.transporteurs.append(transporteur)
-                        # Vérifier si c'est un nouveau transporteur
-                        if t_id not in transporteurs_actuels:
-                            nouveaux_transporteurs.append(t_id)
-                            transporteurs_a_notifier.append(transporteur)
+                db.session.commit()
+                current_app.logger.info(f"Transporteurs mis à jour pour la prestation {id}")
             
-            # Ajouter les transporteurs sélectionnés
-            for t_id in selected_transporteurs:
-                transporteur = User.query.get(t_id)
-                if transporteur and transporteur.role == 'transporteur':
-                    prestation.transporteurs.append(transporteur)
-                    
-                    # Ajouter à la liste des transporteurs à notifier s'il est nouveau
-                    if t_id not in transporteurs_actuels:
-                        transporteurs_a_notifier.append(transporteur)
+            # Récupérer les clients supplémentaires et leurs montants
+            clients_supplementaires = request.form.getlist('clients_supplementaires[]')
+            montants_supplementaires = request.form.getlist('montants_supplementaires[]')
             
-            # Sauvegarder d'abord les modifications de la prestation
-            db.session.commit()
+            current_app.logger.info(f"Clients supplémentaires: {clients_supplementaires}")
+            current_app.logger.info(f"Montants supplémentaires: {montants_supplementaires}")
             
-            # Envoyer des notifications aux nouveaux transporteurs assignés
-            if transporteurs_a_notifier:
-                if notifier_transporteurs(prestation, transporteurs_a_notifier, 'assignation'):
-                    flash(f'{len(transporteurs_a_notifier)} transporteur(s) notifié(s) de leur assignation.', 'info')
-                else:
-                    flash('Erreur lors de l\'envoi des notifications aux transporteurs.', 'warning')
-
-            # Enregistrer les modifications
-            db.session.commit()
-
-            flash('Prestation mise à jour avec succès!', 'success')
-            return redirect(url_for('prestation.index'))
-
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            flash(f'Erreur SQL lors de la mise à jour de la prestation: {str(e)}', 'danger')
+            # Gérer les clients supplémentaires en mode groupage
+            if form.mode_groupage.data:
+                current_app.logger.info(f"Mode groupage activé pour la prestation {id}")
+                
+                # Supprimer d'abord toute association existante
+                db.session.execute(
+                    text("DELETE FROM prestation_clients WHERE prestation_id = :pid"),
+                    {"pid": prestation.id}
+                )
+                
+                # Vider la liste des clients supplémentaires
+                prestation.clients_supplementaires = []
+                db.session.commit()
+                
+                # Ajouter les nouveaux clients supplémentaires
+                if clients_supplementaires:
+                    for i, client_id in enumerate(clients_supplementaires):
+                        if client_id and client_id.isdigit():
+                            client = Client.query.get(int(client_id))
+                            if client:
+                                montant = 0
+                                if i < len(montants_supplementaires) and montants_supplementaires[i].strip():
+                                    try:
+                                        montant = float(montants_supplementaires[i])
+                                    except ValueError as e:
+                                        current_app.logger.error(f"Erreur de conversion du montant: {str(e)}")
+                                        montant = 0
+                                
+                                current_app.logger.info(f"Ajout du client {client.id} avec montant {montant}")
+                                
+                                # Ajouter le client à la relation many-to-many
+                                prestation.clients_supplementaires.append(client)
+                                db.session.commit()
+                                
+                                # Mettre à jour le montant dans la table d'association
+                                try:
+                                    db.session.execute(
+                                        text("UPDATE prestation_clients SET montant = :m WHERE prestation_id = :pid AND client_id = :cid"),
+                                        {"pid": prestation.id, "cid": client.id, "m": montant}
+                                    )
+                                    db.session.commit()
+                                    current_app.logger.info(f"Montant ajouté pour le client {client.id}")
+                                except Exception as e:
+                                    current_app.logger.error(f"Erreur lors de l'ajout du montant: {str(e)}")
+                                    db.session.rollback()
+            else:
+                # Si le mode groupage est désactivé, supprimer tous les clients supplémentaires
+                db.session.execute(
+                    text("DELETE FROM prestation_clients WHERE prestation_id = :pid"),
+                    {"pid": prestation.id}
+                )
+                prestation.clients_supplementaires = []
+                db.session.commit()
+                current_app.logger.info(f"Clients supplémentaires supprimés pour la prestation {id} (mode groupage désactivé)")
+            
+            flash('Prestation modifiée avec succès!', 'success')
+            return redirect(url_for('prestation.view', id=prestation.id))
+        
         except Exception as e:
             db.session.rollback()
-            flash(f'Erreur lors de la mise à jour de la prestation: {str(e)}', 'danger')
-
+            current_app.logger.error(f"Erreur lors de la modification de la prestation {id}: {str(e)}")
+            flash('Une erreur est survenue lors de la modification de la prestation.', 'error')
+    
     return render_template(
         'prestations/edit.html',
-        title='Modifier une Prestation',
         form=form,
         prestation=prestation,
-        types_demenagement=types_demenagement
+        types_demenagement=types_demenagement,
+        clients_montants=clients_montants
     )
 
 @prestation_bp.route('/view/<int:id>')
@@ -478,6 +411,19 @@ def view(id):
         if current_user not in prestation.transporteurs and not notification:
             flash('Vous n\'avez pas accès à cette prestation.', 'danger')
             return redirect(url_for('transporteur_prestations.mes_prestations'))
+    
+    # Récupérer les montants des clients supplémentaires
+    montants_clients = {}
+    if prestation.mode_groupage and prestation.clients_supplementaires:
+        # Utiliser la table d'association directement
+        stmt = db.text("""
+            SELECT client_id, montant 
+            FROM prestation_clients 
+            WHERE prestation_id = :prestation_id
+        """)
+        result = db.session.execute(stmt, {"prestation_id": prestation.id})
+        montants_clients = {row[0]: row[1] for row in result}
+        current_app.logger.info(f"Montants des clients supplémentaires: {montants_clients}")
     
     # Récupérer les transporteurs directement depuis la table d'association
     transporteurs = []
@@ -539,7 +485,8 @@ def view(id):
         client=prestation.client_principal,
         clients=all_clients,
         transporteurs=transporteurs,
-        debug_data=debug_data
+        debug_data=debug_data,
+        prestation_clients=montants_clients
     )
 
 @prestation_bp.route('/assign_transporteurs/<int:id>', methods=['GET', 'POST'])
@@ -638,24 +585,23 @@ def add_etapes(id):
         etapes_arrivee = [etape for etape in etapes_arrivee if etape.strip()]
         
         # Enregistrer les étapes
-        if etapes_depart:
-            prestation.etapes_depart = '||'.join(etapes_depart)
-            current_app.logger.info(f"Étapes de départ ajoutées: {prestation.etapes_depart}")
+        # Si la liste est vide, on met une chaîne vide pour effacer les étapes existantes
+        prestation.etapes_depart = '||'.join(etapes_depart) if etapes_depart else ''
+        prestation.etapes_arrivee = '||'.join(etapes_arrivee) if etapes_arrivee else ''
         
-        if etapes_arrivee:
-            prestation.etapes_arrivee = '||'.join(etapes_arrivee)
-            current_app.logger.info(f"Étapes d'arrivée ajoutées: {prestation.etapes_arrivee}")
+        current_app.logger.info(f"Étapes de départ mises à jour: {prestation.etapes_depart}")
+        current_app.logger.info(f"Étapes d'arrivée mises à jour: {prestation.etapes_arrivee}")
         
         # Sauvegarder les modifications
         try:
             db.session.commit()
-            flash('Étapes ajoutées avec succès!', 'success')
+            flash('Étapes mises à jour avec succès!', 'success')
             
             # Rediriger vers la page de détails de la prestation
             return redirect(url_for('prestation.view', id=prestation.id))
         except Exception as e:
             db.session.rollback()
-            flash(f'Erreur lors de l\'ajout des étapes: {str(e)}', 'danger')
+            flash(f'Erreur lors de la mise à jour des étapes: {str(e)}', 'danger')
     
     # Récupérer les étapes existantes
     etapes_depart = prestation.get_etapes_depart()
@@ -664,7 +610,7 @@ def add_etapes(id):
     # Afficher le formulaire
     return render_template(
         'prestations/add_etapes.html',
-        title='Ajouter des étapes',
+        title='Gérer les étapes',
         prestation=prestation,
         etapes_depart=etapes_depart,
         etapes_arrivee=etapes_arrivee

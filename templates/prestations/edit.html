@@ -112,17 +112,6 @@
     <div class="page-title d-flex justify-content-between align-items-center">
         <h1><i class="fas fa-edit"></i> Modifier une prestation</h1>
         <div class="d-flex align-items-center gap-3">
-            <div class="prestation-type-selector">
-                <div class="form-check form-switch form-switch-lg">
-                    <input class="form-check-input" type="checkbox" id="prestation-type-switch" {% if prestation.est_groupage %}checked{% endif %}>
-                    <label class="form-check-label" for="prestation-type-switch">
-                        <span class="standard-label">Standard</span>
-                        <span class="groupage-label">Groupage</span>
-                    </label>
-                    <input type="hidden" name="type_demenagement" id="type_demenagement_hidden" value="{% if prestation.est_groupage %}Groupage{% else %}Standard{% endif %}">
-                    <input type="hidden" name="mode_groupage" value="{% if prestation.est_groupage %}true{% else %}false{% endif %}">
-                </div>
-            </div>
             <a href="{{ url_for('prestation.index') }}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left"></i> Retour à la liste
             </a>
@@ -131,51 +120,74 @@
 
     <div class="card">
         <div class="card-body">
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 {{ form.hidden_tag() }}
                 
                 <div id="mode-info" class="alert alert-info mb-3">
                     <i class="fas fa-info-circle me-2"></i> {% if prestation.est_groupage %}Mode groupage: plusieurs clients, plusieurs points de départ et d'arrivée{% else %}Mode standard: un seul client, un point de départ et un point d'arrivée{% endif %}
                 </div>
 
-                <!-- Section Client -->
+                <!-- Section Client Principal -->
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-secondary text-white">
-                                <h5 class="mb-0"><i class="fas fa-user"></i> {{ form.client_id.label.text }} <span class="text-danger">*</span></h5>
-                            </div>
-                            <div class="card-body">
-                                <!-- Client principal -->
-                                <div id="client-principal">
-                                    {{ form.client_id(class="form-control" + (" is-invalid" if form.client_id.errors else ""), id="client_id") }}
-                                    {% for error in form.client_id.errors %}
-                                        <div class="invalid-feedback">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-                            </div>
+                        <label for="client_id" class="form-label">Client Principal <span class="text-danger">*</span></label>
+                        {{ form.client_id(class="form-select" + (" is-invalid" if form.client_id.errors else ""), id="client_id") }}
+                        {% for error in form.client_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Switch Mode Groupage -->
+                    <div class="col-md-6">
+                        <div class="form-check form-switch form-switch-lg mt-4">
+                            {{ form.mode_groupage(class="form-check-input", id="mode_groupage") }}
+                            <label class="form-check-label" for="mode_groupage">Mode Groupage</label>
+                        </div>
+                        <div id="mode-description" class="form-text text-muted">
+                            {% if prestation.mode_groupage %}
+                            Mode groupage activé : plusieurs clients, plusieurs points de départ et d'arrivée
+                            {% else %}
+                            Mode standard : un seul client, un point de départ et un point d'arrivée
+                            {% endif %}
                         </div>
                     </div>
+                </div>
 
-                    <!-- Clients supplémentaires pour le groupage -->
-                    <div class="col-md-6" id="section-clients-supplementaires" style="display: none;">
-                        <div class="card">
-                            <div class="card-header bg-info text-white">
-                                <h5 class="mb-0"><i class="fas fa-users"></i> Clients supplémentaires</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="alert alert-info mb-3">
-                                    <i class="fas fa-info-circle"></i> En mode groupage, vous pouvez ajouter plusieurs clients pour une même prestation.
+                <!-- Section Clients Supplémentaires -->
+                <div id="section-clients-supplementaires" class="mb-4" style="display: {% if prestation.mode_groupage %}block{% else %}none{% endif %};">
+                    <h5 class="mb-3">Clients Supplémentaires</h5>
+                    <div id="clients-list">
+                        {% for client in prestation.clients_supplementaires %}
+                        <div class="client-supplementaire mb-3 border-bottom pb-3">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Client Supplémentaire</label>
+                                    <select class="form-select" name="clients_supplementaires[]" required>
+                                        <option value="">Sélectionnez un client</option>
+                                        {% for c in clients %}
+                                        <option value="{{ c.id }}" {% if c.id == client.id %}selected{% endif %}>
+                                            {{ c.nom }} {{ c.prenom }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
-                                <div id="clients-supplementaires">
-                                    <!-- Les clients supplémentaires seront ajoutés ici dynamiquement -->
+                                <div class="col-md-5">
+                                    <label class="form-label">Montant</label>
+                                    <input type="number" class="form-control" name="montants_supplementaires[]" 
+                                           placeholder="Montant" step="0.01" min="0" required value="{{ clients_montants.get(client.id, 0) }}">
                                 </div>
-                                <button type="button" id="ajouter-client" class="btn btn-primary mt-3 w-100">
-                                    <i class="fas fa-plus-circle me-2"></i> Ajouter un client supplémentaire
-                                </button>
+                                <div class="col-md-1 d-flex align-items-end">
+                                    <button type="button" class="btn btn-danger" onclick="this.closest('.client-supplementaire').remove()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
+                    <button type="button" id="ajouter-client-btn" class="btn btn-outline-secondary">
+                        <i class="fas fa-plus"></i> Ajouter un client
+                    </button>
                 </div>
 
                 <!-- Section Dates et Type -->
@@ -200,18 +212,11 @@
                 <!-- Section Type de déménagement -->
                 <div class="row mb-3">
                     <div class="col-md-12">
-                        <label for="type_demenagement_id" class="form-label">Type de déménagement <span class="text-danger">*</span></label>
-                        <select name="type_demenagement_id" id="type_demenagement_id" class="form-select">
-                            <option value="">Sélectionnez un type</option>
-                            {% for type in types_demenagement %}
-                                <option value="{{ type.id }}" {% if prestation.type_demenagement_id == type.id %}selected{% endif %}>
-                                    {{ type.nom }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        {% if form.type_demenagement_id.errors %}
+                        <label for="type_demenagement" class="form-label">Type de déménagement <span class="text-danger">*</span></label>
+                        {{ form.type_demenagement(class="form-select" + (" is-invalid" if form.type_demenagement.errors else ""), id="type_demenagement") }}
+                        {% if form.type_demenagement.errors %}
                             <div class="invalid-feedback d-block">
-                                {% for error in form.type_demenagement_id.errors %}
+                                {% for error in form.type_demenagement.errors %}
                                     {{ error }}
                                 {% endfor %}
                             </div>
@@ -368,15 +373,179 @@
 <script src="{{ url_for('static', filename='js/etapes-supplementaires.js') }}"></script>
 <script src="{{ url_for('static', filename='js/prestation-documents.js') }}"></script>
 <script src="{{ url_for('static', filename='js/boutons-reparation.js') }}"></script>
-<script src="{{ url_for('static', filename='js/groupage-fix-v2.js') }}"></script>
+<!-- Commenté pour éviter les conflits -->
+<!-- <script src="{{ url_for('static', filename='js/groupage-fix-v2.js') }}"></script> -->
 <script src="{{ url_for('static', filename='js/transporteurs-widget-final.js') }}"></script>
 <script src="{{ url_for('static', filename='js/prestation-type-switcher.js') }}"></script>
 <script src="{{ url_for('static', filename='js/adapter-type-prestation.js') }}"></script>
 <script src="{{ url_for('static', filename='js/debug-prestation.js') }}"></script>
 <script>
-    // Pas besoin d'initialiser manuellement, le script s'auto-initialise
-    // document.addEventListener('DOMContentLoaded', function() {
-    //     initEtapesSupplementaires();
-    // });
+    document.addEventListener('DOMContentLoaded', function() {
+        // Éléments DOM
+        const modeGroupageSwitch = document.getElementById('mode_groupage');
+        const modeDescription = document.getElementById('mode-description');
+        const sectionClientsSupplementaires = document.getElementById('section-clients-supplementaires');
+        const clientsList = document.getElementById('clients-list');
+        const ajouterClientBtn = document.getElementById('ajouter-client-btn');
+        
+        console.log("Mode groupage switch:", modeGroupageSwitch);
+        console.log("Section clients supplémentaires:", sectionClientsSupplementaires);
+        console.log("Liste des clients:", clientsList);
+        console.log("Bouton ajouter client:", ajouterClientBtn);
+        
+        // Fonction pour créer un champ client
+        function createClientField(clientId = '', montant = '') {
+            const clientDiv = document.createElement('div');
+            clientDiv.className = 'client-supplementaire mb-3 border-bottom pb-3 fade-in';
+            
+            const row = document.createElement('div');
+            row.className = 'row g-3';
+
+            // Colonne pour le select client
+            const clientCol = document.createElement('div');
+            clientCol.className = 'col-md-6';
+
+            const clientLabel = document.createElement('label');
+            clientLabel.className = 'form-label';
+            clientLabel.textContent = 'Client Supplémentaire';
+
+            const selectClient = document.createElement('select');
+            selectClient.className = 'form-select';
+            selectClient.name = 'clients_supplementaires[]';
+            selectClient.required = true;
+
+            // Copier les options du select client principal
+            const originalSelect = document.querySelector('select[name="client_id"]');
+            if (originalSelect) {
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Sélectionnez un client';
+                selectClient.appendChild(defaultOption);
+
+                originalSelect.querySelectorAll('option:not(:first-child)').forEach(option => {
+                    const newOption = option.cloneNode(true);
+                    // Si un client_id est fourni, le sélectionner
+                    if (clientId && newOption.value == clientId) {
+                        newOption.selected = true;
+                    }
+                    selectClient.appendChild(newOption);
+                });
+            }
+
+            // Colonne pour le montant
+            const montantCol = document.createElement('div');
+            montantCol.className = 'col-md-5';
+
+            const montantLabel = document.createElement('label');
+            montantLabel.className = 'form-label';
+            montantLabel.textContent = 'Montant';
+
+            const montantInput = document.createElement('input');
+            montantInput.type = 'number';
+            montantInput.className = 'form-control';
+            montantInput.name = 'montants_supplementaires[]';
+            montantInput.placeholder = 'Montant';
+            montantInput.step = '0.01';
+            montantInput.min = '0';
+            montantInput.required = true;
+            // Si un montant est fourni, le définir
+            if (montant) {
+                montantInput.value = montant;
+            }
+
+            // Colonne pour le bouton de suppression
+            const btnCol = document.createElement('div');
+            btnCol.className = 'col-md-1 d-flex align-items-end';
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'btn btn-danger';
+            deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+            deleteBtn.onclick = function() {
+                clientDiv.classList.add('fade-out');
+                setTimeout(() => {
+                    clientDiv.remove();
+                }, 300);
+            };
+
+            // Assembler les éléments
+            clientCol.appendChild(clientLabel);
+            clientCol.appendChild(selectClient);
+
+            montantCol.appendChild(montantLabel);
+            montantCol.appendChild(montantInput);
+
+            btnCol.appendChild(deleteBtn);
+
+            row.appendChild(clientCol);
+            row.appendChild(montantCol);
+            row.appendChild(btnCol);
+
+            clientDiv.appendChild(row);
+            return clientDiv;
+        }
+
+        // Fonction pour mettre à jour l'interface en fonction du mode groupage
+        function updateGroupageUI(isGroupage) {
+            console.log("Mise à jour de l'interface pour le mode groupage:", isGroupage);
+            
+            if (modeDescription) {
+                modeDescription.textContent = isGroupage ? 
+                    'Mode groupage activé: Vous pouvez ajouter plusieurs clients à cette prestation.' : 
+                    'Mode standard: Un seul client pour cette prestation.';
+            }
+            
+            if (sectionClientsSupplementaires) {
+                sectionClientsSupplementaires.style.display = isGroupage ? 'block' : 'none';
+            }
+        }
+        
+        // Initialiser le mode groupage
+        if (modeGroupageSwitch) {
+            console.log("État initial du switch:", modeGroupageSwitch.checked);
+            
+            // Forcer l'initialisation correcte basée sur la valeur du modèle
+            {% if prestation.mode_groupage %}
+            if (!modeGroupageSwitch.checked) {
+                modeGroupageSwitch.checked = true;
+            }
+            {% endif %}
+            
+            updateGroupageUI(modeGroupageSwitch.checked);
+            
+            modeGroupageSwitch.addEventListener('change', function() {
+                console.log("Switch changé:", this.checked);
+                updateGroupageUI(this.checked);
+            });
+        } else {
+            console.error("Le switch de mode groupage n'a pas été trouvé !");
+        }
+        
+        // Ajouter un gestionnaire d'événements pour le bouton d'ajout de client
+        if (ajouterClientBtn) {
+            ajouterClientBtn.addEventListener('click', function() {
+                console.log("Ajout d'un nouveau client");
+                const newClientField = createClientField();
+                clientsList.appendChild(newClientField);
+            });
+        } else {
+            console.error("Le bouton d'ajout de client n'a pas été trouvé !");
+        }
+        
+        // Charger les clients supplémentaires existants
+        {% if prestation.mode_groupage and prestation.clients_supplementaires %}
+        updateGroupageUI(true);
+        console.log("Chargement des clients supplémentaires existants");
+        {% for client in prestation.clients_supplementaires %}
+            {% if client.id != prestation.client_id %}
+            const clientId{{ loop.index }} = {{ client.id }};
+            const montant{{ loop.index }} = {{ clients_montants.get(client.id, 0)|default(0) }};
+            console.log("Client:", clientId{{ loop.index }}, "Montant:", montant{{ loop.index }});
+            const clientField{{ loop.index }} = createClientField(clientId{{ loop.index }}, montant{{ loop.index }});
+            clientsList.appendChild(clientField{{ loop.index }});
+            {% endif %}
+        {% endfor %}
+        {% endif %}
+    });
 </script>
 {% endblock %}

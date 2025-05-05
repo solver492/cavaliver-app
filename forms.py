@@ -64,9 +64,8 @@ class PrestationForm(FlaskForm):
     date_fin = DateField('Date de fin', validators=[DataRequired()], default=datetime.now() + timedelta(days=1))
     adresse_depart = TextAreaField('Adresse de départ', validators=[DataRequired()])
     adresse_arrivee = TextAreaField('Adresse d\'arrivée', validators=[DataRequired()])
-    type_demenagement_id = SelectField('Type de déménagement', coerce=optional_int, validators=[DataRequired()])
-    # Champ caché pour la compatibilité avec les anciennes données
-    type_demenagement = HiddenField('Type de déménagement (ancien)')
+    type_demenagement = SelectField('Type de déménagement', coerce=optional_int, validators=[DataRequired()])
+    mode_groupage = BooleanField('Mode Groupage', default=False)
     tags = StringField('Tags (séparés par des virgules)')
     societe = SelectField('Société', choices=[
         ('', 'Sélectionner une société'),
@@ -79,14 +78,14 @@ class PrestationForm(FlaskForm):
         ('Normale', 'Normale'),
         ('Haute', 'Haute'),
         ('Urgente', 'Urgente')
-    ])
+    ], default='Normale')
     statut = SelectField('Statut', choices=[
         ('En attente', 'En attente'),
         ('Confirmée', 'Confirmée'),
         ('En cours', 'En cours'),
         ('Terminée', 'Terminée'),
         ('Annulée', 'Annulée')
-    ])
+    ], default='En attente')
     observations = TextAreaField('Observations')
     vehicules_suggeres = TextAreaField('Véhicules suggérés', render_kw={'readonly': True})
     submit = SubmitField('Enregistrer')

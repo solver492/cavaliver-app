@@ -19,9 +19,11 @@ prestation_transporteurs = db.Table('prestation_transporteurs',
     db.Column('commentaire', db.Text, nullable=True)
 )
 
+# Table d'association pour les clients supplémentaires avec leurs montants
 prestation_clients = db.Table('prestation_clients',
     db.Column('prestation_id', db.Integer, db.ForeignKey('prestation.id'), primary_key=True),
-    db.Column('client_id', db.Integer, db.ForeignKey('client.id'), primary_key=True)
+    db.Column('client_id', db.Integer, db.ForeignKey('client.id'), primary_key=True),
+    db.Column('montant', db.Float, nullable=True, default=0)
 )
 
 type_demenagement_vehicule = db.Table('type_demenagement_vehicule',
@@ -114,6 +116,8 @@ class Client(db.Model):
     statut = db.Column(db.String(20), default='actif')
     archive = db.Column(db.Boolean, default=False)
     date_creation = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    commercial_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    commercial = db.relationship('User', backref=db.backref('clients', lazy=True), foreign_keys=[commercial_id])
 
     prestations_principales = db.relationship('Prestation', backref=db.backref('client_principal', lazy=True), lazy=True, foreign_keys="Prestation.client_id")
     prestations_supplementaires = db.relationship('Prestation', secondary=prestation_clients, back_populates='clients_supplementaires')

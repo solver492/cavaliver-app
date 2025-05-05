@@ -78,9 +78,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="form-group">
                         <label class="form-label">Sélectionner un client</label>
-                        <select class="form-select" name="client_supplementaire_${compteurClients}">
+                        <select class="form-select" name="clients_supplementaires[]">
                             ${optionsHTML}
                         </select>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label class="form-label">Montant</label>
+                        <input type="number" class="form-control" name="montants_supplementaires[]" step="0.01" min="0" placeholder="0.00">
                     </div>
                 </div>
             `;

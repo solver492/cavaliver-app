@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container mt-4">
     <h1 class="mb-4">
-        <i class="fas fa-map-marker-alt"></i> Ajouter des étapes
+        <i class="fas fa-map-marker-alt"></i> Gérer les étapes
     </h1>
     
     <div class="card mb-4">
@@ -122,11 +122,16 @@
     </form>
 </div>
 
-{% block scripts %}
+{% endblock %}
+
+{% block page_scripts %}
 <script>
     $(document).ready(function() {
+        console.log("Script chargé - Initialisation des boutons d'étapes");
+        
         // Ajouter une étape de départ
         $('#add-etape-depart').click(function() {
+            console.log("Ajout d'une étape de départ");
             var newEtape = `
                 <div class="input-group mb-2 etape-depart-group">
                     <input type="text" name="etape_depart[]" class="form-control" placeholder="Adresse de l'étape">
@@ -140,6 +145,7 @@
         
         // Ajouter une étape d'arrivée
         $('#add-etape-arrivee').click(function() {
+            console.log("Ajout d'une étape d'arrivée");
             var newEtape = `
                 <div class="input-group mb-2 etape-arrivee-group">
                     <input type="text" name="etape_arrivee[]" class="form-control" placeholder="Adresse de l'étape">
@@ -153,9 +159,46 @@
         
         // Supprimer une étape
         $(document).on('click', '.remove-etape', function() {
-            $(this).closest('.input-group').remove();
+            console.log("Suppression d'une étape");
+            $(this).closest('.input-group').fadeOut(300, function() {
+                $(this).remove();
+            });
+        });
+
+        // Validation avant soumission du formulaire
+        $('form').on('submit', function(e) {
+            // Supprimer les champs vides pour éviter de les envoyer
+            $('input[name="etape_depart[]"]').each(function() {
+                if ($(this).val().trim() === '') {
+                    $(this).closest('.input-group').remove();
+                }
+            });
+            
+            $('input[name="etape_arrivee[]"]').each(function() {
+                if ($(this).val().trim() === '') {
+                    $(this).closest('.input-group').remove();
+                }
+            });
+            
+            // Vérifier s'il y a au moins un champ non vide pour chaque type d'étape
+            if ($('input[name="etape_depart[]"]').length === 0) {
+                // Ajouter un champ caché pour indiquer qu'il n'y a pas d'étapes de départ
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'etape_depart[]',
+                    value: ''
+                }).appendTo('form');
+            }
+            
+            if ($('input[name="etape_arrivee[]"]').length === 0) {
+                // Ajouter un champ caché pour indiquer qu'il n'y a pas d'étapes d'arrivée
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'etape_arrivee[]',
+                    value: ''
+                }).appendTo('form');
+            }
         });
     });
 </script>
-{% endblock %}
 {% endblock %}

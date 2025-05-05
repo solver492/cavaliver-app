@@ -498,10 +498,10 @@ def upload_document():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-@calendrier_bp.route('/evenements/<int:event_id>/assigner-prestation', methods=['POST'])
+@calendrier_bp.route('/evenements/<int:evenement_id>/assigner-prestation', methods=['POST'])
 @login_required
-def assigner_prestation(event_id):
-    evenement = Evenement.query.get_or_404(event_id)
+def assigner_prestation(evenement_id):
+    evenement = Evenement.query.get_or_404(evenement_id)
     if evenement.user_id != current_user.id:
         abort(403)
 
@@ -723,26 +723,61 @@ def get_prestation_evenement(evenement_id):
     try:
         evenement = Evenement.query.get_or_404(evenement_id)
         if evenement.prestation:
+            # Récupérer les montants des clients supplémentaires
+            clients_supplementaires = []
+            if evenement.prestation.mode_groupage:
+                try:
+                    # Vérifier que la prestation a un client principal
+                    if not evenement.prestation.client_id:
+                        current_app.logger.error(f"Prestation {evenement.prestation.id} sans client principal")
+                    else:
+                        # Requête pour obtenir les clients supplémentaires et leurs montants
+                        from sqlalchemy import text
+                        result = db.session.execute(
+                            text("SELECT c.id, c.nom, c.prenom, pc.montant FROM prestation_clients pc "
+                                "JOIN clients c ON pc.client_id = c.id "
+                                "WHERE pc.prestation_id = :pid"),
+                            {"pid": evenement.prestation.id}
+                        ).fetchall()
+                        
+                        for row in result:
+                            # Vérifier que les données sont valides
+                            if row[0] is not None and row[0] != evenement.prestation.client_id:  # Exclure le client principal
+                                clients_supplementaires.append({
+                                    'id': row[0],
+                                    'nom': f"{row[1] or ''} {row[2] or ''}".strip(),
+                                    'montant': row[3] or 0
+                                })
+                except Exception as e:
+                    current_app.logger.error(f"Erreur lors de la récupération des clients supplémentaires: {str(e)}")
+                    # Ne pas échouer complètement si cette partie échoue
+                    clients_supplementaires = []
+            
+            # Préparer les données de la prestation avec gestion des valeurs nulles
+            prestation_data = {
+                'id': evenement.prestation.id,
+                'client': f"{evenement.prestation.client.nom if evenement.prestation.client else ''} {evenement.prestation.client.prenom if evenement.prestation.client else ''}".strip() or "Client non spécifié",
+                'date_debut': evenement.prestation.date_debut.strftime('%d/%m/%Y') if evenement.prestation.date_debut else '',
+                'date_fin': evenement.prestation.date_fin.strftime('%d/%m/%Y') if evenement.prestation.date_fin else '',
+                'adresse_depart': evenement.prestation.adresse_depart or '',
+                'adresse_arrivee': evenement.prestation.adresse_arrivee or '',
+                'type_demenagement': evenement.prestation.type_demenagement or '',
+                'statut': evenement.prestation.statut or '',
+                'montant': evenement.prestation.montant or 0,
+                'societe': evenement.prestation.societe or '',
+                'date_creation': evenement.prestation.date_creation.strftime('%d/%m/%Y') if evenement.prestation.date_creation else '',
+                'tags': evenement.prestation.tags or '',
+                'mode_groupage': evenement.prestation.mode_groupage or False,
+                'clients_supplementaires': clients_supplementaires
+            }
+            
             return jsonify({
                 'success': True,
-                'prestation': {
-                    'id': evenement.prestation.id,
-                    'client': f"{evenement.prestation.client.nom} {evenement.prestation.client.prenom}",
-                    'date_debut': evenement.prestation.date_debut.strftime('%d/%m/%Y'),
-                    'date_fin': evenement.prestation.date_fin.strftime('%d/%m/%Y'),
-                    'adresse_depart': evenement.prestation.adresse_depart,
-                    'adresse_arrivee': evenement.prestation.adresse_arrivee,
-                    'type_demenagement': evenement.prestation.type_demenagement,
-                    'statut': evenement.prestation.statut,
-                    'montant': evenement.prestation.montant,
-                    'societe': evenement.prestation.societe,
-                    'date_creation': evenement.prestation.date_creation.strftime('%d/%m/%Y'),
-                    'tags': evenement.prestation.tags,
-                    'mode_groupage': evenement.prestation.mode_groupage
-                }
+                'prestation': prestation_data
             })
         return jsonify({'success': False, 'message': 'Aucune prestation assignée à cet événement'}), 404
     except Exception as e:
+        current_app.logger.error(f"Erreur dans get_prestation_evenement: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
 @calendrier_bp.route('/api/evenements/<int:evenement_id>/documents', methods=['GET', 'POST'])
@@ -917,7 +952,7 @@ def api_modifier_observations(evenement_id):
             observations_list = [obs for obs in observations_list if obs and obs.strip()]
             
             # Joindre les observations avec le séparateur spécial ou mettre à None si pas d'observations
-            evenement.observations = '|||'.join(observations_list) if observations_list else None
+            evenement.observations = " ||| ".join(observations_list) if observations_list else None
             
         # Incrémenter la version
         evenement.version = (evenement.version or 1) + 1
@@ -978,11 +1013,9 @@ def api_assigner_prestation(evenement_id):
         prestation = Prestation.query.get_or_404(prestation_id)
         
         # Vérifier que l'utilisateur a le droit d'accéder à cette prestation
-        if not (current_user.role in ['admin', 'superadmin'] or
-                prestation.commercial_id == current_user.id or
-                prestation.createur_id == current_user.id):
-            return jsonify({'success': False, 'error': 'Accès non autorisé'})
-            
+        if not current_user.is_admin() and prestation.commercial_id != current_user.id:
+            abort(403)
+
         evenement.prestation_id = prestation.id
         db.session.commit()
         
@@ -1309,8 +1342,7 @@ def ajouter_document_evenement(evenement_id):
                 chemin=filepath,
                 type='autre',
                 evenement_id=evenement_id,
-                user_id=current_user.id,
-                agenda_id=agenda.id
+                user_id=current_user.id
             )
             db.session.add(document)
             db.session.commit()

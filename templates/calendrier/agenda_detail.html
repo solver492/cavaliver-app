@@ -404,6 +404,18 @@
     </div>
 </div>
 
+<!-- Modal de chargement -->
+<div class="modal fade" id="loadingModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border" role="status"></div>
+                <p class="mt-2">Chargement...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // Variables globales pour stocker l'ID et les détails de l'événement actuel
 let currentEventId = null;
@@ -905,17 +917,8 @@ function assignerPrestationDirecte(prestationId) {
         console.log(`Assignation directe de la prestation ${prestationId} à l'événement ${currentEventId}`);
 
         // Afficher un indicateur de chargement
-        const modal = document.getElementById('assignerPrestationModal');
-        if (!modal) {
-            console.error('Modal non trouvé');
-            alert('Erreur: Modal non trouvé');
-            return;
-        }
-
-        const modalBody = modal.querySelector('.modal-body');
-        if (modalBody) {
-            modalBody.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p class="mt-2">Assignation en cours...</p></div>';
-        }
+        const modal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        modal.show();
 
         // Méthode simplifiée utilisant un formulaire standard au lieu de JSON
         const formData = new FormData();
@@ -941,11 +944,10 @@ function assignerPrestationDirecte(prestationId) {
             return response.json();
         })
         .then(result => {
-            if (result.success) {
-                // Fermer le modal
-                const modalInstance = bootstrap.Modal.getInstance(modal);
-                if (modalInstance) modalInstance.hide();
+            // Fermer l'indicateur de chargement
+            modal.hide();
 
+            if (result.success) {
                 // Mettre à jour l'événement dans le calendrier
                 const event = calendar.getEventById(currentEventId);
                 if (event) {
@@ -965,16 +967,19 @@ function assignerPrestationDirecte(prestationId) {
             } else {
                 alert('Erreur: ' + (result.error || 'Une erreur est survenue'));
                 // Fermer le modal en cas d'erreur
-                const modalInstance = bootstrap.Modal.getInstance(modal);
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('assignerPrestationModal'));
                 if (modalInstance) modalInstance.hide();
             }
         })
         .catch(error => {
+            // Fermer l'indicateur de chargement en cas d'erreur
+            modal.hide();
+
             console.error('Erreur:', error);
             alert('Erreur lors de l\'assignation: ' + error.message);
 
             // Fermer simplement le modal en cas d'erreur
-            const modalInstance = bootstrap.Modal.getInstance(modal);
+            const modalInstance = bootstrap.Modal.getInstance(document.getElementById('assignerPrestationModal'));
             if (modalInstance) modalInstance.hide();
         });
     } catch (e) {
@@ -1137,57 +1142,28 @@ window.sauvegarderModifications = sauvegarderModifications;
 function voirPrestation() {
     if (!currentEvent) return;
 
+    // Afficher un indicateur de chargement
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+
+    // D'abord, récupérer l'ID de la prestation
     fetch(`/calendrier/api/evenements/${currentEvent.id}/prestation`)
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                const prestation = data.prestation;
-                prestationId = prestation.id;
-
-                // Remplir les détails de la prestation
-                document.getElementById('prestationClient').textContent = prestation.client;
-                document.getElementById('prestationType').textContent = prestation.type_demenagement;
-                document.getElementById('prestationDateDebut').textContent = prestation.date_debut;
-                document.getElementById('prestationDateFin').textContent = prestation.date_fin;
-                document.getElementById('prestationAdresseDepart').textContent = prestation.adresse_depart;
-                document.getElementById('prestationAdresseArrivee').textContent = prestation.adresse_arrivee;
-                document.getElementById('prestationMontant').textContent = prestation.montant;
-                document.getElementById('prestationSociete').textContent = prestation.societe;
-                if(prestation.mode_groupage){
-                    const elementgroupage = document.getElementById('prestationModeGroupage');
-                    elementgroupage.textContent = 'ModeGroupage';
-                    elementgroupage.style.fontWeight = 'bold';
-                }
-                document.getElementById('prestationTags').textContent = prestation.tags;
-                document.getElementById('prestationDateCreation').textContent = prestation.date_creation;
-
-                // Gérer le statut avec une couleur appropriée
-                const statutElement = document.getElementById('prestationStatut');
-                statutElement.textContent = prestation.statut;
-                switch(prestation.statut.toLowerCase()) {
-                    case 'en attente':
-                        statutElement.className = 'badge bg-warning';
-                        break;
-                    case 'en cours':
-                        statutElement.className = 'badge bg-info';
-                        break;
-                    case 'terminée':
-                        statutElement.className = 'badge bg-success';
-                        break;
-                    case 'annulée':
-                        statutElement.className = 'badge bg-danger';
-                        break;
-                    default:
-                        statutElement.className = 'badge bg-secondary';
-                }
-
-                // Afficher le modal
-                new bootstrap.Modal(document.getElementById('detailsPrestationModal')).show();
+            // Fermer l'indicateur de chargement
+            loadingModal.hide();
+            
+            if (data.success && data.prestation && data.prestation.id) {
+                // Rediriger vers la page de détails de la prestation
+                window.location.href = `/prestations/view/${data.prestation.id}`;
             } else {
-                alert('Impossible de charger les détails de la prestation.');
+                alert(data.message || 'Impossible de charger les détails de la prestation.');
             }
         })
         .catch(error => {
+            // Fermer l'indicateur de chargement en cas d'erreur
+            loadingModal.hide();
+            
             console.error('Erreur:', error);
             alert('Une erreur est survenue lors du chargement des détails de la prestation.');
         });
@@ -1249,10 +1225,13 @@ function voirPrestation() {
                         <p class="ms-3" id="prestationSociete"></p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>Montant:</strong></p>
-                        <p class="ms-3" id="prestationMontant"></p>
+                        <p><strong>Montant Principal:</strong></p>
+                        <p class="ms-3 fw-bold text-success" id="prestationMontant"></p>
+                        <!-- Montants supplémentaires ajoutés directement ici -->
+                        <div id="montants-supplementaires"></div>
                     </div>
                 </div>
+                
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>

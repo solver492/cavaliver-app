@@ -33,6 +33,10 @@ def index():
     
     clients_query = Client.query
     
+    # Filtrer les clients selon le rôle
+    if not current_user.is_admin():  # Si ce n'est pas un admin/superadmin
+        clients_query = clients_query.filter_by(commercial_id=current_user.id)
+    
     # Filter by archive status
     if not show_archived:
         clients_query = clients_query.filter_by(archive=False)
@@ -83,7 +87,8 @@ def add():
             email=form.email.data,
             type_client=form.type_client.data,
             tags=form.tags.data,
-            observations=form.observations.data
+            observations=form.observations.data,
+            commercial_id=current_user.id  # Associer le client au commercial actuel
         )
         
         db.session.add(client)

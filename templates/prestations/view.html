@@ -40,7 +40,15 @@
                         </tr>
                         <tr>
                             <th>Type de déménagement</th>
-                            <td>{{ prestation.type_demenagement }}</td>
+                            <td>
+                                {% if prestation.type_demenagement == 'demenagement_particulier' %}
+                                    Déménagement particulier
+                                {% elif prestation.type_demenagement == 'demenagement_professionnel' %}
+                                    Déménagement professionnel
+                                {% else %}
+                                    {{ prestation.type_demenagement }}
+                                {% endif %}
+                            </td>
                         </tr>
                         <tr>
                             <th>Priorité</th>
@@ -55,9 +63,20 @@
                             <td>{{ prestation.date_fin.strftime('%d/%m/%Y') }}</td>
                         </tr>
                         <tr>
-                            <th>Montant</th>
+                            <th>Montant Principal</th>
                             <td>{% if prestation.montant %}{{ prestation.montant }} €{% else %}Non défini{% endif %}</td>
                         </tr>
+                        {% if prestation.mode_groupage %}
+                            {% for client in prestation.clients_supplementaires %}
+                            <tr>
+                                <th>Montant ({{ client.nom }} {{ client.prenom }})</th>
+                                <td>
+                                    {% set montant = prestation_clients[client.id] if client.id in prestation_clients else None %}
+                                    {% if montant %}{{ montant }} €{% else %}Non défini{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
                         <tr>
                             <th>Société</th>
                             <td>{{ prestation.societe or 'Non définie' }}</td>
