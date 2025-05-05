@@ -1,6 +1,4 @@
-/**
- * Script de gestion des clients supplémentaires en mode groupage - Version optimisée
- */
+
 document.addEventListener('DOMContentLoaded', function() {
     const sectionClientsSupplementaires = document.getElementById('section-clients-supplementaires');
     const clientsSupplementairesContainer = document.getElementById('clients-supplementaires');
@@ -13,15 +11,11 @@ document.addEventListener('DOMContentLoaded', function() {
         clientDiv.className = 'client-supplementaire card mb-3 fade-in';
         clientDiv.style.borderLeft = '4px solid #28a745';
 
+        // Get original select options
         const clientSelect = document.getElementById('client_id');
         const options = Array.from(clientSelect.options)
-            .filter((option, index, self) => 
-                index === self.findIndex((o) => o.value === option.value))
-            .sort((a, b) => {
-                const textA = a.text.toLowerCase();
-                const textB = b.text.toLowerCase();
-                return textA.localeCompare(textB);
-            });
+            .filter(option => option.value)
+            .sort((a, b) => a.text.localeCompare(b.text));
 
         clientDiv.innerHTML = `
             <div class="card-body p-3">
@@ -29,25 +23,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h6 class="mb-0">
                         <i class="fas fa-user"></i> Client ${clientNumber}
                     </h6>
-                    <button type="button" class="btn btn-sm btn-outline-danger supprimer-client" title="Supprimer ce client">
+                    <button type="button" class="btn btn-sm btn-outline-danger supprimer-client">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Sélectionner un client</label>
-                    <select class="form-select" name="clients_supplementaires[]" required>
-                        <option value="">Choisir un client...</option>
-                        ${options.map(option => 
-                            `<option value="${option.value}">${option.text}</option>`
-                        ).join('')}
-                    </select>
-                </div>
-                <div class="form-group mt-2">
-                    <label class="form-label">Montant</label>
-                    <div class="input-group">
-                        <input type="number" class="form-control" name="montants_supplementaires[]" 
-                               step="0.01" min="0" placeholder="0.00" required>
-                        <span class="input-group-text">€</span>
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Sélectionner un client</label>
+                        <select class="form-select" name="clients_supplementaires[]" required>
+                            <option value="">Choisir un client...</option>
+                            ${options.map(option => 
+                                `<option value="${option.value}">${option.text}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Montant</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="montants_supplementaires[]" 
+                                   step="0.01" min="0" placeholder="0.00" required>
+                            <span class="input-group-text">€</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -66,6 +62,10 @@ document.addEventListener('DOMContentLoaded', function() {
         modeGroupageSwitch.addEventListener('change', function() {
             if (this.checked) {
                 sectionClientsSupplementaires.classList.remove('d-none');
+                // Clear existing clients when switching to groupage mode
+                if (clientsSupplementairesContainer) {
+                    clientsSupplementairesContainer.innerHTML = '';
+                }
             } else {
                 sectionClientsSupplementaires.classList.add('d-none');
                 if (clientsSupplementairesContainer) {
