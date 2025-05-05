@@ -1,39 +1,46 @@
 
 document.addEventListener('DOMContentLoaded', function() {
+    const modeGroupageSwitch = document.getElementById('mode_groupage');
     const sectionClientsSupplementaires = document.getElementById('section-clients-supplementaires');
     const clientsSupplementairesContainer = document.getElementById('clients-supplementaires');
     const ajouterClientBtn = document.getElementById('ajouter-client');
-    const modeGroupageSwitch = document.getElementById('mode_groupage');
 
     function createClientField() {
         const clientNumber = document.querySelectorAll('.client-supplementaire').length + 2;
         const clientDiv = document.createElement('div');
-        clientDiv.className = 'client-supplementaire card mb-3 fade-in';
+        clientDiv.className = 'client-supplementaire card mb-3';
         clientDiv.style.borderLeft = '4px solid #28a745';
 
-        // Get original select options
-        const clientSelect = document.getElementById('client_id');
-        const options = Array.from(clientSelect.options)
+        // Récupérer les options du select original
+        const originalSelect = document.getElementById('client_id');
+        const options = Array.from(originalSelect.options)
             .filter(option => option.value)
-            .sort((a, b) => a.text.localeCompare(b.text));
+            .map(option => ({
+                value: option.value,
+                text: option.text,
+                commercialId: option.getAttribute('data-commercial-id')
+            }))
+            .filter(option => {
+                const isAdmin = {{ 'true' if current_user.is_admin() else 'false' }};
+                const currentUserId = {{ current_user.id }};
+                return isAdmin || option.commercialId === currentUserId.toString();
+            });
 
         clientDiv.innerHTML = `
             <div class="card-body p-3">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="mb-0">
-                        <i class="fas fa-user"></i> Client ${clientNumber}
-                    </h6>
+                    <h6 class="mb-0">Client ${clientNumber}</h6>
                     <button type="button" class="btn btn-sm btn-outline-danger supprimer-client">
                         <i class="fas fa-trash-alt"></i>
                     </button>
                 </div>
                 <div class="row g-3">
                     <div class="col-md-8">
-                        <label class="form-label">Sélectionner un client</label>
+                        <label class="form-label">Client</label>
                         <select class="form-select" name="clients_supplementaires[]" required>
                             <option value="">Choisir un client...</option>
-                            ${options.map(option => 
-                                `<option value="${option.value}">${option.text}</option>`
+                            ${options.map(opt => 
+                                `<option value="${opt.value}" data-commercial-id="${opt.commercialId}">${opt.text}</option>`
                             ).join('')}
                         </select>
                     </div>
@@ -46,31 +53,37 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
+            </div>`;
 
         const deleteBtn = clientDiv.querySelector('.supprimer-client');
         deleteBtn.addEventListener('click', () => {
             clientDiv.classList.add('fade-out');
-            setTimeout(() => clientDiv.remove(), 300);
+            setTimeout(() => {
+                clientDiv.remove();
+                updateClientNumbers();
+            }, 300);
         });
 
         return clientDiv;
+    }
+
+    function updateClientNumbers() {
+        document.querySelectorAll('.client-supplementaire').forEach((div, index) => {
+            const title = div.querySelector('h6');
+            if (title) {
+                title.textContent = `Client ${index + 2}`;
+            }
+        });
     }
 
     if (modeGroupageSwitch) {
         modeGroupageSwitch.addEventListener('change', function() {
             if (this.checked) {
                 sectionClientsSupplementaires.classList.remove('d-none');
-                // Clear existing clients when switching to groupage mode
-                if (clientsSupplementairesContainer) {
-                    clientsSupplementairesContainer.innerHTML = '';
-                }
+                clientsSupplementairesContainer.innerHTML = '';
             } else {
                 sectionClientsSupplementaires.classList.add('d-none');
-                if (clientsSupplementairesContainer) {
-                    clientsSupplementairesContainer.innerHTML = '';
-                }
+                clientsSupplementairesContainer.innerHTML = '';
             }
         });
     }
