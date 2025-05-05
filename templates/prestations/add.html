@@ -361,9 +361,15 @@
                 defaultOption.textContent = 'Sélectionnez un client';
                 selectClient.appendChild(defaultOption);
 
+                const isAdmin = {{ 'true' if current_user.is_admin() else 'false' }};
+                const currentUserId = {{ current_user.id }};
                 originalSelect.querySelectorAll('option:not(:first-child)').forEach(option => {
-                    const newOption = option.cloneNode(true);
-                    selectClient.appendChild(newOption);
+                    const clientOption = option.closest('option[data-commercial-id]');
+                    const commercialId = clientOption ? parseInt(clientOption.dataset.commercialId) : null;
+                    if (isAdmin || commercialId === currentUserId) {
+                        const newOption = option.cloneNode(true);
+                        selectClient.appendChild(newOption);
+                    }
                 });
             }
 
