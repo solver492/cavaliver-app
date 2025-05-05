@@ -361,11 +361,13 @@
                 defaultOption.textContent = 'Sélectionnez un client';
                 selectClient.appendChild(defaultOption);
 
+                // Récupérer l'ID du commercial actuel
                 const isAdmin = {{ 'true' if current_user.is_admin() else 'false' }};
                 const currentUserId = {{ current_user.id }};
+
+                // Copier uniquement les clients du commercial ou tous pour l'admin
                 originalSelect.querySelectorAll('option:not(:first-child)').forEach(option => {
-                    const client = originalSelect.querySelector(`option[value="${option.value}"]`);
-                    const commercialId = client ? client.getAttribute('data-commercial-id') : null;
+                    const commercialId = option.getAttribute('data-commercial-id');
                     if (isAdmin || (commercialId && parseInt(commercialId) === currentUserId)) {
                         const newOption = option.cloneNode(true);
                         selectClient.appendChild(newOption);
