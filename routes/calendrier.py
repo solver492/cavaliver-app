@@ -389,7 +389,7 @@ def creer_evenement(agenda_id):
         observations = [obs for obs in observations if obs and obs.strip()]
         
         # Joindre les observations avec le séparateur spécial
-        observations_text = '|||'.join(observations)
+        observations_text = '-*_ _*-'.join(observations)
 
         evenement = Evenement(
             agenda_id=agenda_id,
@@ -437,7 +437,7 @@ def supprimer_document(doc_id):
 def voir_details_evenement(event_id):
     evt = Evenement.query.get_or_404(event_id)
     # Convertir les observations en liste
-    observations = evt.observations.split('|||') if evt.observations else []
+    observations = evt.observations.split('-*_ _*-') if evt.observations else []
     return jsonify({
         'id': evt.id,
         'titre': evt.titre,
@@ -606,7 +606,7 @@ def modifier_evenement(evenement_id):
         observations = [obs for obs in observations if obs and obs.strip()]
         
         # Joindre les observations avec le séparateur spécial
-        evenement.observations = " ||| ".join(observations) if observations else None
+        evenement.observations = " -*_ _*- ".join(observations) if observations else None
         
         db.session.commit()
 
@@ -919,7 +919,7 @@ def api_modifier_evenement(evenement_id):
             observations_list = [obs for obs in observations_list if obs and obs.strip()]
             
             # Joindre les observations avec le séparateur spécial
-            observations_text = '|||'.join(observations_list)
+            observations_text = '-*_ _*-'.join(observations_list)
             evenement.observations = observations_text
             
         # Incrémenter la version
@@ -952,7 +952,7 @@ def api_modifier_observations(evenement_id):
             observations_list = [obs for obs in observations_list if obs and obs.strip()]
             
             # Joindre les observations avec le séparateur spécial ou mettre à None si pas d'observations
-            evenement.observations = " ||| ".join(observations_list) if observations_list else None
+            evenement.observations = " -*_ _*- ".join(observations_list) if observations_list else None
             
         # Incrémenter la version
         evenement.version = (evenement.version or 1) + 1
@@ -1185,7 +1185,7 @@ def traiter_modification_evenement(evenement_id):
         type_evenement = request.form.get('type_evenement')
         observations = request.form.getlist('observations[]')
         observations = [obs for obs in observations if obs and obs.strip()]
-        observations_text = '|||'.join(observations) if observations else None
+        observations_text = '-*_ _*-'.join(observations) if observations else None
         
         # Mettre à jour l'événement
         evenement.titre = titre
@@ -1230,7 +1230,7 @@ def traiter_modification_evenement(evenement_id):
         observations = [obs for obs in observations if obs and obs.strip()]
         
         # Joindre les observations avec le séparateur spécial
-        observations_text = '|||'.join(observations) if observations else None
+        observations_text = '-*_ _*-'.join(observations) if observations else None
         
         # Créer une version de l'événement avant modification
         version = EvenementVersion(
