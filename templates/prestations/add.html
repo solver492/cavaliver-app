@@ -30,12 +30,6 @@
             to { opacity: 0; transform: translateY(-10px); }
         }
 
-        /* Style pour le sélecteur de type de prestation */
-        .prestation-type-selector {
-            position: relative;
-            z-index: 10;
-        }
-
         .form-switch-lg {
             min-height: 2.5rem;
             padding-left: 4.5em;
@@ -168,7 +162,7 @@
                         </div>
                         <div class="card-body">
                             <div id="clients-supplementaires">
-                                <!-- Les clients et leurs montants seront ajoutés ici -->
+                                <!-- Les clients seront ajoutés ici dynamiquement -->
                             </div>
                         </div>
                     </div>
@@ -344,33 +338,29 @@
             const clientCol = document.createElement('div');
             clientCol.className = 'col-md-6';
 
-            const clientLabel = document.createElement('label');
-            clientLabel.className = 'form-label';
-            clientLabel.textContent = 'Client Supplémentaire';
+            const clientSelect = document.createElement('select');
+            clientSelect.className = 'form-select';
+            clientSelect.name = 'clients_supplementaires[]';
+            clientSelect.required = true;
 
-            const selectClient = document.createElement('select');
-            selectClient.className = 'form-select';
-            selectClient.name = 'clients_supplementaires[]';
-            selectClient.required = true;
-
-            // Copier les options du select client principal
+            // Copier uniquement les options du client principal
             const originalSelect = document.querySelector('select[name="client_id"]');
             if (originalSelect) {
                 const defaultOption = document.createElement('option');
                 defaultOption.value = '';
                 defaultOption.textContent = 'Sélectionnez un client';
-                selectClient.appendChild(defaultOption);
+                clientSelect.appendChild(defaultOption);
 
-                // Récupérer l'ID du commercial actuel
                 const isAdmin = {{ 'true' if current_user.is_admin() else 'false' }};
                 const currentUserId = {{ current_user.id }};
 
-                // Copier uniquement les clients du commercial ou tous pour l'admin
-                originalSelect.querySelectorAll('option:not(:first-child)').forEach(option => {
-                    const commercialId = option.getAttribute('data-commercial-id');
-                    if (isAdmin || (commercialId && parseInt(commercialId) === currentUserId)) {
-                        const newOption = option.cloneNode(true);
-                        selectClient.appendChild(newOption);
+                originalSelect.querySelectorAll('option').forEach(option => {
+                    if (option.value) {
+                        const commercialId = option.getAttribute('data-commercial-id');
+                        if (isAdmin || (commercialId && parseInt(commercialId) === currentUserId)) {
+                            const newOption = option.cloneNode(true);
+                            clientSelect.appendChild(newOption);
+                        }
                     }
                 });
             }
@@ -378,10 +368,6 @@
             // Colonne pour le montant
             const montantCol = document.createElement('div');
             montantCol.className = 'col-md-5';
-
-            const montantLabel = document.createElement('label');
-            montantLabel.className = 'form-label';
-            montantLabel.textContent = 'Montant';
 
             const montantInput = document.createElement('input');
             montantInput.type = 'number';
@@ -408,12 +394,8 @@
             };
 
             // Assembler les éléments
-            clientCol.appendChild(clientLabel);
-            clientCol.appendChild(selectClient);
-
-            montantCol.appendChild(montantLabel);
+            clientCol.appendChild(clientSelect);
             montantCol.appendChild(montantInput);
-
             btnCol.appendChild(deleteBtn);
 
             row.appendChild(clientCol);
@@ -427,23 +409,18 @@
         if (modeGroupageSwitch) {
             modeGroupageSwitch.addEventListener('change', function() {
                 const isGroupage = this.checked;
-
-                // Mettre à jour la description du mode
                 modeDescription.textContent = isGroupage 
                     ? 'Mode groupage: plusieurs clients, plusieurs points de départ et d\'arrivée'
                     : 'Mode standard: un seul client, un point de départ et un point d\'arrivée';
 
-                // Afficher/masquer la section des clients supplémentaires
                 if (sectionClientsSupplementaires) {
                     if (isGroupage) {
                         sectionClientsSupplementaires.classList.remove('d-none');
-                        // Ajouter un client supplémentaire par défaut si aucun n'existe
                         if (clientsList && clientsList.children.length === 0) {
                             clientsList.appendChild(createClientField());
                         }
                     } else {
                         sectionClientsSupplementaires.classList.add('d-none');
-                        // Vider les clients supplémentaires
                         if (clientsList) {
                             clientsList.innerHTML = '';
                         }
@@ -451,11 +428,9 @@
                 }
             });
 
-            // Déclencher l'événement au chargement pour initialiser l'état
             modeGroupageSwitch.dispatchEvent(new Event('change'));
         }
 
-        // Gestion du bouton d'ajout de client
         if (ajouterClientBtn && clientsList) {
             ajouterClientBtn.addEventListener('click', function() {
                 clientsList.appendChild(createClientField());
