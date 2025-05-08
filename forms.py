@@ -1,4 +1,6 @@
 
+from flask_wtf import FlaskForm
+
 class FactureSearchForm(FlaskForm):
     client_id = SelectField('Client', coerce=int, choices=[])
     statut = SelectField('Statut', choices=[
