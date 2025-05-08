@@ -46,7 +46,6 @@ class User(UserMixin, db.Model):
     notes = db.Column(db.Text, nullable=True)
     derniere_connexion = db.Column(db.DateTime, nullable=True)
     date_creation = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    session_expiry = db.Column(db.DateTime, nullable=True)
 
     prestations = db.relationship('Prestation', secondary=prestation_transporteurs, back_populates='transporteurs')
     type_vehicule = db.relationship('TypeVehicule', backref='transporteurs')

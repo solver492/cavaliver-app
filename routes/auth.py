@@ -27,15 +27,6 @@ def login():
         if user.statut != 'actif':
             flash('Votre compte est désactivé. Veuillez contacter un administrateur.', 'warning')
             return redirect(url_for('auth.login'))
-
-        # Check session expiry for non-superadmin users
-        if user.role != 'superadmin':
-            if user.session_expiry and user.session_expiry < datetime.utcnow():
-                flash('Votre compte a expiré. Veuillez contacter un super administrateur.', 'danger')
-                return redirect(url_for('auth.login'))
-            # Set session expiry to 3 hours from now
-            user.session_expiry = datetime.utcnow() + timedelta(hours=3)
-            db.session.commit()
         
         # Update last login time
         user.last_login = datetime.utcnow()
