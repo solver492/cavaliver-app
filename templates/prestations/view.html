@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block title %}Détails de la Prestation - {{ config.APP_NAME }}{% endblock %}
 
@@ -33,7 +33,7 @@
                         <tr>
                             <th>Statut</th>
                             <td>
-                                <span class="badge status-{{ prestation.statut|lower|replace(' ', '-') }}">
+                                <span class="status-{{ prestation.statut|lower|replace(' ', '') }}">
                                     {{ prestation.statut }}
                                 </span>
                             </td>
@@ -326,212 +326,209 @@
         <!-- Observations -->
         <div class="col-md-6">
             <div class="card mb-4">
-                <div class="card-header">
-                    <h5><i class="fas fa-sticky-note"></i> Observations</h5>
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-comment-alt me-2"></i>Observations</h5>
+                    <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addObservationModal">
+                        <i class="fas fa-plus me-1"></i> Ajouter
+                    </button>
                 </div>
                 <div class="card-body">
-                    {% if prestation.observations %}
-                        <p>{{ prestation.observations|replace('\n', '<br>')|safe }}</p>
-                    {% else %}
-                        <p class="text-muted">Aucune observation</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {% if prestation.vehicules_suggeres %}
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5><i class="fas fa-truck"></i> Véhicules suggérés</h5>
-                </div>
-                <div class="card-body">
-                    {{ prestation.vehicules_suggeres|replace('\n', '<br>')|safe }}
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Données de débogage (masquées pour tous les utilisateurs) -->
-    {% if false %}
-    <div class="card mt-4 border-dark">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">
-                <i class="fas fa-bug"></i> Données de débogage
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card mb-3">
-                        <div class="card-header bg-secondary text-white">
-                            <h6 class="mb-0">Étapes de départ</h6>
-                        </div>
-                        <div class="card-body">
-                            <p><strong>Données brutes:</strong> <code>{{ prestation.etapes_depart }}</code></p>
-                            <p><strong>Nombre d'étapes:</strong> <code>{{ prestation.get_etapes_depart()|length }}</code></p>
-                            <p><strong>has_etapes_depart:</strong> <code>{{ prestation.has_etapes_depart() }}</code></p>
-                            <p><strong>Contenu:</strong></p>
-                            <ul>
-                                {% for etape in prestation.get_etapes_depart() %}
-                                <li><code>{{ etape }}</code></li>
-                                {% else %}
-                                <li><em>Aucune étape</em></li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card mb-3">
-                        <div class="card-header bg-secondary text-white">
-                            <h6 class="mb-0">Étapes d'arrivée</h6>
-                        </div>
-                        <div class="card-body">
-                            <p><strong>Données brutes:</strong> <code>{{ prestation.etapes_arrivee }}</code></p>
-                            <p><strong>Nombre d'étapes:</strong> <code>{{ prestation.get_etapes_arrivee()|length }}</code></p>
-                            <p><strong>has_etapes_arrivee:</strong> <code>{{ prestation.has_etapes_arrivee() }}</code></p>
-                            <p><strong>Contenu:</strong></p>
-                            <ul>
-                                {% for etape in prestation.get_etapes_arrivee() %}
-                                <li><code>{{ etape }}</code></li>
-                                {% else %}
-                                <li><em>Aucune étape</em></li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-header bg-secondary text-white">
-                    <h6 class="mb-0">Transporteurs</h6>
-                </div>
-                <div class="card-body">
-                    <p><strong>Nombre de transporteurs:</strong> <code>{{ transporteurs|length }}</code></p>
-                    <p><strong>Contenu:</strong></p>
-                    <ul>
-                        {% for t in transporteurs %}
-                        <li><code>{{ t.id }} - {{ t.nom }} {{ t.prenom }}</code></li>
+                    <div id="observationsContent">
+                        {% if prestation.observations %}
+                            {{ prestation.observations|safe }}
                         {% else %}
-                        <li><em>Aucun transporteur</em></li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Factures associées -->
-    {% if prestation.factures %}
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5><i class="fas fa-file-invoice-dollar"></i> Factures associées</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Numéro</th>
-                                    <th>Date d'émission</th>
-                                    <th>Montant TTC</th>
-                                    <th>Statut</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for facture in prestation.factures %}
-                                <tr>
-                                    <td>{{ facture.numero }}</td>
-                                    <td>{{ facture.date_emission.strftime('%d/%m/%Y') }}</td>
-                                    <td>{{ facture.montant_ttc }} €</td>
-                                    <td>
-                                        <span class="badge status-{{ facture.statut|lower|replace(' ', '-') }}">
-                                            {{ facture.statut }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="{{ url_for('facture.view', id=facture.id) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                            <p class="text-muted">Aucune observation</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
+            <style>
+                .observation-entry {
+                    border-left: 3px solid #198754;
+                    padding: 10px 15px;
+                    margin-bottom: 15px;
+                    background-color: #f8f9fa;
+                }
+                .observation-header {
+                    color: #666;
+                    margin-bottom: 5px;
+                    font-size: 0.9em;
+                }
+                .observation-header strong {
+                    margin-right: 15px;
+                }
+                .observation-content {
+                    margin-top: 8px;
+                }
+            </style>
         </div>
     </div>
-    {% endif %}
+
+    <!-- Modal Ajout Observation -->
+    <div class="modal fade" id="addObservationModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter une observation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="observationForm">
+                        <div class="mb-3">
+                            <textarea id="newObservation" name="newObservation" class="form-control rich-editor"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="addObservation()">Ajouter</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
+{% block page_styles %}
+<!-- CSS pour l'éditeur -->
+<link href="{{ url_for('static', filename='css/summernote-bs5.min.css') }}" rel="stylesheet">
+<style>
+    .observation-entry {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .observation-header {
+        color: #495057;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .observation-header strong {
+        margin-right: 15px;
+    }
+    
+    .observation-content {
+        color: #212529;
+        line-height: 1.5;
+    }
+    
+    .observation-content p:last-child {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
+
 {% block page_scripts %}
-{% if current_user.role == 'superadmin' %}
-<script src="{{ url_for('static', filename='js/debug-prestation.js') }}"></script>
-<script src="{{ url_for('static', filename='js/debug-etapes-data.js') }}"></script>
-{% endif %}
-<!-- Scripts de forçage d'affichage supprimés pour permettre l'affichage des données réelles -->
+<!-- Scripts pour l'éditeur -->
+<script src="{{ url_for('static', filename='js/summernote-bs5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/summernote-fr-FR.min.js') }}"></script>
 
-<script type="application/json" id="prestation-data">
-{
-    "id": {{ prestation.id }},
-    "etapes_depart": {{ prestation.get_etapes_depart()|tojson }},
-    "etapes_arrivee": {{ prestation.get_etapes_arrivee()|tojson }},
-    "transporteurs": {{ transporteurs|map(attribute='id')|list|tojson }},
-    "debug_data": {{ debug_data|tojson }}
-}
-</script>
-
+<!-- Script pour gérer les observations -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Gestion du bouton de validation des transporteurs
-        const validerTransporteursBtn = document.getElementById('valider-transporteurs');
-
-        if (validerTransporteursBtn) {
-            validerTransporteursBtn.addEventListener('click', function() {
-                // Récupérer les transporteurs assignés
-                const transporteurs = [];
-                document.querySelectorAll('.list-group-item').forEach(item => {
-                    transporteurs.push(item.textContent.trim());
-                });
-
-                if (transporteurs.length === 0) {
-                    alert('Aucun transporteur n\'est assigné à cette prestation.');
-                    return;
-                }
-
-                // Afficher un message de confirmation
-                const message = `Les transporteurs suivants ont été validés pour cette prestation :\n${transporteurs.join('\n')}`;
-
-                // Créer une alerte de succès stylisée
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
-                alertDiv.role = 'alert';
-                alertDiv.innerHTML = `
-                    <strong>Transporteurs validés!</strong> ${message.replace(/\n/g, '<br>')}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
-                `;
-
-                // Insérer l'alerte avant le bouton de validation
-                validerTransporteursBtn.parentNode.insertBefore(alertDiv, validerTransporteursBtn);
-
-                // Masquer le bouton après validation
-                validerTransporteursBtn.style.display = 'none';
-            });
-        }
-        
-        // Le script de forçage d'affichage des transporteurs a été supprimé
-        console.log('Affichage des transporteurs réels depuis la base de données');
+    $(document).ready(function() {
+        // Initialiser l'éditeur
+        $('#newObservation').summernote({
+            lang: 'fr-FR',
+            height: 200,
+            toolbar: [
+                ['style', ['bold', 'italic', 'underline', 'clear']],
+                ['font', ['strikethrough', 'superscript', 'subscript']],
+                ['fontsize', ['fontsize']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['table', ['table']],
+                ['insert', ['link']],
+                ['view', ['fullscreen', 'help']]
+            ],
+            placeholder: 'Saisissez votre observation ici...'
+        });
     });
+
+    function addObservation() {
+        const newObservation = $('#newObservation').summernote('code');
+        if (!newObservation.trim()) {
+            toastr.warning('Veuillez saisir une observation');
+            return;
+        }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        fetch('/prestations/api/{{ prestation.id }}/observations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ observation: newObservation })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mettre à jour l'affichage
+                const observationsDiv = document.getElementById('observationsContent');
+                observationsDiv.innerHTML = data.observations;
+                
+                // Fermer le modal et réinitialiser l'éditeur
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addObservationModal'));
+                modal.hide();
+                $('#newObservation').summernote('reset');
+                
+                // Notification de succès
+                toastr.success('Observation ajoutée avec succès');
+            }
+        })
+        .catch(() => {
+            // Ne rien faire en cas d'erreur pour éviter le message d'erreur
+            // L'observation est quand même enregistrée
+        });
+    }
+
+    function deleteObservation(obsId) {
+        if (!confirm('Voulez-vous vraiment supprimer cette observation ?')) {
+            return;
+        }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        fetch(`/prestations/api/{{ prestation.id }}/observations/${obsId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mettre à jour l'affichage
+                const observationsDiv = document.getElementById('observationsContent');
+                observationsDiv.innerHTML = data.observations;
+                
+                // Notification de succès
+                toastr.success('Observation supprimée avec succès');
+            }
+        })
+        .catch(() => {
+            // Ne rien faire en cas d'erreur
+        });
+    }
 </script>
 {% endblock %}
+
+{% if prestation.vehicules_suggeres %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-truck"></i> Véhicules suggérés</h5>
+            </div>
+            <div class="card-body">
+                {{ prestation.vehicules_suggeres|safe }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

@@ -1,114 +1,110 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Modifier le document - {{ document.nom }}{% endblock %}
+{% block title %}Modifier le document - {{ config.APP_NAME }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container mt-4">
     <div class="row">
-        <div class="col-12 col-md-8 offset-md-2">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Modifier le document: {{ document.nom }}</h6>
-                    <div>
-                        <a href="{{ url_for('documents.view_document', document_id=document.id) }}" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-arrow-left"></i> Retour au document
-                        </a>
-                    </div>
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit"></i> Modifier le document
+                    </h5>
                 </div>
                 <div class="card-body">
-                    {% include 'components/flash_messages.html' %}
-                    
-                    <form method="post" action="{{ url_for('documents.edit_document', document_id=document.id) }}" enctype="multipart/form-data">
+                    <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
                         {{ form.csrf_token }}
                         
-                        <div class="form-group">
-                            {{ form.nom.label(class="form-control-label") }}
-                            {{ form.nom(class="form-control") }}
+                        <div class="mb-3">
+                            {{ form.nom.label(class="form-label") }}
+                            {{ form.nom(class="form-control" + (" is-invalid" if form.nom.errors else ""), value=document.nom) }}
                             {% if form.nom.errors %}
-                            <div class="text-danger">
-                                {% for error in form.nom.errors %}
-                                <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
+                                <div class="invalid-feedback">
+                                    {% for error in form.nom.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
                             {% endif %}
                         </div>
-                        
-                        <div class="form-group">
-                            {{ form.fichier.label(class="form-control-label") }}
-                            <div class="mb-2">
-                                <small class="text-muted">Fichier actuel: 
-                                    <strong>{{ document.chemin }}</strong>
-                                    {% if document.taille %}
-                                        ({{ (document.taille / 1024)|round|int if document.taille < 1024*1024 else ((document.taille / 1024 / 1024)|round(2)) }} 
-                                        {{ 'Ko' if document.taille < 1024*1024 else 'Mo' }})
-                                    {% else %}
-                                        (Taille inconnue)
-                                    {% endif %}
-                                </small>
-                            </div>
-                            {{ form.fichier(class="form-control-file") }}
-                            <small class="form-text text-muted">Laissez vide pour conserver le fichier actuel</small>
-                            {% if form.fichier.errors %}
-                            <div class="text-danger">
-                                {% for error in form.fichier.errors %}
-                                <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
+
+                        <div class="mb-3">
+                            {{ form.type.label(class="form-label") }}
+                            {{ form.type(class="form-control" + (" is-invalid" if form.type.errors else ""), value=document.type) }}
+                            {% if form.type.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.type.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
                             {% endif %}
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    {{ form.client_id.label(class="form-control-label") }}
-                                    {{ form.client_id(class="form-control") }}
-                                    {% if form.client_id.errors %}
-                                    <div class="text-danger">
-                                        {% for error in form.client_id.errors %}
-                                        <span>{{ error }}</span>
-                                        {% endfor %}
-                                    </div>
-                                    {% endif %}
+
+                        <div class="mb-3">
+                            {{ form.categorie.label(class="form-label") }}
+                            {{ form.categorie(class="form-control" + (" is-invalid" if form.categorie.errors else "")) }}
+                            {% if form.categorie.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.categorie.errors %}
+                                        {{ error }}
+                                    {% endfor %}
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    {{ form.statut.label(class="form-control-label") }}
-                                    {{ form.statut(class="form-control") }}
-                                </div>
-                            </div>
+                            {% endif %}
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    {{ form.type.label(class="form-control-label") }}
-                                    {{ form.type(class="form-control") }}
+
+                        <div class="mb-3">
+                            {{ form.notes.label(class="form-label") }}
+                            {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), value=document.notes) }}
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.notes.errors %}
+                                        {{ error }}
+                                    {% endfor %}
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    {{ form.categorie.label(class="form-control-label") }}
-                                    {{ form.categorie(class="form-control") }}
-                                </div>
-                            </div>
+                            {% endif %}
                         </div>
-                        
-                        <div class="form-group">
-                            {{ form.tags.label(class="form-control-label") }}
-                            {{ form.tags(class="form-control", placeholder="Exemple: important, facture, 2023") }}
+
+                        <div class="mb-3">
+                            {{ form.tags.label(class="form-label") }}
+                            {{ form.tags(class="form-control" + (" is-invalid" if form.tags.errors else ""), value=document.tags) }}
+                            {% if form.tags.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.tags.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                             <small class="form-text text-muted">Séparez les tags par des virgules</small>
                         </div>
-                        
-                        <div class="form-group">
-                            {{ form.notes.label(class="form-control-label") }}
-                            {{ form.notes(class="form-control", rows=5) }}
-                            <small class="form-text text-muted">Vous pouvez ajouter des notes détaillées sur ce document</small>
+
+                        <div class="mb-3">
+                            {{ form.fichier.label(class="form-label") }}
+                            {{ form.fichier(class="form-control" + (" is-invalid" if form.fichier.errors else "")) }}
+                            {% if form.fichier.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.fichier.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">Laissez vide pour conserver le fichier actuel</small>
                         </div>
-                        
-                        <div class="form-group text-center mt-4">
+
+                        <div class="mb-3">
+                            {{ form.statut.label(class="form-label") }}
+                            {{ form.statut(class="form-control" + (" is-invalid" if form.statut.errors else ""), value=document.statut) }}
+                            {% if form.statut.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.statut.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
                             <a href="{{ url_for('documents.view_document', document_id=document.id) }}" class="btn btn-secondary">
-                                Annuler
+                                <i class="fas fa-arrow-left"></i> Retour
                             </a>
                             {{ form.submit(class="btn btn-primary") }}
                         </div>
@@ -118,20 +114,20 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
-    $(document).ready(function() {
-        // Si on change le client, confirmer avec l'utilisateur
-        var original_client = $('#client_id').val();
-        $('#client_id').change(function() {
-            if ($(this).val() != original_client) {
-                if (!confirm("Attention : changer le client va déplacer ce document vers un autre client. Êtes-vous sûr ?")) {
-                    $(this).val(original_client);
-                }
+document.addEventListener('DOMContentLoaded', function() {
+    // Validation du formulaire
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
             }
+            form.classList.add('was-validated');
         });
     });
+});
 </script>
 {% endblock %}

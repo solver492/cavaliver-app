@@ -21,12 +21,12 @@ class Config:
     ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'xls', 'xlsx', 'txt'}
     
     # Application settings
-    APP_NAME = "Cavalier Déménagement"
-    COMPANY_FULL_NAME = "Cavalier Déménagement"
+    APP_NAME = "DSL Déménagement"
+    COMPANY_FULL_NAME = "DSL Déménagement"
     COMPANY_ADDRESS = "123 Rue du Transport, 75000 Paris"
-    COMPANY_PHONE = "+33 1 23 45 67 89"
-    COMPANY_EMAIL = "contact@cavalier-demenagement.fr"
-    COMPANY_WEBSITE = "www.cavalier-demenagement.fr"
+    COMPANY_PHONE = "+33 77 31 63 772"
+    COMPANY_EMAIL = "contact@dsl-demenagement.fr"
+    COMPANY_WEBSITE = "www.dsl-demenagement.fr"
     COMPANY_SIRET = "123 456 789 00012"
     
     # Invoice settings

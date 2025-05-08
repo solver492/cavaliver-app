@@ -814,15 +814,24 @@ def notify_transporteur():
         }), 500
 
 @api_bp.route('/clients', methods=['GET'])
+@login_required
 def get_clients():
     """
-    Récupère la liste des clients pour le dropdown de sélection
+    Récupère la liste des clients pour le dropdown de sélection,
+    filtrée selon le commercial connecté
     """
     try:
-        # Récupérer tous les clients
-        clients = Client.query.order_by(Client.nom, Client.prenom).all()
+        if current_user.role in ['admin', 'superadmin']:
+            # Admin et superadmin voient tous les clients non archivés
+            clients = Client.query.filter_by(archive=False).all()
+        elif current_user.role == 'commercial':
+            # Commercial ne voit que ses clients non archivés
+            clients = Client.query.filter_by(commercial_id=current_user.id, archive=False).all()
+        else:
+            # Autres rôles n'ont accès à aucun client
+            clients = []
         
-        # Formater les données des clients
+        # Préparer les données pour la réponse JSON
         clients_data = []
         for client in clients:
             clients_data.append({
@@ -843,6 +852,13 @@ def get_clients():
             'success': False,
             'message': f"Erreur lors de la récupération des clients: {str(e)}"
         }), 500
+
+# Route duplicata pour assurer la compatibilité avec le nouveau chemin d'API
+@api_bp.route('/api/clients', methods=['GET'])
+@login_required
+def get_clients_api_path():
+    """Route duplicata pour /api/clients, redirige vers la fonction get_clients()"""
+    return get_clients()
 
 @api_bp.route('/session-data', methods=['GET'])
 @login_required

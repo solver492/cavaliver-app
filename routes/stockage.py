@@ -402,3 +402,31 @@ def remove_article():
     
     flash('Article retiré du stockage avec succès.', 'success')
     return redirect(url_for('stockage.edit', id=stockage_id))
+
+@stockage_bp.route('/delete/<int:id>')
+@login_required
+@role_required('commercial', 'admin', 'superadmin')
+def delete(id):
+    stockage = Stockage.query.get_or_404(id)
+    
+    try:
+        db.session.delete(stockage)
+        db.session.commit()
+        flash('Le stockage a été supprimé avec succès.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Une erreur est survenue lors de la suppression du stockage.', 'danger')
+    
+    return redirect(url_for('stockage.index'))
+
+@stockage_bp.route('/change_status/<int:id>')
+@login_required
+def change_status(id):
+    stockage = Stockage.query.get_or_404(id)
+    
+    if stockage.statut == 'Actif':
+        stockage.statut = 'Terminé'
+        db.session.commit()
+        flash('Le stockage a été marqué comme terminé.', 'success')
+    
+    return redirect(url_for('stockage.index'))

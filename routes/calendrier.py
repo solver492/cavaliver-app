@@ -1,15 +1,12 @@
+from datetime import datetime
 import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, abort, send_file
 from werkzeug.utils import secure_filename
 from flask_login import login_required, current_user
-from sqlalchemy import and_
-from datetime import datetime, timedelta
-from forms import AgendaForm
-from sqlalchemy import and_
-import logging
-
+from sqlalchemy import and_, or_
 from extensions import db
-from models import Prestation, Stockage, Agenda, Document, Evenement, User, TypeVehicule, EvenementVersion
+from models import *
+from forms import AgendaForm
 
 calendrier_bp = Blueprint('calendrier', __name__, url_prefix='/calendrier')
 
@@ -19,11 +16,11 @@ def format_date(date):
         return date.strftime('%d/%m/%Y')
     return ''
 
-
 @calendrier_bp.route('/agendas')
 @login_required
 def liste_agendas():
     try:
+        # Créer une nouvelle instance du formulaire
         form = AgendaForm()
         form.user_id.data = current_user.id
 
@@ -51,7 +48,6 @@ def liste_agendas():
         current_app.logger.error(f'Erreur lors de l\'affichage des agendas: {str(e)}')
         flash('Une erreur est survenue lors du chargement des agendas.', 'danger')
         return redirect(url_for('dashboard.index'))
-
 
 @calendrier_bp.route('/api/agendas/<int:agenda_id>', methods=['GET'])
 @login_required
@@ -223,7 +219,6 @@ def nouveau_agenda():
 
     return redirect(url_for('calendrier.liste_agendas'))
 
-
 @calendrier_bp.route('/agendas/<int:agenda_id>')
 @login_required
 def voir_agenda(agenda_id):
@@ -272,7 +267,10 @@ def voir_agenda(agenda_id):
                         'type_demenagement': prestation.type_demenagement,
                         'client_nom': prestation.client.nom if prestation.client else 'Non spécifié',
                         'client_prenom': prestation.client.prenom if prestation.client else '',
-                        'date_debut': prestation.date_debut.isoformat() if prestation.date_debut else None
+                        'date_debut': prestation.date_debut.isoformat() if prestation.date_debut else None,
+                        'adresse_depart': prestation.adresse_depart if hasattr(prestation, 'adresse_depart') else None,
+                        'adresse_arrivee': prestation.adresse_arrivee if hasattr(prestation, 'adresse_arrivee') else None,
+                        'type_demenagement': prestation.type_demenagement if hasattr(prestation, 'type_demenagement') else None,
                     }
             
             events_data.append(event)
@@ -298,7 +296,6 @@ def voir_agenda(agenda_id):
     except Exception as e:
         flash(f"Erreur lors du chargement de l'agenda: {str(e)}", 'danger')
         return redirect(url_for('calendrier.liste_agendas'))
-
 
 @calendrier_bp.route('/agendas/<int:agenda_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -327,10 +324,6 @@ def edit_agenda(agenda_id):
         'description': agenda.description
     })
 
-
-
-
-
 @calendrier_bp.route('/agendas/<int:agenda_id>/archive', methods=['POST'])
 @login_required
 def archive_agenda(agenda_id):
@@ -340,7 +333,6 @@ def archive_agenda(agenda_id):
     agenda.archive = True
     db.session.commit()
     return jsonify({'success': True})
-
 
 @calendrier_bp.route('/agendas/<int:agenda_id>/delete', methods=['POST'])
 @login_required
@@ -364,7 +356,6 @@ def supprimer_agenda(agenda_id):
         flash(f'Une erreur est survenue lors de la suppression : {str(e)}', 'danger')
         
     return redirect(url_for('calendrier.liste_agendas'))
-
 
 @calendrier_bp.route('/agendas/<int:agenda_id>/evenements/creer', methods=['POST'])
 @login_required
@@ -468,7 +459,7 @@ def upload_document():
     
     file = request.files['document']
     if file.filename == '':
-        return jsonify({'success': False, 'error': 'Nom de fichier invalide'})
+        return jsonify({'success': False, 'error': 'Nom de fichier vide'})
     
     evenement_id = request.form.get('evenement_id')
     if not evenement_id:
@@ -551,7 +542,6 @@ def desarchiver_evenement(agenda_id, event_id):
     evenement.archive = False
     db.session.commit()
     return jsonify({'success': True})
-
 
 @calendrier_bp.route('/agendas/<int:agenda_id>/evenements/<int:event_id>/supprimer', methods=['DELETE'])
 @login_required
@@ -636,56 +626,66 @@ def archiver_evenement(agenda_id, event_id):
     db.session.commit()
     return jsonify({'success': True})
 
-
 @calendrier_bp.route('/api/prestations/calendrier')
 @login_required
 def get_prestations_calendrier():
     """Récupère les prestations pour le calendrier avec toutes les informations nécessaires"""
     try:
-        # Récupérer les prestations où l'utilisateur est soit le commercial, soit le créateur
-        prestations = Prestation.query.filter(
-            (Prestation.commercial_id == current_user.id) | 
-            (Prestation.createur_id == current_user.id) |
-            (current_user.role == 'admin')  # Les admins voient toutes les prestations
-        ).all()
-        
-        # Formater les prestations pour le calendrier avec toutes les informations nécessaires
-        events = []
-        for prestation in prestations:
-            # Récupérer les informations du client
-            client_nom = prestation.client.nom if prestation.client else 'Client non défini'
-            client_prenom = prestation.client.prenom if prestation.client else ''
+        if current_user.role == 'admin':
+            prestations = Prestation.query.filter(Prestation.archive == False).all()
+        elif current_user.role == 'transporteur':
+            # Les transporteurs voient leurs prestations en cours et terminées
+            prestations = Prestation.query.join(
+                prestation_transporteurs
+            ).filter(
+                Prestation.archive == False,
+                prestation_transporteurs.c.user_id == current_user.id
+            ).all()
             
-            events.append({
-                'id': prestation.id,
-                'title': f"{prestation.type_demenagement} - {client_nom} - ID:{prestation.id}",
-                'start': prestation.date_debut.isoformat(),
-                'end': prestation.date_fin.isoformat() if prestation.date_fin else None,
-                'description': prestation.observations,
-                'location': f"De: {prestation.adresse_depart} À: {prestation.adresse_arrivee}",
-                'status': prestation.statut,
-                'className': f"prestation-status-{prestation.statut.lower()}",
-                # Ajouter toutes les informations nécessaires dans extendedProps
-                'extendedProps': {
-                    'statut': prestation.statut,
-                    'type_demenagement': prestation.type_demenagement,
-                    'adresse_depart': prestation.adresse_depart,
-                    'adresse_arrivee': prestation.adresse_arrivee,
-                    'observations': prestation.observations,
-                    'client_nom': client_nom,
-                    'client_prenom': client_prenom,
-                    'client_id': prestation.client_id if prestation.client else None,
-                    'commercial_id': prestation.commercial_id,
-                    'createur_id': prestation.createur_id,
-                    'date_creation': prestation.date_creation.isoformat() if prestation.date_creation else None,
-                    'date_modification': prestation.date_modification.isoformat() if prestation.date_modification else None
+            # Log pour voir tous les statuts
+            statuts = set(p.statut for p in prestations)
+            print(f"Statuts trouvés : {statuts}")
+        else:
+            prestations = Prestation.query.filter(
+                Prestation.archive == False,
+                (Prestation.commercial_id == current_user.id) | 
+                (Prestation.createur_id == current_user.id)
+            ).all()
+
+        events = []
+        for p in prestations:
+            try:
+                # Ajouter plus d'informations dans le titre pour le débogage
+                title = f"Prestation #{p.id} ({p.statut})"
+                if hasattr(p, 'type_demenagement') and p.type_demenagement:
+                    title += f" - {p.type_demenagement}"
+                if hasattr(p, 'client') and p.client:
+                    title += f" - {p.client.nom}"
+                
+                event = {
+                    'id': p.id,
+                    'title': title,
+                    'start': p.date_debut.isoformat() if p.date_debut else None,
+                    'end': p.date_fin.isoformat() if p.date_fin else None,
+                    'className': f"prestation-status-{p.statut.lower()}",
+                    'extendedProps': {
+                        'adresse_depart': p.adresse_depart if hasattr(p, 'adresse_depart') else None,
+                        'adresse_arrivee': p.adresse_arrivee if hasattr(p, 'adresse_arrivee') else None,
+                        'type_demenagement': p.type_demenagement if hasattr(p, 'type_demenagement') else None,
+                        'statut': p.statut
+                    }
                 }
-            })
-        
+                events.append(event)
+                print(f"Ajout de la prestation {p.id} avec statut '{p.statut}'")
+            except Exception as e:
+                print(f"Erreur lors du traitement de la prestation {p.id}: {str(e)}")
+                continue
+
+        print(f"Total des prestations trouvées : {len(events)}")
         return jsonify(events)
     except Exception as e:
+        print(f"Erreur lors de la récupération des prestations: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
 
 @calendrier_bp.route('/fullscreen')
 @login_required
@@ -694,7 +694,6 @@ def fullscreen():
         'calendrier/fullscreen.html',
         title='Calendrier des prestations'
     )
-
 
 @calendrier_bp.route('/api/evenements/<int:evenement_id>', methods=['PATCH', 'DELETE'])
 @login_required
@@ -1057,16 +1056,11 @@ def api_ajouter_document(evenement_id):
             filename = secure_filename(f"{timestamp}_{fichier.filename}")
             
             # Créer le dossier d'upload s'il n'existe pas
-            upload_folder = os.path.join(os.getcwd(), current_app.config['UPLOAD_FOLDER'])
-            if not os.path.exists(upload_folder):
-                os.makedirs(upload_folder)
-        
-            # Créer un sous-dossier pour l'événement si nécessaire
-            event_folder = os.path.join(upload_folder, f'event_{evenement_id}')
-            os.makedirs(event_folder, exist_ok=True)
+            upload_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'agendas', str(evenement_id))
+            os.makedirs(upload_folder, exist_ok=True)
             
             # Chemin complet du fichier
-            filepath = os.path.join(event_folder, filename)
+            filepath = os.path.join(upload_folder, filename)
             
             try:
                 # Sauvegarder le fichier
@@ -1139,17 +1133,6 @@ def assigner_prestation_direct():
         flash(f'Erreur lors de l\'assignation: {str(e)}', 'danger')
         return redirect(url_for('calendrier.voir_agenda', agenda_id=agenda_id))
 
-    # Récupérer l'historique des versions
-    versions = EvenementVersion.query.filter_by(evenement_id=evenement.id).order_by(EvenementVersion.version.desc()).all()
-    
-    # Pour l'affichage GET, préparer les données
-    return render_template(
-        'calendrier/modifier_evenement.html',
-        evenement=evenement,
-        agenda=agenda,
-        versions=versions
-    )
-
 @calendrier_bp.route('/evenements/<int:evenement_id>/traiter-modification', methods=['POST'])
 @login_required
 def traiter_modification_evenement(evenement_id):
@@ -1206,68 +1189,6 @@ def traiter_modification_evenement(evenement_id):
         db.session.rollback()
         flash(f'Erreur lors de la modification: {str(e)}', 'danger')
         return redirect(url_for('calendrier.modifier_evenement_page', evenement_id=evenement_id))
-    """Traite le formulaire de modification d'un événement et redirige vers la page de l'agenda."""
-    evenement = Evenement.query.get_or_404(evenement_id)
-    agenda = Agenda.query.get_or_404(evenement.agenda_id)
-    
-    # Vérifier que l'utilisateur a le droit de modifier cet événement
-    if agenda.user_id != current_user.id and current_user not in agenda.utilisateurs_partages:
-        flash("Vous n'avez pas les droits pour modifier cet événement.", 'danger')
-        return redirect(url_for('calendrier.voir_agenda', agenda_id=agenda.id))
-    
-    try:
-        # Récupérer les données du formulaire
-        titre = request.form.get('titre')
-        date_debut = datetime.fromisoformat(request.form.get('date_debut'))
-        date_fin_str = request.form.get('date_fin')
-        date_fin = datetime.fromisoformat(date_fin_str) if date_fin_str and date_fin_str.strip() else None
-        type_evenement = request.form.get('type_evenement')
-        
-        # Récupérer toutes les observations (format array)
-        observations = request.form.getlist('observations[]')
-        
-        # Filtrer les observations vides
-        observations = [obs for obs in observations if obs and obs.strip()]
-        
-        # Joindre les observations avec le séparateur spécial
-        observations_text = '-*_ _*-'.join(observations) if observations else None
-        
-        # Créer une version de l'événement avant modification
-        version = EvenementVersion(
-            evenement_id=evenement.id,
-            version=evenement.version,
-            titre=evenement.titre,
-            type_evenement=evenement.type_evenement,
-            date_debut=evenement.date_debut,
-            date_fin=evenement.date_fin,
-            observations=evenement.observations,
-            modifie_par=current_user.id,
-            date_modification=datetime.now()
-        )
-        db.session.add(version)
-        
-        # Mettre à jour l'événement
-        evenement.titre = titre
-        evenement.date_debut = date_debut
-        evenement.date_fin = date_fin
-        evenement.type_evenement = type_evenement
-        evenement.observations = observations_text
-        
-        # Incrémenter la version
-        evenement.version = (evenement.version or 1) + 1
-        
-        # Mettre à jour la date de modification
-        evenement.date_modification = datetime.now()
-        
-        db.session.commit()
-        
-        flash('Événement modifié avec succès!', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Erreur lors de la modification: {str(e)}', 'danger')
-    
-    # Rediriger vers la page de l'agenda dans tous les cas
-    return redirect(url_for('calendrier.voir_agenda', agenda_id=agenda.id))
 
 @calendrier_bp.route('/evenements/<int:evenement_id>/modifier', methods=['GET'])
 @login_required

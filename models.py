@@ -131,6 +131,7 @@ class Document(db.Model):
     nom = db.Column(db.String(255), nullable=False)
     chemin = db.Column(db.String(255), nullable=False)
     type = db.Column(db.String(50), nullable=True)  # Type de document (facture, contrat, etc.)
+    categorie = db.Column(db.String(50), nullable=True)  # Catégorie du document (administratif, financier, etc.)
     taille = db.Column(db.Integer, nullable=True)   # Taille en octets
     format = db.Column(db.String(20), nullable=True)  # Extension du fichier (pdf, jpg, etc.)
     notes = db.Column(db.Text, nullable=True)  # Notes sur le document
@@ -386,11 +387,15 @@ class Facture(db.Model):
     date_emission = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     date_echeance = db.Column(db.DateTime, nullable=True)
     montant_ht = db.Column(db.Float, nullable=False)
-    tva = db.Column(db.Float, nullable=False, default=20.0)
+    taux_tva = db.Column(db.Float, nullable=False, default=20.0)  # Ajout du champ taux_tva
     montant_ttc = db.Column(db.Float, nullable=False)
-    statut = db.Column(db.String(50), default='Non payée')  # Non payée, Payée, Annulée, Retard
-    date_paiement = db.Column(db.DateTime, nullable=True)
+    montant_acompte = db.Column(db.Float, nullable=True, default=0)
+    societe = db.Column(db.String(50), nullable=True)
     mode_paiement = db.Column(db.String(50), nullable=True)
+    statut = db.Column(db.String(20), nullable=False, default='En attente')
+    commission_pourcentage = db.Column(db.Float, nullable=True)
+    commission_montant = db.Column(db.Float, nullable=True)
+    notes = db.Column(db.Text, nullable=True)
     observations = db.Column(db.Text, nullable=True)
     commercial_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 

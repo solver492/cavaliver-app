@@ -83,6 +83,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <a href="/calendrier/agendas" class="btn btn-secondary mb-2">
                     <i class="fas fa-calendar-alt"></i> Gestion des agendas
                 </a>
+                <a href="${window.appUrls ? window.appUrls.guide : '/guide'}" class="btn btn-info mb-2">
+                    <i class="fas fa-book"></i> Guide et bonnes pratiques
+                </a>
             </div>
         `;
         

@@ -53,8 +53,6 @@
         filterBtns: null,       // Boutons de filtre
         transporteursList: null, // Liste des transporteurs
         counterElement: null,   // Compteur de transporteurs sélectionnés
-        checkAvailabilityBtn: null, // Bouton de vérification des disponibilités
-        viewCalendarBtn: null,  // Bouton pour voir le calendrier
         floatingBtn: null,      // Bouton flottant
         selectedDisplay: null   // Affichage des transporteurs sélectionnés
     };
@@ -465,11 +463,11 @@
         const actions = document.createElement('div');
         actions.className = 'transporteurs-actions';
         
-        const checkAvailabilityBtn = document.createElement('button');
-        checkAvailabilityBtn.className = 'secondary';
-        checkAvailabilityBtn.id = 'check-availability-btn';
-        checkAvailabilityBtn.textContent = 'Vérifier disponibilités';
-        actions.appendChild(checkAvailabilityBtn);
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'primary';
+        saveBtn.textContent = 'Valider la sélection';
+        saveBtn.disabled = true;
+        actions.appendChild(saveBtn);
         
         // Barre de recherche
         const searchContainer = document.createElement('div');
@@ -487,22 +485,6 @@
         searchContainer.appendChild(searchInput);
         searchContainer.appendChild(clearSearchBtn);
         
-        // Boutons de filtre
-        const filterContainer = document.createElement('div');
-        filterContainer.className = 'transporteurs-filters';
-        
-        const allFilterBtn = document.createElement('button');
-        allFilterBtn.className = 'active';
-        allFilterBtn.dataset.filter = 'tous';
-        allFilterBtn.textContent = 'Tous';
-        
-        const availableFilterBtn = document.createElement('button');
-        availableFilterBtn.dataset.filter = 'disponibles';
-        availableFilterBtn.textContent = 'Disponibles';
-        
-        filterContainer.appendChild(allFilterBtn);
-        filterContainer.appendChild(availableFilterBtn);
-        
         // Liste des transporteurs
         const transporteursList = document.createElement('div');
         transporteursList.className = 'transporteurs-list';
@@ -510,7 +492,6 @@
         // Ajouter les éléments au contenu
         content.appendChild(actions);
         content.appendChild(searchContainer);
-        content.appendChild(filterContainer);
         content.appendChild(transporteursList);
         
         // Créer le pied
@@ -521,13 +502,7 @@
         counter.className = 'transporteurs-counter';
         counter.textContent = '0 transporteur(s) sélectionné(s)';
         
-        const saveBtn = document.createElement('button');
-        saveBtn.className = 'primary';
-        saveBtn.textContent = 'Valider la sélection';
-        saveBtn.disabled = true;
-        
         footer.appendChild(counter);
-        footer.appendChild(saveBtn);
         
         // Poignée de redimensionnement
         if (config.resizable) {
@@ -550,12 +525,9 @@
         elements.footer = footer;
         elements.searchInput = searchInput;
         elements.clearSearchBtn = clearSearchBtn;
-        elements.filterBtns = [allFilterBtn, availableFilterBtn];
         elements.transporteursList = transporteursList;
         elements.counterElement = counter;
         elements.saveBtn = saveBtn;
-        elements.checkAvailabilityBtn = actions.querySelector('#check-availability-btn');
-        elements.viewCalendarBtn = actions.querySelector('#view-calendar-btn');
     }
     
     // Fonction pour créer le bouton flottant
@@ -691,33 +663,6 @@
             });
         }
         
-        // Boutons de filtre
-        if (elements.filterBtns) {
-            elements.filterBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    elements.filterBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    const filter = this.dataset.filter;
-                    const searchTerm = elements.searchInput ? elements.searchInput.value.toLowerCase() : '';
-                    
-                    filterTransporteurs(searchTerm, filter);
-                });
-            });
-        }
-        
-        // Bouton de vérification des disponibilités
-        if (elements.checkAvailabilityBtn) {
-            elements.checkAvailabilityBtn.addEventListener('click', checkAvailability);
-        }
-        
-        // Bouton pour voir le calendrier
-        if (elements.viewCalendarBtn) {
-            elements.viewCalendarBtn.addEventListener('click', function() {
-                window.location.href = '/calendrier';
-            });
-        }
-        
         // Bouton flottant
         if (elements.floatingBtn) {
             elements.floatingBtn.addEventListener('click', function() {
@@ -827,9 +772,9 @@
             
             // Charger des transporteurs par défaut
             state.transporteurs = [
-                { id: 1, nom: 'Transporteur', prenom: '1', vehicule: 'Camion 20m³', disponible: true },
-                { id: 2, nom: 'Transporteur', prenom: '2', vehicule: 'Camionnette 12m³', disponible: true },
-                { id: 3, nom: 'Transporteur', prenom: '3', vehicule: 'Camion 30m³', disponible: false }
+                { id: 1, nom: 'Transporteur', prenom: '1', vehicule: 'Camion 20m³' },
+                { id: 2, nom: 'Transporteur', prenom: '2', vehicule: 'Camionnette 12m³' },
+                { id: 3, nom: 'Transporteur', prenom: '3', vehicule: 'Camion 30m³' }
             ];
             renderTransporteurs();
             
@@ -875,7 +820,7 @@
     }
     
     // Fonction pour filtrer les transporteurs
-    function filterTransporteurs(searchTerm = '', filter = 'tous') {
+    function filterTransporteurs(searchTerm = '') {
         if (!elements.transporteursList) return;
         
         const items = elements.transporteursList.querySelectorAll('.transporteur-item');
@@ -892,12 +837,8 @@
                 (transporteur.nom + ' ' + transporteur.prenom).toLowerCase().includes(searchTerm) || 
                 transporteur.vehicule.toLowerCase().includes(searchTerm);
             
-            // Filtre de disponibilité
-            const matchesFilter = filter === 'tous' || 
-                (filter === 'disponibles' && transporteur.disponible);
-            
             // Afficher ou masquer l'item
-            const visible = matchesSearch && matchesFilter;
+            const visible = matchesSearch;
             item.style.display = visible ? '' : 'none';
             
             if (visible) visibleCount++;
@@ -916,87 +857,15 @@
             elements.transporteursList.appendChild(noResultsMsg);
         } else {
             // Supprimer le message s'il existe
-            const msg = elements.transporteursList.querySelector('.alert');
-            if (msg) msg.remove();
+            const oldMsg = elements.transporteursList.querySelector('.alert');
+            if (oldMsg) oldMsg.remove();
         }
     }
     
-    // Fonction pour afficher les transporteurs
-    function renderTransporteurs() {
-        if (!elements.transporteursList) return;
-        
-        // Vider la liste
-        elements.transporteursList.innerHTML = '';
-        
-        // Si aucun transporteur, afficher un message
-        if (!state.transporteurs || state.transporteurs.length === 0) {
-            elements.transporteursList.innerHTML = '<div class="alert alert-warning">Aucun transporteur disponible</div>';
-            return;
-        }
-        
-        // Créer un élément pour chaque transporteur
-        state.transporteurs.forEach(transporteur => {
-            const item = document.createElement('div');
-            item.className = 'transporteur-item';
-            item.dataset.id = transporteur.id;
-            
-            // Vérifier si le transporteur est sélectionné
-            if (state.selectedTransporteurs.some(t => t.id === transporteur.id)) {
-                item.classList.add('selected');
-            }
-            
-            // Déterminer le statut et l'icône
-            const statut = transporteur.disponible ? 'disponible' : 'occupe';
-            const icone = transporteur.disponible ? '🟢' : '🟠';
-            
-            // Créer le contenu de l'item
-            item.innerHTML = `
-                <div class="transporteur-status">${icone}</div>
-                <div class="transporteur-info">
-                    <div class="transporteur-name">${transporteur.nom} ${transporteur.prenom}</div>
-                    <div class="transporteur-vehicle">${transporteur.vehicule}</div>
-                </div>
-            `;
-            
-            // Ajouter l'événement de clic pour sélectionner/désélectionner
-            item.addEventListener('click', function() {
-                toggleTransporteurSelection(transporteur);
-            });
-            
-            elements.transporteursList.appendChild(item);
-        });
-    }
-    
-    // Fonction pour basculer la sélection d'un transporteur
-    function toggleTransporteurSelection(transporteur) {
-        const index = state.selectedTransporteurs.findIndex(t => t.id === transporteur.id);
-        
-        if (index === -1) {
-            // Ajouter à la sélection
-            state.selectedTransporteurs.push(transporteur);
-        } else {
-            // Retirer de la sélection
-            state.selectedTransporteurs.splice(index, 1);
-        }
-        
-        // Mettre à jour l'affichage
-        updateTransporteursSelection();
-        updateCounter();
-        
-        // Mettre à jour le bouton de sauvegarde
-        if (elements.saveBtn) {
-            elements.saveBtn.disabled = state.selectedTransporteurs.length === 0;
-        }
-        
-        // Mettre à jour le badge du bouton flottant
-        updateFloatingButtonBadge();
-    }
-    
-    // Fonction pour mettre à jour l'affichage des transporteurs sélectionnés
+    // Fonction pour mettre à jour la sélection des transporteurs
     function updateTransporteursSelection() {
         if (!elements.transporteursList) return;
         
-        // Mettre à jour les classes des items
         const items = elements.transporteursList.querySelectorAll('.transporteur-item');
         
         items.forEach(item => {
@@ -1013,23 +882,20 @@
     
     // Fonction pour mettre à jour le compteur
     function updateCounter() {
-        if (!elements.counterElement) return;
-        
-        const count = state.selectedTransporteurs.length;
-        elements.counterElement.textContent = `${count} transporteur(s) sélectionné(s)`;
+        if (elements.counterElement) {
+            elements.counterElement.textContent = `${state.selectedTransporteurs.length} transporteur(s) sélectionné(s)`;
+        }
     }
     
     // Fonction pour mettre à jour le badge du bouton flottant
     function updateFloatingButtonBadge() {
-        const floatingButton = elements.floatingBtn;
-        if (!floatingButton) return;
-        
-        const badge = floatingButton.querySelector('.badge');
-        if (!badge) return;
-        
-        const count = state.selectedTransporteurs.length;
-        badge.textContent = count.toString();
-        badge.style.display = count > 0 ? 'flex' : 'none';
+        if (elements.floatingBtn) {
+            const badge = elements.floatingBtn.querySelector('.badge');
+            if (badge) {
+                badge.textContent = state.selectedTransporteurs.length;
+                badge.style.display = state.selectedTransporteurs.length > 0 ? '' : 'none';
+            }
+        }
     }
     
     // Fonction pour créer l'affichage des transporteurs sélectionnés
@@ -1230,139 +1096,20 @@
         const editBtn = displayContainer.querySelector('.edit-transporteurs-btn');
         if (editBtn) {
             editBtn.addEventListener('click', openWidget);
-        }
-    }
-    
-    // Fonction pour vérifier les disponibilités
-    function checkAvailability() {
-        // Vérifier s'il y a des transporteurs sélectionnés
-        if (state.selectedTransporteurs.length === 0) {
-            alert('Veuillez sélectionner au moins un transporteur');
-            return;
-        }
-        
-        // Créer un message de chargement
-        const loadingMsg = document.createElement('div');
-        loadingMsg.className = 'alert alert-info';
-        loadingMsg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Vérification des disponibilités en cours...';
-        
-        // Afficher le message de chargement
-        elements.transporteursList.innerHTML = '';
-        elements.transporteursList.appendChild(loadingMsg);
-        
-        // Récupérer les dates de la prestation
-        const dateDebut = document.querySelector('input[name="date_debut"]')?.value;
-        const dateFin = document.querySelector('input[name="date_fin"]')?.value;
-        
-        if (!dateDebut || !dateFin) {
-            elements.transporteursList.innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> Veuillez d\'abord remplir les dates de début et de fin</div>';
-            return;
-        }
-        
-        // Appeler l'API pour vérifier les disponibilités
-        fetch('/api/transporteurs/check-disponibilite', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                transporteur_ids: state.selectedTransporteurs.map(t => t.id),
-                date_debut: dateDebut,
-                date_fin: dateFin
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Mettre à jour l'affichage
-            elements.transporteursList.innerHTML = '';
-            
-            if (data.success) {
-                if (data.disponibles && data.disponibles.length > 0) {
-                    // Afficher les transporteurs disponibles
-                    const disponiblesMsg = document.createElement('div');
-                    disponiblesMsg.className = 'alert alert-success mb-3';
-                    disponiblesMsg.innerHTML = '<i class="fas fa-check-circle"></i> Transporteurs disponibles :';
-                    elements.transporteursList.appendChild(disponiblesMsg);
-                    
-                    data.disponibles.forEach(id => {
-                        const transporteur = state.transporteurs.find(t => t.id === parseInt(id));
-                        if (transporteur) {
-                            const item = document.createElement('div');
-                            item.className = 'transporteur-item';
-                            item.dataset.id = transporteur.id;
-                            
-                            // Créer le contenu de l'item
-                            item.innerHTML = `
-                                <div class="transporteur-status">🟢</div>
-                                <div class="transporteur-info">
-                                    <div class="transporteur-name">${transporteur.nom} ${transporteur.prenom}</div>
-                                    <div class="transporteur-vehicle">${transporteur.vehicule}</div>
-                                </div>
-                            `;
-                            
-                            // Ajouter l'événement de clic pour sélectionner/désélectionner
-                            item.addEventListener('click', function() {
-                                toggleTransporteurSelection(transporteur);
-                            });
-                            
-                            // Vérifier si le transporteur est déjà sélectionné
-                            if (state.selectedTransporteurs.some(t => t.id === transporteur.id)) {
-                                item.classList.add('selected');
-                            }
-                            
-                            elements.transporteursList.appendChild(item);
                         }
-                    });
-                }
-                
-                if (data.indisponibles && data.indisponibles.length > 0) {
-                    // Afficher les transporteurs indisponibles
-                    const indisponiblesMsg = document.createElement('div');
-                    indisponiblesMsg.className = 'alert alert-warning mb-3';
-                    indisponiblesMsg.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Transporteurs indisponibles :';
-                    elements.transporteursList.appendChild(indisponiblesMsg);
-                    
-                    data.indisponibles.forEach(id => {
-                        const transporteur = state.transporteurs.find(t => t.id === parseInt(id));
-                        if (transporteur) {
-                            const item = document.createElement('div');
-                            item.className = 'transporteur-item';
-                            item.dataset.id = transporteur.id;
-                            
-                            // Créer le contenu de l'item
-                            item.innerHTML = `
-                                <div class="transporteur-status">🟠</div>
-                                <div class="transporteur-info">
-                                    <div class="transporteur-name">${transporteur.nom} ${transporteur.prenom}</div>
-                                    <div class="transporteur-vehicle">${transporteur.vehicule}</div>
-                                </div>
-                            `;
-                            
-                            elements.transporteursList.appendChild(item);
-                        }
-                    });
-                }
-                
-                if ((!data.disponibles || data.disponibles.length === 0) && 
-                    (!data.indisponibles || data.indisponibles.length === 0)) {
-                    // Aucun transporteur trouvé
-                    const noResultsMsg = document.createElement('div');
-                    noResultsMsg.className = 'alert alert-info';
-                    noResultsMsg.innerHTML = '<i class="fas fa-info-circle"></i> Aucun transporteur trouvé pour cette période';
-                    elements.transporteursList.appendChild(noResultsMsg);
-                }
-            } else {
-                // Erreur lors de la vérification
-                const errorMsg = document.createElement('div');
-                errorMsg.className = 'alert alert-danger';
-                errorMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${data.message || 'Erreur lors de la vérification des disponibilités'}`;
-                elements.transporteursList.appendChild(errorMsg);
-            }
-        })
-        .catch(error => {
-            console.error('Erreur lors de la vérification des disponibilités:', error);
+                    </div>
+                    <div class="card-footer">
+                        <button type="button" class="btn btn-sm btn-outline-primary edit-transporteurs-btn">
+                            <i class="fas fa-edit"></i> Modifier la sélection
+                        </button>
+                    </div>
+                </div>
+            `;
             
-            const errorMsg = document.createElement('div');
+            // Ajouter un événement au bouton de modification
+            const editBtn = displayContainer.querySelector('.edit-transporteurs-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', openWidget);
             errorMsg.className = 'alert alert-danger';
             errorMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Erreur lors de la vérification des disponibilités';
             elements.transporteursList.appendChild(errorMsg);
@@ -1395,51 +1142,50 @@
         } else {
             console.log("Élément transporteursSelect trouvé");
         }
-        
-        return transporteursSelect;
+        console.log("Élément transporteursSelect créé avec succès");
+    } else {
+        console.log("Élément transporteursSelect trouvé");
     }
+    
+    return transporteursSelect;
+}
 
-    // Fonction d'initialisation du widget
-    function initTransporteursWidget() {
-        console.log("Initialisation du widget transporteurs...");
-        cleanupOldWidgets();
-        createStyles();
-        const floatingBtn = createFloatingButton();
+// Fonction d'initialisation du widget
+function initTransporteursWidget() {
+    console.log("Initialisation du widget transporteurs...");
+    cleanupOldWidgets();
+    createStyles();
+    const floatingBtn = createFloatingButton();
+    
+    // Créer ou récupérer l'élément transporteursSelect
+    createTransporteursSelectElement();
+    
+    // Ajouter un délai pour s'assurer que tout est chargé
+    setTimeout(() => {
+        // Créer le widget mais ne pas l'afficher immédiatement
+        createWidget();
+        initDragEvents();
+        initResizeEvents();
+        initControlEvents();
         
-        // Créer ou récupérer l'élément transporteursSelect
-        createTransporteursSelectElement();
+        // Charger les transporteurs
+        loadTransporteurs();
         
-        // Ajouter un délai pour s'assurer que tout est chargé
-        setTimeout(() => {
-            // Créer le widget mais ne pas l'afficher immédiatement
-            createWidget();
-            initDragEvents();
-            initResizeEvents();
-            initControlEvents();
-            
-            // Charger les transporteurs
-            loadTransporteurs();
-            
-            // Fermer le widget par défaut
-            if (elements.modal) {
-                elements.modal.style.display = 'none';
-            }
-            
-            console.log("Widget transporteurs initialisé avec succès!");
-        }, 500);
-    }
-    
-    // Exposer la fonction d'initialisation globalement
-    window.initTransporteursWidget = initTransporteursWidget;
-    
-    // Initialisation au chargement du DOM
-    document.addEventListener('DOMContentLoaded', function() {
-        initTransporteursWidget();
-    });
-    
-    // Écouter l'événement personnalisé pour l'initialisation
-    document.addEventListener('initTransporteursWidget', function() {
-        console.log("Événement d'initialisation du widget transporteurs reçu");
-        initTransporteursWidget();
-    });
+        // Fermer le widget par défaut
+        if (elements.modal) {
+            elements.modal.style.display = 'none';
+        }
+        
+        console.log("Widget transporteurs initialisé avec succès!");
+    }, 500);
+}
+
+// Exposer la fonction d'initialisation globalement
+window.initTransporteursWidget = initTransporteursWidget;
+
+// Initialisation au chargement du DOM
+document.addEventListener('DOMContentLoaded', function() {
+    initTransporteursWidget();
+});
+
 })();

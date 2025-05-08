@@ -16,6 +16,18 @@ from utils import notifier_transporteurs, accepter_prestation, refuser_prestatio
 
 prestation_bp = Blueprint('prestation', __name__)
 
+def check_permission():
+    """Vérifie si l'utilisateur a le droit de créer/modifier des prestations"""
+    if not current_user.is_authenticated:
+        abort(401)  # Non authentifié
+    if current_user.role == 'transporteur':
+        abort(403)  # Accès interdit pour les transporteurs
+    return True
+
+def count_user_prestations(user_id):
+    """Compte le nombre de prestations créées par un utilisateur"""
+    return Prestation.query.filter_by(commercial_id=user_id, archive=False).count()
+
 @prestation_bp.route('/')
 @login_required
 def index():
@@ -84,6 +96,16 @@ def index():
 @prestation_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
+    # Vérifier les permissions
+    check_permission()
+    
+    # Vérifier la limite de prestations
+    if current_user.role in ['commercial', 'admin']:
+        prestation_count = count_user_prestations(current_user.id)
+        if prestation_count >= 3:
+            flash('Vous avez atteint la limite de 3 prestations. Vous êtes en mode accès anticipé. Veuillez contacter DSL pour en créer davantage.', 'danger')
+            return redirect(url_for('prestation.index'))
+    
     form = PrestationForm()
     
     try:
@@ -217,32 +239,61 @@ def add():
         current_app.logger.error(f"Erreur lors du chargement du formulaire: {str(e)}")
         flash('Une erreur est survenue lors du chargement du formulaire.', 'error')
 
+    # Préparer les données des clients pour le JavaScript
+    clients_data = [{
+        'id': client.id,
+        'nom': client.nom,
+        'prenom': client.prenom,
+        'commercial_id': client.commercial_id
+    } for client in Client.query.all()]
+
     return render_template(
         'prestations/add.html',
         form=form,
-        types_demenagement=types_demenagement
+        types_demenagement=types_demenagement,
+        all_clients=clients_data
     )
 
 @prestation_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit(id):
+    # Vérifier les permissions
+    check_permission()
+    
     prestation = Prestation.query.get_or_404(id)
     form = PrestationForm(obj=prestation)
     
-    # Charger les types de déménagement depuis la base de données
+    # Charger les types de déménagement
     types_demenagement = TypeDemenagement.query.all()
     form.type_demenagement.choices = [(t.id, t.nom) for t in types_demenagement]
     
-    # Pré-sélectionner le type de déménagement actuel
-    if prestation.type_demenagement_id:
-        form.type_demenagement.data = prestation.type_demenagement_id
-    
+    # Filtrer les clients selon le rôle de l'utilisateur
+    if current_user.role in ['admin', 'superadmin']:
+        # Admin et superadmin voient tous les clients non archivés
+        all_clients = Client.query.filter_by(archive=False).all()
+    elif current_user.role == 'commercial':
+        # Commercial ne voit que ses clients non archivés
+        all_clients = Client.query.filter_by(commercial_id=current_user.id, archive=False).all()
+    else:
+        # Autres rôles n'ont accès à aucun client
+        all_clients = []
+
     # Charger les clients en fonction du rôle de l'utilisateur
     if current_user.role in ['admin', 'superadmin']:
+        # Admin et superadmin voient tous les clients non archivés
         clients = Client.query.filter_by(archive=False).all()
-    else:
+    elif current_user.role == 'commercial':
+        # Commercial ne voit que ses clients non archivés
         clients = Client.query.filter_by(commercial_id=current_user.id, archive=False).all()
+    else:
+        # Autres rôles n'ont accès à aucun client
+        clients = []
+    
+    # Ajouter les choix au formulaire
     form.client_id.choices = [(c.id, f"{c.nom} {c.prenom}") for c in clients]
+    
+    # Stocker la liste complète des clients pour le template
+    all_clients = clients
     
     # Charger les transporteurs
     transporteurs = User.query.filter(User.role.in_(['transporteur', 'admin'])).all()
@@ -371,8 +422,8 @@ def edit(id):
                 db.session.commit()
                 current_app.logger.info(f"Clients supplémentaires supprimés pour la prestation {id} (mode groupage désactivé)")
             
-            flash('Prestation modifiée avec succès!', 'success')
-            return redirect(url_for('prestation.view', id=prestation.id))
+            flash('Prestation modifiée avec succès.', 'success')
+            return redirect(url_for('prestation.index'))
         
         except Exception as e:
             db.session.rollback()
@@ -384,7 +435,8 @@ def edit(id):
         form=form,
         prestation=prestation,
         types_demenagement=types_demenagement,
-        clients_montants=clients_montants
+        clients_montants=clients_montants,
+        all_clients=all_clients
     )
 
 @prestation_bp.route('/view/<int:id>')
@@ -486,7 +538,8 @@ def view(id):
         clients=all_clients,
         transporteurs=transporteurs,
         debug_data=debug_data,
-        prestation_clients=montants_clients
+        prestation_clients=montants_clients,
+        all_clients=all_clients
     )
 
 @prestation_bp.route('/assign_transporteurs/<int:id>', methods=['GET', 'POST'])
@@ -501,14 +554,44 @@ def assign_transporteurs(id):
     # Récupérer la prestation
     prestation = Prestation.query.get_or_404(id)
     
-    # Récupérer tous les transporteurs actifs
-    transporteurs = User.query.filter_by(role='transporteur', statut='actif').order_by(User.nom).all()
+    # Récupérer les transporteurs actifs
+    transporteurs = User.query.filter_by(role='transporteur', statut='actif').all()
     
-    # Récupérer les transporteurs déjà assignés
-    transporteurs_assignes = prestation.transporteurs
+    # Pour chaque transporteur, vérifier son statut actuel
+    transporteurs_status = {}
+    for t in transporteurs:
+        # Vérifier s'il est assigné à cette prestation
+        if t in prestation.transporteurs:
+            # Vérifier s'il a une notification pour cette prestation
+            notif = Notification.query.filter_by(
+                user_id=t.id,
+                prestation_id=prestation.id
+            ).order_by(Notification.date_creation.desc()).first()
+            
+            if notif:
+                if notif.statut == 'acceptee':
+                    transporteurs_status[t.id] = 'occupe'
+                elif notif.statut in ['non_lue', 'lue']:
+                    transporteurs_status[t.id] = 'assigne'
+                elif notif.statut == 'refusee':
+                    transporteurs_status[t.id] = 'disponible'
+            else:
+                transporteurs_status[t.id] = 'assigne'
+        else:
+            # Vérifier s'il est occupé sur une autre prestation
+            notif_active = Notification.query.filter(
+                Notification.user_id == t.id,
+                Notification.statut == 'acceptee',
+                Notification.prestation_id != prestation.id
+            ).first()
+            
+            if notif_active:
+                transporteurs_status[t.id] = 'occupe'
+            else:
+                transporteurs_status[t.id] = 'disponible'
     
-    # Créer une liste d'IDs des transporteurs déjà assignés
-    transporteurs_assignes_ids = [t.id for t in transporteurs_assignes]
+    # Récupérer les IDs des transporteurs déjà assignés
+    transporteurs_assignes_ids = [t.id for t in prestation.transporteurs]
     
     if request.method == 'POST':
         try:
@@ -556,11 +639,12 @@ def assign_transporteurs(id):
     
     # Afficher le formulaire
     return render_template(
-        'prestations/assign_transporteurs.html',
+        'prestations/assign_transport.html',
         title='Assigner des transporteurs',
         prestation=prestation,
         transporteurs=transporteurs,
-        transporteurs_assignes_ids=transporteurs_assignes_ids
+        transporteurs_assignes_ids=transporteurs_assignes_ids,
+        transporteurs_status=transporteurs_status
     )
 
 @prestation_bp.route('/add_etapes/<int:id>', methods=['GET', 'POST'])
@@ -828,3 +912,81 @@ def print_prestation(id):
         # En cas d'erreur, afficher la version HTML
         flash("Impossible de générer le PDF. Affichage en HTML.", "warning")
         return html
+
+@prestation_bp.route('/api/<int:id>/observations', methods=['POST'])
+@login_required
+def update_observations(id):
+    prestation = Prestation.query.get_or_404(id)
+    
+    # Récupérer la nouvelle observation
+    data = request.get_json()
+    new_observation = data.get('observation', '').strip()
+    
+    if not new_observation:
+        return jsonify({'success': False, 'error': 'Observation vide'})
+    
+    # Formater la nouvelle observation avec un ID unique
+    timestamp = datetime.now().strftime('%d/%m/%Y %H:%M')
+    obs_id = f"obs_{int(datetime.now().timestamp())}"
+    formatted_observation = f"""
+    <div class="observation-entry mb-3" id="{obs_id}">
+        <div class="observation-header d-flex justify-content-between align-items-center">
+            <div>
+                <strong><i class="fas fa-clock me-1"></i>{timestamp}</strong>
+                <strong><i class="fas fa-user me-1"></i>{current_user.username}</strong>
+            </div>
+            <button onclick="deleteObservation('{obs_id}')" class="btn btn-sm btn-danger">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        <div class="observation-content mt-2">
+            {new_observation}
+        </div>
+    </div>
+    """
+    
+    # Concaténer avec l'observation existante
+    if prestation.observations:
+        prestation.observations += formatted_observation
+    else:
+        prestation.observations = formatted_observation
+    
+    try:
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'observations': prestation.observations
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+@prestation_bp.route('/api/<int:id>/observations/<obs_id>', methods=['DELETE'])
+@login_required
+def delete_observation(id, obs_id):
+    prestation = Prestation.query.get_or_404(id)
+    
+    if not prestation.observations:
+        return jsonify({'success': False, 'error': 'Aucune observation à supprimer'})
+    
+    # Créer un DOM à partir du HTML des observations
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(prestation.observations, 'html.parser')
+    
+    # Trouver l'observation à supprimer
+    observation = soup.find('div', id=obs_id)
+    if observation:
+        observation.decompose()
+        # Mettre à jour les observations
+        prestation.observations = str(soup)
+        try:
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'observations': prestation.observations
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)})
+    
+    return jsonify({'success': False, 'error': 'Observation non trouvée'})

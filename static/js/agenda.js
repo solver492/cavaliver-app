@@ -11,20 +11,25 @@ function ajouterObservation() {
 
 // Fonction pour modifier un agenda
 function modifierAgenda(agendaId) {
-    fetch(`/calendrier/agendas/${agendaId}/edit`)
+    fetch(`/calendrier/api/agendas/${agendaId}`)
         .then(response => response.json())
         .then(data => {
-            document.querySelector('input[name="nom"]').value = data.nom;
-            document.querySelector('select[name="type_agenda"]').value = data.type_agenda;
-            document.querySelector('input[name="couleur"]').value = data.couleur;
-            document.querySelector('textarea[name="description"]').value = data.description;
+            if (data.success) {
+                const agenda = data.agenda;
+                document.querySelector('input[name="nom"]').value = agenda.nom;
+                document.querySelector('select[name="type_agenda"]').value = agenda.type_agenda;
+                document.querySelector('input[name="couleur"]').value = agenda.couleur;
+                document.querySelector('textarea[name="description"]').value = agenda.description || '';
 
-            const modal = new bootstrap.Modal(document.getElementById('nouvelAgendaModal'));
-            modal.show();
+                const modal = new bootstrap.Modal(document.getElementById('nouvelAgendaModal'));
+                modal.show();
+            } else {
+                throw new Error(data.message || 'Erreur lors de la récupération des données');
+            }
         })
         .catch(error => {
             console.error('Erreur:', error);
-            alert('Erreur lors de la récupération des données');
+            toastr.error('Erreur lors de la récupération des données de l\'agenda');
         });
 }
 

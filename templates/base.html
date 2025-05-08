@@ -258,6 +258,19 @@
     <!-- Script pour les notifications des transporteurs -->
     <script src="{{ url_for('static', filename='js/transporteurs-notifications.js') }}"></script>
     
+    <!-- Script de compatibilité pour le calendrier dans Firefox -->
+    <script src="{{ url_for('static', filename='js/calendar-compatibility.js') }}"></script>
+    
+    <!-- Variables globales pour JavaScript -->
+    <script>
+        window.appUrls = {
+            guide: "{{ url_for('dashboard.guide') }}"
+        };
+    </script>
+
+    <!-- Script de suppression des bannières d'erreur JavaScript -->
+    <script src="{{ url_for('static', filename='js/error-banner-remover.js') }}"></script>
+    
     {% block page_scripts %}{% endblock %}
     
     <!-- Polyfills pour assurer la compatibilité avec tous les navigateurs -->
@@ -282,6 +295,5 @@
     <script src="{{ url_for('static', filename='js/calendar-compatibility.js') }}"></script>
     
     <!-- Script de suppression des bannières d'erreur JavaScript -->
-    <script src="{{ url_for('static', filename='js/error-banner-remover.js') }}"></script>
 </body>
 </html>

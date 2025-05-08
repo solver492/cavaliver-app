@@ -115,23 +115,20 @@
                                             {{ stockage.statut }}
                                         </span>
                                     </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{{ url_for('stockage.detail', id=stockage.id) }}" class="btn btn-info" data-toggle="tooltip" title="Détails">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="{{ url_for('stockage.edit', id=stockage.id) }}" class="btn btn-primary" data-toggle="tooltip" title="Modifier">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="{{ url_for('stockage.create_invoice', id=stockage.id) }}" class="btn btn-warning" data-toggle="tooltip" title="Créer une facture">
-                                                <i class="fas fa-file-invoice-dollar"></i>
-                                            </a>
-                                            <a href="{{ url_for('stockage.toggle_archive', id=stockage.id) }}" class="btn btn-secondary" data-toggle="tooltip" 
-                                               title="{{ 'Désarchiver' if stockage.archive else 'Archiver' }}"
-                                               onclick="return confirm('Êtes-vous sûr de vouloir {{ 'restaurer' if stockage.archive else 'archiver' }} ce stockage?')">
-                                                <i class="fas fa-{{ 'undo' if stockage.archive else 'archive' }}"></i>
-                                            </a>
-                                        </div>
+                                    <td class="text-right">
+                                        <a href="{{ url_for('stockage.detail', id=stockage.id) }}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('stockage.edit', id=stockage.id) }}" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ url_for('stockage.toggle_archive', id=stockage.id) }}" class="btn btn-secondary btn-sm">
+                                            <i class="fas fa-archive"></i>
+                                        </a>
+                                        <a href="{{ url_for('stockage.delete', id=stockage.id) }}" class="btn btn-danger btn-sm" 
+                                           onclick="return confirm('Voulez-vous vraiment supprimer ce stockage ?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
                                     </td>
                                 </tr>
                                 {% else %}

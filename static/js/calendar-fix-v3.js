@@ -141,45 +141,8 @@ document.addEventListener('DOMContentLoaded', function() {
      * Crée des événements de démonstration pour la visualisation
      */
     function createDemoEvents() {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth();
-        const date = now.getDate();
-        
-        return [
-            {
-                id: 'demo-1',
-                title: 'Déménagement d\'appartement - dev sniksa',
-                start: new Date(year, month, date - 1, 0, 0),
-                end: new Date(year, month, date - 1, 23, 59),
-                allDay: true,
-                backgroundColor: '#ffc107',
-                borderColor: '#ffc107',
-                textColor: '#000',
-                statut: 'En attente',
-                client: 'Dev Sniksa',
-                adresse_depart: '123 Rue Exemple, Lyon',
-                adresse_arrivee: '456 Avenue Test, Paris',
-                type_demenagement: 'Appartement',
-                observations: 'Déménagement de test'
-            },
-            {
-                id: 'demo-2',
-                title: 'Déménagement d\'entreprise - dev sniksa',
-                start: new Date(year, month, date, 0, 0),
-                end: new Date(year, month, date, 23, 59),
-                allDay: true,
-                backgroundColor: '#ffc107',
-                borderColor: '#ffc107',
-                textColor: '#000',
-                statut: 'En attente',
-                client: 'Dev Sniksa Corp',
-                adresse_depart: '789 Boulevard Business, Lyon',
-                adresse_arrivee: '101 Avenue Commerce, Marseille',
-                type_demenagement: 'Entreprise',
-                observations: 'Déménagement de bureaux'
-            }
-        ];
+        // Ne plus créer d'événements de démonstration
+        return [];
     }
     
     /**

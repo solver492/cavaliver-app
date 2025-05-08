@@ -1,290 +1,243 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}Modifier une prestation - {{ config.APP_NAME }}{% endblock %}
+{% block title %}{{ "Modifier" if prestation else "Créer" }} une prestation - {{ config.APP_NAME }}{% endblock %}
 
 {% block styles %}
     {{ super() }}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/prestation-theme.css') }}">
-    <style>
-        .fade-in {
-            animation: fadeIn 0.5s;
-        }
-
-        .fade-out {
-            animation: fadeOut 0.3s;
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        .client-supplementaire {
-            transition: all 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fadeOut {
-            from { opacity: 1; transform: translateY(0); }
-            to { opacity: 0; transform: translateY(-10px); }
-        }
-
-        .prestation-type-selector {
-            position: relative;
-            z-index: 10;
-        }
-
-        .form-switch-lg {
-            min-height: 2.5rem;
-            padding-left: 4.5em;
-        }
-
-        .form-switch-lg .form-check-input {
-            height: 2rem;
-            width: 3.5rem;
-            border-radius: 2rem;
-            cursor: pointer;
-        }
-
-        .form-check-label {
-            position: relative;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-        }
-    </style>
-{% endblock %}
-
-{% block head %}
-    {{ super() }}
-    <script src="{{ url_for('static', filename='js/prestation-form.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/transporteurs-widget.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/prestation-submit.js') }}"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/transporteurs-widget.css') }}">
-    <link href="{{ url_for('static', filename='css/lib/fullcalendar.min.css') }}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
-<div class="prestation-page">
-    <div class="page-title d-flex justify-content-between align-items-center">
-        <h1><i class="fas fa-edit"></i> Modifier une prestation</h1>
-        <div class="d-flex align-items-center gap-3">
-            <a href="{{ url_for('prestation.index') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Retour à la liste
-            </a>
+<div class="container py-4">
+    <h1 class="mb-4">{{ "Modifier" if prestation else "Créer" }} une prestation</h1>
+
+    <form method="POST" class="needs-validation" novalidate>
+        {{ form.csrf_token }}
+
+        <!-- Mode Groupage Switch -->
+        <div class="form-check form-switch mb-4">
+            {{ form.mode_groupage(class="form-check-input") }}
+            {{ form.mode_groupage.label(class="form-check-label") }}
         </div>
-    </div>
 
-    <div class="card">
-        <div class="card-body">
-            <form method="POST" enctype="multipart/form-data">
-                {{ form.hidden_tag() }}
-
-                <div id="mode-info" class="alert alert-info mb-3">
-                    <i class="fas fa-info-circle me-2"></i> {% if prestation.est_groupage %}Mode groupage: plusieurs clients, plusieurs points de départ et d'arrivée{% else %}Mode standard: un seul client, un point de départ et un point d'arrivée{% endif %}
-                </div>
-
-                <!-- Section Client Principal -->
-                <div class="row mb-3">
+        <!-- Client Principal -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">Client Principal</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="client_id" class="form-label">Client Principal <span class="text-danger">*</span></label>
-                        {{ form.client_id(class="form-select" + (" is-invalid" if form.client_id.errors else ""), id="client_id") }}
-                        {% for error in form.client_id.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                        {% endfor %}
+                        {{ form.client_id.label(class="form-label") }}
+                        {{ form.client_id(class="form-select") }}
                     </div>
-
                     <div class="col-md-6">
-                        <div class="form-check form-switch form-switch-lg mt-4">
-                            {{ form.mode_groupage(class="form-check-input", id="mode_groupage") }}
-                            <label class="form-check-label" for="mode_groupage">Mode Groupage</label>
-                        </div>
-                        <div id="mode-description" class="form-text text-muted">
-                            {% if prestation.mode_groupage %}
-                            Mode groupage activé : plusieurs clients, plusieurs points de départ et d'arrivée
-                            {% else %}
-                            Mode standard : un seul client, un point de départ et un point d'arrivée
-                            {% endif %}
+                        {{ form.montant.label(class="form-label") }}
+                        <div class="input-group">
+                            {{ form.montant(class="form-control", placeholder="Montant") }}
+                            <span class="input-group-text">€</span>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Section Clients Supplémentaires -->
-                <div id="section-clients-supplementaires" style="display: {% if prestation.mode_groupage %}block{% else %}none{% endif %};">
-                    <div class="card mb-3">
-                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Clients Supplémentaires</h5>
-                            <button type="button" class="btn btn-light btn-sm" id="ajouter-client">
-                                <i class="fas fa-plus"></i> Ajouter un client
-                            </button>
-                        </div>
-                        <div class="card-body">
-                            <div id="clients-supplementaires">
-                                {% for client in prestation.clients_supplementaires %}
-                                <div class="client-supplementaire mb-3 border-bottom pb-3">
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label">Client Supplémentaire</label>
-                                            <select class="form-select" name="clients_supplementaires[]" required>
-                                                <option value="">Sélectionnez un client</option>
-                                                {% for c in clients %}
-                                                    {% if current_user.is_admin() or c.commercial_id == current_user.id %}
-                                                    <option value="{{ c.id }}" {% if client and c.id == client.id %}selected{% endif %}>
-                                                        {{ c.nom }} {{ c.prenom }}
-                                                    </option>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="col-md-5">
-                                            <label class="form-label">Montant</label>
+        <!-- Clients Supplémentaires -->
+        <div id="section-clients-supplementaires" class="card mb-4" style="display: none;">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Clients Supplémentaires</h5>
+                <button type="button" id="ajouter-client" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-plus"></i> Ajouter un client
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="clients-supplementaires">
+                    {% if prestation and prestation.clients_supplementaires %}
+                        {% for client in prestation.clients_supplementaires %}
+                        <div class="client-supplementaire card mb-3">
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Client Supplémentaire</label>
+                                        <select class="form-select" name="clients_supplementaires[]" required>
+                                            <option value="">Sélectionner un client</option>
+                                            {% for c in all_clients %}
+                                                {% if current_user.role in ['admin', 'superadmin'] or c.commercial_id == current_user.id %}
+                                                    <option value="{{ c.id }}" {% if c.id == client.id %}selected{% endif %}>{{ c.nom }} {{ c.prenom }}</option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label">Montant</label>
+                                        <div class="input-group">
                                             <input type="number" class="form-control" name="montants_supplementaires[]" 
-                                                   placeholder="Montant" step="0.01" min="0" required value="{{ clients_montants.get(client.id, 0) }}">
-                                        </div>
-                                        <div class="col-md-1 d-flex align-items-end">
-                                            <button type="button" class="btn btn-danger" onclick="this.closest('.client-supplementaire').remove()">
-                                                <i class="fas fa-times"></i>
-                                            </button>
+                                                   required min="0" step="0.01" placeholder="Montant" 
+                                                   value="{{ client.montant }}">
+                                            <span class="input-group-text">€</span>
                                         </div>
                                     </div>
+                                    <div class="col-md-1 d-flex align-items-end">
+                                        <button type="button" class="btn btn-outline-danger btn-remove">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                {% endfor %}
                             </div>
                         </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Adresses -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">Adresses</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        {{ form.adresse_depart.label(class="form-label") }}
+                        {{ form.adresse_depart(class="form-control", placeholder="Adresse de départ") }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.adresse_arrivee.label(class="form-label") }}
+                        {{ form.adresse_arrivee(class="form-control", placeholder="Adresse d'arrivée") }}
                     </div>
                 </div>
-
-                {% include 'prestations/_form_sections.html' %}
-
-                <!-- Boutons d'action -->
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <a href="{{ url_for('prestation.index') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Retour à la liste
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Enregistrer
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
-    </div>
+
+        <!-- Type de déménagement -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">Type de déménagement</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        {{ form.type_demenagement.label(class="form-label") }}
+                        {{ form.type_demenagement(class="form-select") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dates -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">Dates</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        {{ form.date_debut.label(class="form-label") }}
+                        {{ form.date_debut(class="form-control", type="date") }}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.date_fin.label(class="form-label") }}
+                        {{ form.date_fin(class="form-control", type="date") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observations -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">Observations</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <textarea name="observations" id="observations" class="form-control summernote">{{ form.observations.data if form.observations.data else "" }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Boutons -->
+        <div class="d-flex justify-content-between">
+            <a href="{{ url_for('prestation.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> {{ "Modifier" if prestation else "Créer" }}
+            </button>
+        </div>
+    </form>
 </div>
-{% endblock %}
 
 {% block page_scripts %}
-<script src="{{ url_for('static', filename='js/lib/fullcalendar.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/lib/fullcalendar-fr.js') }}"></script>
-<script src="{{ url_for('static', filename='js/prestations.js') }}"></script>
+{{ super() }}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const modeGroupageSwitch = document.getElementById('mode_groupage');
-        const sectionClientsSupplementaires = document.getElementById('section-clients-supplementaires');
-        const clientsList = document.getElementById('clients-supplementaires');
-        const ajouterClientBtn = document.getElementById('ajouter-client');
-
-        function createClientField() {
-            const clientDiv = document.createElement('div');
-            clientDiv.className = 'client-supplementaire mb-3 border-bottom pb-3 fade-in';
-
-            const row = document.createElement('div');
-            row.className = 'row g-3';
-
-            const clientCol = document.createElement('div');
-            clientCol.className = 'col-md-6';
-
-            const clientLabel = document.createElement('label');
-            clientLabel.className = 'form-label';
-            clientLabel.textContent = 'Client Supplémentaire';
-
-            const selectClient = document.createElement('select');
-            selectClient.className = 'form-select';
-            selectClient.name = 'clients_supplementaires[]';
-            selectClient.required = true;
-
-            const originalSelect = document.querySelector('select[name="client_id"]');
-            if (originalSelect) {
-                const defaultOption = document.createElement('option');
-                defaultOption.value = '';
-                defaultOption.textContent = 'Sélectionnez un client';
-                selectClient.appendChild(defaultOption);
-
-                originalSelect.querySelectorAll('option:not(:first-child)').forEach(option => {
-                    const newOption = option.cloneNode(true);
-                    selectClient.appendChild(newOption);
-                });
-            }
-
-            const montantCol = document.createElement('div');
-            montantCol.className = 'col-md-5';
-
-            const montantLabel = document.createElement('label');
-            montantLabel.className = 'form-label';
-            montantLabel.textContent = 'Montant';
-
-            const montantInput = document.createElement('input');
-            montantInput.type = 'number';
-            montantInput.className = 'form-control';
-            montantInput.name = 'montants_supplementaires[]';
-            montantInput.placeholder = 'Montant';
-            montantInput.step = '0.01';
-            montantInput.min = '0';
-            montantInput.required = true;
-
-            const btnCol = document.createElement('div');
-            btnCol.className = 'col-md-1 d-flex align-items-end';
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.type = 'button';
-            deleteBtn.className = 'btn btn-danger';
-            deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
-            deleteBtn.onclick = function() {
-                clientDiv.classList.add('fade-out');
-                setTimeout(() => {
-                    clientDiv.remove();
-                }, 300);
-            };
-
-            clientCol.appendChild(clientLabel);
-            clientCol.appendChild(selectClient);
-
-            montantCol.appendChild(montantLabel);
-            montantCol.appendChild(montantInput);
-
-            btnCol.appendChild(deleteBtn);
-
-            row.appendChild(clientCol);
-            row.appendChild(montantCol);
-            row.appendChild(btnCol);
-
-            clientDiv.appendChild(row);
-            return clientDiv;
-        }
-
-        if (modeGroupageSwitch) {
-            {% if prestation.mode_groupage %}
-            if (!modeGroupageSwitch.checked) {
-                modeGroupageSwitch.checked = true;
-            }
-            {% endif %}
-
-            modeGroupageSwitch.addEventListener('change', function() {
-                if (this.checked) {
-                    sectionClientsSupplementaires.style.display = 'block';
-                } else {
-                    sectionClientsSupplementaires.style.display = 'none';
-                }
-            });
-        }
-
-        if (ajouterClientBtn) {
-            ajouterClientBtn.addEventListener('click', function() {
-                const newClientField = createClientField();
-                clientsList.appendChild(newClientField);
-            });
+    // Initialisation de l'éditeur Summernote
+    $(document).ready(function() {
+        var editor = $('.summernote');
+        editor.summernote({
+            placeholder: 'Saisissez votre texte ici...',
+            tabsize: 2,
+            height: 200,
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'underline', 'clear']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['table', ['table']],
+                ['insert', ['link']],
+                ['view', ['fullscreen', 'help']]
+            ],
+            lang: 'fr-FR'
+        });
+        
+        // Initialiser le contenu si présent
+        var content = editor.val();
+        if (content) {
+            editor.summernote('code', content);
         }
     });
 </script>
+{% endblock %}
+
+<!-- Scripts -->
+<script>
+    // Passer la liste des clients et les informations de l'utilisateur au JavaScript
+    window.allClients = [
+        {% for client in all_clients %}
+            {
+                id: {{ client.id }},
+                nom: "{{ client.nom }} {{ client.prenom }}",
+                commercial_id: {{ client.commercial_id if client.commercial_id else 'null' }}
+            }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    // Passer le rôle et l'ID de l'utilisateur actuel
+    window.currentUser = {
+        role: "{{ current_user.role }}",
+        id: {{ current_user.id }}
+    };
+
+    // Initialisation de l'éditeur Summernote
+    $(document).ready(function() {
+        $('.summernote').summernote({
+            placeholder: 'Saisissez vos observations ici...',
+            tabsize: 2,
+            height: 200,
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'underline', 'clear']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['table', ['table']],
+                ['insert', ['link']],
+                ['view', ['fullscreen', 'help']]
+            ],
+            lang: 'fr-FR'
+        });
+    });
+</script>
+<script src="{{ url_for('static', filename='js/prestation.js') }}"></script>
 {% endblock %}

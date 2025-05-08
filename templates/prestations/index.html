@@ -124,9 +124,15 @@
                                     {{ prestation.type_demenagement }}
                                 </td>
                                 <td>
-                                    <span class="badge status-{{ prestation.statut|lower|replace(' ', '-') }}">
-                                        {{ prestation.statut }}
-                                    </span>
+                                    {% if prestation.statut == 'en_cours' %}
+                                        <span class="statut-en-cours">En cours</span>
+                                    {% elif prestation.statut == 'terminee' %}
+                                        <span class="badge bg-success">Terminée</span>
+                                    {% elif prestation.statut == 'annulee' %}
+                                        <span class="badge bg-danger">Annulée</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">{{ prestation.statut|title }}</span>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">

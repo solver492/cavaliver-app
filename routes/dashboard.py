@@ -13,6 +13,11 @@ dashboard_bp = Blueprint('dashboard', __name__)
 def test_images():
     return render_template('test_images.html')
 
+@dashboard_bp.route('/guide')
+@login_required
+def guide():
+    return render_template('guide.html', title='Guide et bonnes pratiques')
+
 @dashboard_bp.route('/dashboard')
 @login_required
 def index():

@@ -13,12 +13,24 @@ from auth import role_required
 
 client_bp = Blueprint('client', __name__)
 
+def count_user_clients(user_id):
+    """Compte le nombre de clients créés par un utilisateur"""
+    return Client.query.filter_by(commercial_id=user_id, archive=False).count()
+
 @client_bp.route('/clients/liste')
 @login_required
 @role_required('commercial', 'admin', 'superadmin')
 def liste():
-    # Récupérer tous les clients
-    clients = Client.query.order_by(Client.date_creation.desc()).all()
+    # Requête de base
+    query = Client.query
+
+    # Filtrer les clients selon le rôle
+    if not current_user.is_admin():  # Si ce n'est pas un admin/superadmin
+        query = query.filter_by(commercial_id=current_user.id)
+    
+    # Récupérer les clients triés par date de création
+    clients = query.order_by(Client.date_creation.desc()).all()
+    
     return render_template('clients/liste.html', clients=clients)
 
 @client_bp.route('/clients')
@@ -73,6 +85,13 @@ def index():
 @login_required
 @role_required('commercial', 'admin', 'superadmin')
 def add():
+    # Vérifier la limite de clients
+    if current_user.role in ['commercial', 'admin']:
+        client_count = count_user_clients(current_user.id)
+        if client_count >= 3:
+            flash('Vous avez atteint la limite de 3 clients. vous etes en mode access anticipé Veuillez contacter DSL  pour en créer davantage .   .' 'danger')
+            return redirect(url_for('client.index'))
+
     form = ClientForm()
     
     if form.validate_on_submit():

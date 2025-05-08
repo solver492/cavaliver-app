@@ -331,71 +331,19 @@
 <div class="page-header">
     <div class="container">
         <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary btn-back">
-                    <i class="fas fa-arrow-left"></i> Retour
-                </a>
-                <h1 class="d-inline-block mb-0 fs-4"><i class="fas fa-calendar-alt"></i> Calendrier des prestations</h1>
-            </div>
-            <!-- Les boutons de filtrage ont été supprimés car ils ne sont plus nécessaires -->
-            <div id="calendar-filters" class="d-flex gap-2">
-                <!-- Espace réservé pour d'éventuels filtres futurs -->
-            </div>
+            <h1 class="d-inline-block mb-0 fs-4"><i class="fas fa-calendar-alt"></i> Calendrier des prestations</h1>
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary btn-back">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
         </div>
     </div>
 </div>
 
 <div class="calendar-container">
-    {% if agenda %}
-        <h2>{{ agenda.nom }}</h2>
-        <div class="agenda-events-list mb-4">
-            {% if evenements %}
-                {% for evt in evenements %}
-                <div class="event-card">
-                    <h4>{{ evt.type_demenagement }}</h4>
-                    <p class="text-muted">{{ evt.date_debut|format_date }}</p>
-                    {% if evt.client %}
-                        <p>Client: {{ evt.client.nom }} {{ evt.client.prenom }}</p>
-                    {% endif %}
-                    <p>{{ evt.observations or '' }}</p>
-                </div>
-                {% endfor %}
-            {% else %}
-                <p class="text-center text-muted">Aucun événement pour cet agenda</p>
-            {% endif %}
-        </div>
-    {% endif %}
     <div id="calendar" class="calendar-fullscreen"></div>
 </div>
 
-<div class="calendar-legend">
-    <div class="legend-item">
-        <div class="legend-color" style="background-color: #ffc107;"></div>
-        <span>En attente</span>
-    </div>
-    <div class="legend-item">
-        <div class="legend-color" style="background-color: #17a2b8;"></div>
-        <span>Confirmée</span>
-    </div>
-    <div class="legend-item">
-        <div class="legend-color" style="background-color: #007bff;"></div>
-        <span>En cours</span>
-    </div>
-    <div class="legend-item">
-        <div class="legend-color" style="background-color: #28a745;"></div>
-        <span>Terminée</span>
-    </div>
-    <div class="legend-item">
-        <div class="legend-color" style="background-color: #dc3545;"></div>
-        <span>Annulée</span>
-    </div>
-    <div class="legend-item">
-        <div class="legend-color" style="background-color: #6c757d;"></div>
-        <span>Refusée</span>
-    </div>
-</div>
-
-<!-- Panneau de détails de prestation -->
+<!-- Panneau de détails -->
 <div class="prestation-details">
     <div class="prestation-details-content">
         <div class="prestation-header d-flex justify-content-between align-items-center">
@@ -403,59 +351,6 @@
             <i class="fas fa-times close-details"></i>
         </div>
         <div id="prestation-details-container"></div>
-    </div>
-</div>
-<!-- Modal pour l'ajout de planning -->
-<div class="modal fade" id="planning-modal" tabindex="-1" aria-labelledby="planningModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="planningModalLabel">Nouveau Planning</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-            </div>
-            <div class="modal-body">
-                <form id="planning-form">
-                    <div class="mb-3">
-                        <label for="planning-type" class="form-label">Type de planning</label>
-                        <select class="form-select" id="planning-type" name="planning-type" required>
-                            <option value="" selected disabled>Sélectionner un type</option>
-                            <option value="demenagement">Déménagement</option>
-                            <option value="stockage">Stockage</option>
-                        </select>
-                        <div class="form-text text-muted mt-2" id="type-description">
-                            Veuillez sélectionner un type de planning pour continuer.
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="planning-name" class="form-label">Nom du planning</label>
-                        <input type="text" class="form-control" id="planning-name" name="planning-name" placeholder="Ex: Déménagement client Dupont" required>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="start-date" class="form-label">Date de début</label>
-                            <input type="date" class="form-control" id="start-date" name="start-date" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="end-date" class="form-label">Date de fin</label>
-                            <input type="date" class="form-control" id="end-date" name="end-date" required>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="planning-tags" class="form-label">Tags (facultatif)</label>
-                        <input type="text" class="form-control" id="planning-tags" name="planning-tags" placeholder="Ex: urgent, spécial, équipe A">
-                        <div class="form-text text-muted">Séparez les tags par des virgules</div>
-                    </div>
-
-                    <div class="modal-footer px-0 pb-0">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-primary">Continuer</button>
-                    </div>
-                </form>
-            </div>
-        </div>
     </div>
 </div>
 {% endblock %}
@@ -489,14 +384,16 @@
             'X-CSRFToken': csrfToken || ''
         };
 
-        // Initialisation du calendrier
-        console.log("Configuration du calendrier...");
-        window.calendar = new FullCalendar.Calendar(calendarEl, {
+        // Vérifier si l'utilisateur est un transporteur
+        const isTransporteur = {{ 'true' if current_user.role == 'transporteur' else 'false' }};
+
+        // Configuration du calendrier
+        var calendar = new FullCalendar.Calendar(calendarEl, {
             // Options de base
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+                right: isTransporteur ? 'dayGridMonth,timeGridWeek,timeGridDay,listWeek' : 'dayGridMonth,timeGridWeek,timeGridDay,listWeek,addPrestation'
             },
             locale: 'fr',
             initialView: 'dayGridMonth',
@@ -550,10 +447,10 @@
 
                 // Ajouter un tooltip avec les informations de base
                 const title = info.event.title;
-                const statut = info.event.extendedProps.statut;
-                const type = info.event.extendedProps.type_demenagement;
-                const adresse_depart = info.event.extendedProps.adresse_depart;
-                const adresse_arrivee = info.event.extendedProps.adresse_arrivee;
+                const statut = info.event.extendedProps?.statut || 'Non défini';
+                const type = info.event.extendedProps?.type_demenagement || 'Non défini';
+                const adresse_depart = info.event.extendedProps?.adresse_depart || 'Non renseignée';
+                const adresse_arrivee = info.event.extendedProps?.adresse_arrivee || 'Non renseignée';
 
                 const content = `
                     <div class="tooltip-event">
@@ -654,32 +551,15 @@
                     })
                     .then(data => {
                         console.log("Données reçues:", data);
-                        if (data.length === 0) {
-                            console.warn("Aucun événement reçu de l'API");
+                        if (Array.isArray(data)) {
+                            successCallback(data);
+                        } else {
+                            throw new Error('Format de données invalide');
                         }
-                        successCallback(data);
                     })
                     .catch(error => {
                         console.error('Erreur de chargement des événements:', error);
-
-                        // En cas d'erreur, on affiche des événements de test
-                        const today = new Date();
-                        const testEvents = [
-                            {
-                                id: 999,
-                                title: 'Test - Déménagement',
-                                start: today.toISOString(),
-                                end: new Date(today.getTime() + (3 * 60 * 60 * 1000)).toISOString(),
-                                color: '#ffc107',
-                                extendedProps: {
-                                    statut: 'En attente',
-                                    adresse_depart: 'Adresse de test',
-                                    adresse_arrivee: 'Destination de test',
-                                    type_demenagement: 'Appartement'
-                                }
-                            }
-                        ];
-                        successCallback(testEvents);
+                        successCallback([]); // Afficher un calendrier vide en cas d'erreur
                     });
             },
 
@@ -698,249 +578,126 @@
                 calendar.updateSize();
             },
 
-            // Gestion du clic sur un événement - Système simplifié comme dans le dashboard
+            // Gestion du clic sur un événement
             eventClick: function(info) {
-                console.log("Clic sur un événement:", info.event.title, "ID:", info.event.id);
+                const event = info.event;
+                const prestationId = event.id;
                 
-                // Récupérer les informations de base de l'événement
-                const prestationId = info.event.id;
-                const title = info.event.title || 'Sans titre';
-                const start = info.event.start ? info.event.start.toLocaleDateString('fr-FR') : 'Non défini';
-                const end = info.event.end ? info.event.end.toLocaleDateString('fr-FR') : 'Non défini';
-                const statut = info.event.extendedProps?.statut || 'Non défini';
-                const type = info.event.extendedProps?.type_demenagement || 'Non défini';
+                // Récupérer les détails directement depuis l'événement
+                const adresseDepart = event.extendedProps.adresse_depart || 'Non renseignée';
+                const adresseArrivee = event.extendedProps.adresse_arrivee || 'Non renseignée';
+                const typePrestation = event.extendedProps.type_demenagement || 'Non défini';
                 
-                // Extraire le nom du client depuis le titre de l'événement
-                const extractedClient = title.split(' - ')[0] || 'Client non spécifié';
-                
-                // Extraire les adresses de départ et d'arrivée
-                let adresseDepart = 'Non renseignée';
-                let adresseArrivee = 'Non renseignée';
-                
-                if (info.event.extendedProps?.adresse_depart) {
-                    adresseDepart = info.event.extendedProps.adresse_depart;
-                }
-                
-                if (info.event.extendedProps?.adresse_arrivee) {
-                    adresseArrivee = info.event.extendedProps.adresse_arrivee;
-                }
-                
-                // Extraire les observations
-                const observations = info.event.extendedProps?.observations || '';
-                
-                // Afficher le panneau de détails
-                prestationDetails.classList.add('active');
-                
-                // Construire le HTML des détails directement sans appel API
-                const container = document.getElementById('prestation-details-container');
-                
-                // Couleur du badge selon le statut
-                const badgeClass = {
-                    'En attente': 'bg-warning text-dark',
-                    'Confirmée': 'bg-info text-white',
-                    'En cours': 'bg-primary text-white',
-                    'Terminée': 'bg-success text-white',
-                    'Annulée': 'bg-danger text-white',
-                    'Refusée': 'bg-secondary text-white'
-                }[statut] || 'bg-secondary text-white';
-                
-                // Construire le HTML des détails
+                // Créer le contenu HTML
                 const html = `
-                    <div>
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0">Prestation #${prestationId}</h5>
-                            <span class="badge prestation-detail-badge ${badgeClass}">${statut}</span>
+                    <div class="p-3">
+                        <h4 class="mb-4">Prestation #${prestationId}</h4>
+                        
+                        <div class="mb-4">
+                            <h5 class="text-muted mb-3">
+                                <i class="fas fa-calendar me-2"></i>Dates
+                            </h5>
+                            <span>Du ${event.start ? event.start.toLocaleDateString('fr-FR') : ''} au ${event.end ? event.end.toLocaleDateString('fr-FR') : ''}</span>
                         </div>
 
-                        <div class="detail-section card mb-3">
-                            <div class="card-body">
-                                <h6 class="card-subtitle mb-3 text-muted d-flex align-items-center">
-                                    <i class="fas fa-user me-2 text-primary"></i> Client
-                                </h6>
-                                <p class="card-text mb-2 fw-bold">${extractedClient}</p>
-                                <p class="card-text mb-0">Pour voir les détails complets du client, cliquez sur le bouton "Fiche complète" ci-dessous.</p>
+                        <div class="mb-4">
+                            <h5 class="text-muted mb-3">
+                                <i class="fas fa-map-marker-alt me-2"></i>Adresses
+                            </h5>
+                            <div class="mb-3">
+                                <strong>Départ:</strong><br>
+                                <span>${adresseDepart}</span>
+                            </div>
+                            <div>
+                                <strong>Arrivée:</strong><br>
+                                <span>${adresseArrivee}</span>
                             </div>
                         </div>
 
-                        <div class="detail-section card mb-3">
-                            <div class="card-body">
-                                <h6 class="card-subtitle mb-3 text-muted d-flex align-items-center">
-                                    <i class="fas fa-calendar-alt me-2 text-primary"></i> Dates
-                                </h6>
-                                <p class="card-text">Du ${start} au ${end}</p>
-                            </div>
+                        <div class="mb-4">
+                            <h5 class="text-muted mb-3">
+                                <i class="fas fa-truck me-2"></i>Type de prestation
+                            </h5>
+                            <span>${typePrestation}</span>
                         </div>
 
-                        <div class="detail-section card mb-3">
-                            <div class="card-body">
-                                <h6 class="card-subtitle mb-3 text-muted d-flex align-items-center">
-                                    <i class="fas fa-map-marker-alt me-2 text-primary"></i> Adresses
-                                </h6>
-                                <p class="card-text mb-2"><span class="fw-bold">Départ:</span> ${adresseDepart}</p>
-                                <p class="card-text"><span class="fw-bold">Arrivée:</span> ${adresseArrivee}</p>
-                            </div>
-                        </div>
-
-                        <div class="detail-section card mb-3">
-                            <div class="card-body">
-                                <h6 class="card-subtitle mb-3 text-muted d-flex align-items-center">
-                                    <i class="fas fa-truck me-2 text-primary"></i> Type de prestation
-                                </h6>
-                                <p class="card-text">${type}</p>
-                            </div>
-                        </div>
-
-                        ${observations ? `
-                        <div class="detail-section card mb-3">
-                            <div class="card-body">
-                                <h6 class="card-subtitle mb-3 text-muted d-flex align-items-center">
-                                    <i class="fas fa-clipboard-list me-2 text-primary"></i> Observations
-                                </h6>
-                                <p class="card-text">${observations}</p>
-                            </div>
-                        </div>
-                        ` : ''}
-
-                        <div class="action-buttons">
-                            <a href="/prestations/view/${prestationId}" class="btn btn-primary">
-                                <i class="fas fa-eye me-1"></i> Fiche complète
+                        <div class="text-end mt-4">
+                            ${!isTransporteur ? `
+                                <a href="/prestations/edit/${prestationId}" class="btn btn-secondary me-2" target="_blank">
+                                    <i class="fas fa-edit"></i> Modifier
+                                </a>
+                            ` : ''}
+                            <a href="/prestations/view/${prestationId}" class="btn btn-primary" target="_blank">
+                                Voir tous les détails
                             </a>
-                            <button class="btn btn-outline-secondary close-panel-btn">
-                                <i class="fas fa-times me-1"></i> Fermer
-                            </button>
                         </div>
                     </div>
                 `;
                 
-                // Mettre à jour le contenu du panneau
-                container.innerHTML = html;
+                // Mettre à jour le contenu
+                const detailsPanel = document.querySelector('.prestation-details');
+                const detailsContainer = document.getElementById('prestation-details-container');
+                detailsContainer.innerHTML = html;
                 
-                // Ajouter l'événement de fermeture au bouton
-                document.querySelector('.close-panel-btn')?.addEventListener('click', function() {
-                    document.querySelector('.prestation-details')?.classList.remove('active');
-                });
-            }
-        });
+                // Afficher le panneau
+                detailsPanel.classList.add('active');
+            },
 
-        // Fonction pour rafraîchir l'affichage du calendrier
-        function updateCalendarSize() {
-            calendar.updateSize();
-        }
+            // Fonction pour rafraîchir l'affichage du calendrier
+            function updateCalendarSize() {
+                calendar.updateSize();
+            },
 
-        // Rendu du calendrier
-        console.log("Rendu du calendrier...");
-        calendar.render();
+            // Rafraîchir le calendrier après que tous les éléments soient chargés
+            window.addEventListener('load', updateCalendarSize);
 
-        // Forcer un rafraîchissement après le rendu initial
-        setTimeout(updateCalendarSize, 100);
-
-        // Rafraîchir le calendrier après que tous les éléments soient chargés
-        window.addEventListener('load', updateCalendarSize);
-
-        // Fermer le panneau de détails
-        closeDetailsBtn.addEventListener('click', function() {
-            prestationDetails.classList.remove('active');
-        });
-
-        // La gestion des filtres a été désactivée car les boutons ont été supprimés
-        // Tous les événements sont maintenant affichés par défaut
-        // Les couleurs des événements sont appliquées automatiquement selon leur statut
-
-        // Fonction pour réinitialiser le calendrier
-        function initCalendar() {
-            calendar.render();
-            setTimeout(updateCalendarSize, 100);
-
+            // Fermer le panneau de détails
             closeDetailsBtn.addEventListener('click', function() {
                 prestationDetails.classList.remove('active');
             });
 
             // La gestion des filtres a été désactivée car les boutons ont été supprimés
-            // Tous les événements sont maintenant affichés avec leurs couleurs selon leur statut
+            // Tous les événements sont maintenant affichés par défaut
+            // Les couleurs des événements sont appliquées automatiquement selon leur statut
+
+            // Fonction pour réinitialiser le calendrier
+            function initCalendar() {
+                calendar.render();
+                setTimeout(updateCalendarSize, 100);
+
+                closeDetailsBtn.addEventListener('click', function() {
+                    prestationDetails.classList.remove('active');
+                });
+
+                // La gestion des filtres a été désactivée car les boutons ont été supprimés
+                // Tous les événements sont maintenant affichés avec leurs couleurs selon leur statut
+            }
+        });
+
+        // Obtenir la classe de badge selon le statut
+        function getBadgeClass(statut) {
+            return {
+                'En attente': 'bg-warning text-dark',
+                'Confirmée': 'bg-info text-white',
+                'En cours': 'bg-primary text-white',
+                'Terminée': 'bg-success text-white',
+                'Annulée': 'bg-danger text-white',
+                'Refusée': 'bg-secondary text-white'
+            }[statut] || 'bg-secondary text-white';
         }
     });
 
 
 
-    // Obtenir la classe de badge selon le statut
-    function getBadgeClass(statut) {
-        return {
-            'En attente': 'bg-warning text-dark',
-            'Confirmée': 'bg-info text-white',
-            'En cours': 'bg-primary text-white',
-            'Terminée': 'bg-success text-white',
-            'Annulée': 'bg-danger text-white',
-            'Refusée': 'bg-secondary text-white'
-        }[statut] || 'bg-secondary text-white';
-    }
-</script>
+    // Rendu du calendrier
+    console.log("Rendu du calendrier...");
+    calendar.render();
 
-<!-- Script pour la gestion des plannings -->
-<script src="{{ url_for('static', filename='js/planning-manager.js') }}"></script>
+    // Forcer un rafraîchissement après le rendu initial
+    setTimeout(updateCalendarSize, 100);
+</script>
 
 <!-- Script pour la recherche intelligente -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/calendar-search.css') }}">
 <script src="{{ url_for('static', filename='js/calendar-search.js') }}"></script>
-
-<!-- Code directement inséré pour l'ajout du bouton Planning -->
-<script>
-    // Attendre que la page soit chargée
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log("Initialisation du bouton Planning (code intégré)...");
-
-        // Créer le bouton d'ajout de planning
-        function createPlanningButton() {
-            // Vérifier si le bouton existe déjà
-            if (document.getElementById('add-planning-button')) return;
-
-            // Créer le bouton
-            var button = document.createElement('button');
-            button.id = 'add-planning-button';
-            button.className = 'btn btn-primary';
-            button.innerHTML = '<i class="fas fa-plus me-1"></i> Ajouter Planning';
-            button.style.marginLeft = '10px';
-
-            // Ajouter l'événement click
-            button.onclick = function() {
-                var planningModal = document.getElementById('planning-modal');
-                if (planningModal) {
-                    var modal = new bootstrap.Modal(planningModal);
-                    modal.show();
-                }
-            };
-
-            // Insérer le bouton après l'onglet Planning
-            var planningTab = document.querySelector('.fc-listMonth-button');
-            if (planningTab && planningTab.parentNode) {
-                planningTab.parentNode.appendChild(button);
-                console.log("Bouton 'Ajouter Planning' ajouté après l'onglet Planning");
-                return true;
-            }
-
-            // Alternative: insérer dans le dernier chunk de la barre d'outils
-            var toolbarChunks = document.querySelectorAll('.fc-toolbar-chunk');
-            if (toolbarChunks.length > 0) {
-                var lastChunk = toolbarChunks[toolbarChunks.length - 1];
-                lastChunk.appendChild(button);
-                console.log("Bouton 'Ajouter Planning' ajouté dans la barre d'outils");
-                return true;
-            }
-
-            return false;
-        }
-
-        // Essayer de créer le bouton plusieurs fois (pour s'assurer que la page est chargée)
-        setTimeout(createPlanningButton, 500);
-        setTimeout(createPlanningButton, 1000);
-        setTimeout(createPlanningButton, 2000);
-
-        // Observer les changements de vue pour ajouter le bouton quand on passe en vue Planning
-        document.addEventListener('click', function(e) {
-            if (e.target && (e.target.classList.contains('fc-listMonth-button') || 
-                (e.target.textContent && e.target.textContent.includes('Planning')))) {
-                setTimeout(createPlanningButton, 100);
-            }
-        });
-    });
-</script>
 {% endblock %}

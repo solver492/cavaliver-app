@@ -6,7 +6,7 @@
     padding: 0.25rem 0.5rem;
     margin: 0.15rem;
     border-radius: 3px;
-    background-color: #e9ecef;
+    background-color: #a7cff8;
     font-size: 0.85rem;
     color: #495057;
 }
@@ -24,21 +24,41 @@
 }
 
 .tag-volumineux {
-    background-color: #d1ecf1;
+    background-color: #cc5848;
     color: #0c5460;
     border-left: 3px solid #17a2b8;
 }
 
 .tag-international {
-    background-color: #d4edda;
+    background-color: #74e78f;
     color: #155724;
     border-left: 3px solid #28a745;
 }
 
 .tag-enterprise {
-    background-color: #cce5ff;
+    background-color: #ffa703;
     color: #004085;
     border-left: 3px solid #007bff;
+}
+
+/* Styles pour les tags du document */
+.document-tag {
+    background-color: #007bff;
+    color: #000000;  
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    margin-right: 5px;
+    display: inline-block;
+}
+
+/* Styles pour les statuts dans la vue document */
+.document-status {
+    background-color: #007bff;
+    color: #000000;  
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    display: inline-block;
+    font-weight: 500;
 }
 
 /* Styles pour les champs date */
@@ -108,11 +128,52 @@
     margin-right: 5px;
 }
 
+.statut-en-cours {
+    background-color: #ffee00;
+    color: #000000;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-weight: 500;
+}
+
 .status-en-attente { background-color: #ffc107; }
 .status-confirmee { background-color: #17a2b8; }
 .status-en-cours { background-color: #007bff; }
 .status-terminee { background-color: #28a745; }
 .status-annulee { background-color: #dc3545; }
+
+/* Styles pour les statuts de prestation */
+.status-encours {
+    color: #000000;
+    background-color: #90EE90;  /* Vert clair */
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.status-enattente {
+    color: #000000;
+    background-color: #FFE4B5;  /* Orange clair */
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.status-terminee {
+    color: #000000;
+    background-color: #B0C4DE;  /* Bleu clair */
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.status-annulee {
+    color: #000000;
+    background-color: #FFB6C1;  /* Rouge clair */
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
 
 /* Animation pour le chargement des suggestions */
 @keyframes pulse {
@@ -148,7 +209,7 @@
 .selected-file {
     padding: 5px;
     margin-bottom: 5px;
-    background-color: #f8f9fa;
+    background-color: #9dc1e4;
     border-radius: 3px;
     display: flex;
     align-items: center;
@@ -182,4 +243,13 @@ select.form-control {
     min-height: 38px !important;
     max-height: 38px !important;
     line-height: 1.5 !important;
+}
+
+/* Style pour le format du document */
+.document-format {
+    color: #000000;  /* Texte noir */
+    background-color: #f8f9fa;  /* Fond légèrement gris pour un bon contraste */
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
 }

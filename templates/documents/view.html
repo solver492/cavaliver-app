@@ -46,14 +46,14 @@
                                         <td>{{ document.type|capitalize if document.type else '-' }}</td>
                                     </tr>
                                     <tr>
-                                        <th scope="row">Catégorie</th>
+                                        <th scope="row">Categorie</th>
                                         <td>{{ document.categorie|capitalize if document.categorie else '-' }}</td>
                                     </tr>
                                     <tr>
                                         <th scope="row">Format</th>
                                         <td>
                                             {% if document.format %}
-                                            <span class="badge badge-info">{{ document.format }}</span>
+                                            <span class="document-format">{{ document.format }}</span>
                                             {% else %}
                                             -
                                             {% endif %}
@@ -87,11 +87,7 @@
                                     <tr>
                                         <th scope="row">Statut</th>
                                         <td>
-                                            {% if document.statut == 'actif' %}
-                                            <span class="badge badge-success">Actif</span>
-                                            {% else %}
-                                            <span class="badge badge-secondary">Archivé</span>
-                                            {% endif %}
+                                            <span class="document-status">{{ document.statut }}</span>
                                         </td>
                                     </tr>
                                     <tr>
@@ -99,7 +95,7 @@
                                         <td>
                                             {% if document.tags %}
                                             {% for tag in document.tags.split(',') %}
-                                            <span class="badge badge-secondary">{{ tag.strip() }}</span>
+                                            <span class="document-tag">{{ tag.strip() }}</span>
                                             {% endfor %}
                                             {% else %}
                                             -

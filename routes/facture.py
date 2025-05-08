@@ -317,7 +317,7 @@ def get_prestations(client_id):
 @facture_bp.route('/factures/<int:facture_id>/upload-file', methods=['POST'])
 @login_required
 def upload_file(facture_id):
-    if current_user.role not in ['admin', 'commercial', 'super_admin']:
+    if current_user.role == 'transporteur':
         flash('Vous n\'avez pas l\'autorisation d\'ajouter des fichiers.', 'danger')
         return redirect(url_for('facture.view', id=facture_id))
     
@@ -397,16 +397,22 @@ def download_file(fichier_id):
 @facture_bp.route('/factures/<int:facture_id>/delete-file')
 @login_required
 def delete_file(facture_id):
-    if current_user.role not in ['admin', 'super_admin']:
+    if current_user.role == 'transporteur':
         flash('Vous n\'avez pas l\'autorisation de supprimer des fichiers.', 'danger')
         return redirect(url_for('facture.view', id=facture_id))
-    
+
     file_id = request.args.get('file_id', type=int)
     if not file_id:
         flash('ID de fichier non spécifié.', 'danger')
         return redirect(url_for('facture.view', id=facture_id))
     
     fichier = FichierFacture.query.get_or_404(file_id)
+    facture = Facture.query.get_or_404(facture_id)
+    
+    # Vérifier si l'utilisateur est le commercial de la facture
+    if current_user.role == 'commercial' and current_user.id != facture.commercial_id:
+        flash('Vous n\'avez pas l\'autorisation de supprimer ce fichier.', 'danger')
+        return redirect(url_for('facture.view', id=facture_id))
     
     # Vérifier si le fichier existe et le supprimer du disque
     if os.path.exists(fichier.chemin_fichier):
