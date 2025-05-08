@@ -9,7 +9,7 @@ deploymentTarget = "autoscale"
 run = ["sh", "-c", "python main.py"]
 
 [workflows]
-runButton = "Run App"
+runButton = "Run"
 
 [[workflows.workflow]]
 name = "Project"
@@ -47,6 +47,15 @@ args = "python app.py"
 [[workflows.workflow]]
 name = "Run App"
 author = 41622333
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python app.py"
+
+[[workflows.workflow]]
+name = "Run"
+author = 42451886
 mode = "sequential"
 
 [[workflows.workflow.tasks]]

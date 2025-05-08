@@ -88,7 +88,7 @@ def download_file(fichier_id):
 def delete_file(fichier_id):
     fichier = FichierFacture.query.get_or_404(fichier_id)
     facture_id = fichier.facture_id
-    
+
     try:
         if os.path.exists(fichier.chemin_fichier):
             os.remove(fichier.chemin_fichier)
@@ -97,31 +97,5 @@ def delete_file(fichier_id):
         flash('Fichier supprimé avec succès', 'success')
     except Exception as e:
         flash(f'Erreur lors de la suppression du fichier: {str(e)}', 'error')
-    
-    return redirect(url_for('facture.view', id=facture_id))
 
-@facture_bp.route('/delete_file/<int:facture_id>', methods=['GET'])
-@login_required
-def delete_file(facture_id):
-    file_id = request.args.get('file_id')
-    if not file_id:
-        flash('ID du fichier manquant', 'error')
-        return redirect(url_for('facture.view', id=facture_id))
-
-    fichier = FichierFacture.query.get_or_404(file_id)
-    if fichier.facture_id != facture_id:
-        flash('Fichier non autorisé', 'error')
-        return redirect(url_for('facture.view', id=facture_id))
-
-    try:
-        # Supprimer le fichier physique
-        os.remove(os.path.join('uploads', fichier.nom_fichier))
-    except:
-        pass # Ignorer si le fichier n'existe pas
-
-    # Supprimer l'entrée de la base de données
-    db.session.delete(fichier)
-    db.session.commit()
-
-    flash('Fichier supprimé avec succès', 'success')
     return redirect(url_for('facture.view', id=facture_id))
