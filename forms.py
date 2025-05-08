@@ -1,3 +1,18 @@
+
+class FactureSearchForm(FlaskForm):
+    client_id = SelectField('Client', coerce=int, choices=[])
+    statut = SelectField('Statut', choices=[
+        ('', 'Tous'),
+        ('En attente', 'En attente'),
+        ('Payée', 'Payée'),
+        ('Retard', 'Retard'),
+        ('Annulée', 'Annulée')
+    ])
+    date_debut = DateField('Date début')
+    date_fin = DateField('Date fin')
+    submit = SubmitField('Rechercher')
+    reset = SubmitField('Réinitialiser')
+
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import (

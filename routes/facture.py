@@ -7,11 +7,14 @@ from utils_modules.notifications import is_authorized
 
 facture_bp = Blueprint('facture', __name__)
 
+from forms import FactureSearchForm
+
 @facture_bp.route('/')
 @login_required
 def index():
+    form = FactureSearchForm()
     factures = Facture.query.all()
-    return render_template('factures/index.html', factures=factures, title='Gestion des factures')
+    return render_template('factures/index.html', factures=factures, form=form, title='Gestion des factures')
 
 @facture_bp.route('/add', methods=['GET', 'POST'])
 @login_required
