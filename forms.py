@@ -1,5 +1,5 @@
-
 from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField, TextAreaField, SelectField, DateField, FloatField, BooleanField, SelectMultipleField, HiddenField, IntegerField
 
 class FactureSearchForm(FlaskForm):
     client_id = SelectField('Client', coerce=int, choices=[])
@@ -251,10 +251,10 @@ class SearchUserForm(FlaskForm):
             ('commercial', 'Commercial'),
             ('admin', 'Admin')
         ]
-        
+
         if current_user.role == 'superadmin':
             role_choices.append(('superadmin', 'Super Admin'))
-            
+
         self.role.choices = base_choices + role_choices
 
 class StockageForm(FlaskForm):
