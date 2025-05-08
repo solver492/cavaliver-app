@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from models import Facture, Prestation, FichierFacture
@@ -72,6 +72,32 @@ def upload_file(facture_id):
         db.session.commit()
         flash('Fichier téléversé avec succès', 'success')
 
+    return redirect(url_for('facture.view', id=facture_id))
+
+@facture_bp.route('/download_file/<int:fichier_id>')
+@login_required
+def download_file(fichier_id):
+    fichier = FichierFacture.query.get_or_404(fichier_id)
+    if not os.path.exists(fichier.chemin_fichier):
+        flash('Le fichier n\'existe pas sur le serveur', 'error')
+        return redirect(url_for('facture.view', id=fichier.facture_id))
+    return send_file(fichier.chemin_fichier, as_attachment=True, download_name=fichier.nom_fichier)
+
+@facture_bp.route('/delete_file/<int:fichier_id>', methods=['POST'])
+@login_required
+def delete_file(fichier_id):
+    fichier = FichierFacture.query.get_or_404(fichier_id)
+    facture_id = fichier.facture_id
+    
+    try:
+        if os.path.exists(fichier.chemin_fichier):
+            os.remove(fichier.chemin_fichier)
+        db.session.delete(fichier)
+        db.session.commit()
+        flash('Fichier supprimé avec succès', 'success')
+    except Exception as e:
+        flash(f'Erreur lors de la suppression du fichier: {str(e)}', 'error')
+    
     return redirect(url_for('facture.view', id=facture_id))
 
 @facture_bp.route('/delete_file/<int:facture_id>', methods=['GET'])
