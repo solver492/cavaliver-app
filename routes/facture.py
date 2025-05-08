@@ -60,13 +60,15 @@ def upload_file(facture_id):
     if file:
         type_fichier = request.form.get('type_fichier', 'autre')
         filename = secure_filename(file.filename)
+        chemin = os.path.join('uploads', filename)
         fichier = FichierFacture(
             facture_id=facture_id,
             nom_fichier=filename,
+            chemin_fichier=chemin,
             type_fichier=type_fichier
         )
         db.session.add(fichier)
-        file.save(os.path.join('uploads', filename))
+        file.save(chemin)
         db.session.commit()
         flash('Fichier téléversé avec succès', 'success')
 
