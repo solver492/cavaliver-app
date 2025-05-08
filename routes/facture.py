@@ -11,8 +11,8 @@ from forms import FactureSearchForm
 @facture_bp.route('/')
 @login_required
 def index():
-    form = FactureSearchForm()
     factures = Facture.query.all()
+    form = FactureSearchForm()
     return render_template('factures/index.html', factures=factures, form=form, title='Gestion des factures')
 
 @facture_bp.route('/add', methods=['GET', 'POST'])
@@ -31,3 +31,12 @@ def edit(id):
 def view(id):
     facture = Facture.query.get_or_404(id)
     return render_template('factures/view.html', facture=facture, title='Détails de la facture')
+
+@facture_bp.route('/delete/<int:id>', methods=['POST'])
+@login_required
+def delete(id):
+    facture = Facture.query.get_or_404(id)
+    db.session.delete(facture)
+    db.session.commit()
+    flash('Facture supprimée avec succès.', 'success')
+    return redirect(url_for('facture.index'))

@@ -97,7 +97,11 @@
                                             <i class="fas fa-file-pdf"></i>
                                         </a>
                                         {% if current_user.is_admin() %}
-                                            <a href="{{ url_for('facture.delete', id=facture.id) }}" 
+                                            <form action="{{ url_for('facture.delete', id=facture.id) }}" method="POST" style="display: inline;">
+    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette facture ?');">
+        <i class="fas fa-trash"></i> Supprimer
+    </button>
+</form> 
                                                class="btn btn-outline-danger delete-facture" 
                                                title="Supprimer" 
                                                data-facture-num="{{ facture.numero }}">
