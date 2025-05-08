@@ -2,37 +2,39 @@ from flask import flash
 from models import Notification, User, Prestation
 from extensions import db
 from datetime import datetime
+from flask_login import current_user
+
+def is_authorized(user, resource):
+    """
+    Vérifie si un utilisateur est autorisé à accéder à une ressource
+    """
+    if not user:
+        return False
+
+    if user.role == 'admin':
+        return True
+
+    if hasattr(resource, 'user_id'):
+        return user.id == resource.user_id
+
+    return False
 
 def notifier_transporteurs(prestation, transporteurs_ids, type_notification='assignation'):
-    """
-    Envoie des notifications aux transporteurs lorsqu'ils sont assignés à une prestation.
-    
-    Args:
-        prestation: L'objet Prestation auquel les transporteurs sont assignés
-        transporteurs_ids: Liste des IDs des transporteurs à notifier
-        type_notification: Type de notification ('assignation', 'modification', 'annulation')
-    
-    Returns:
-        bool: True si les notifications ont été envoyées avec succès, False sinon
-    """
     try:
         for transporteur_id in transporteurs_ids:
-            # Vérifier que le transporteur existe
             transporteur = User.query.filter_by(id=transporteur_id, role='transporteur').first()
             if not transporteur:
                 continue
-                
-            # Créer le message approprié selon le type de notification
+
             if type_notification == 'assignation':
-                message = f"Vous avez été assigné à une nouvelle prestation du {prestation.date_debut.strftime('%d/%m/%Y')} au {prestation.date_fin.strftime('%d/%m/%Y')}. Adresse de départ: {prestation.adresse_depart}. Adresse d'arrivée: {prestation.adresse_arrivee}."
+                message = f"Vous avez été assigné à une nouvelle prestation du {prestation.date_debut.strftime('%d/%m/%Y')} au {prestation.date_fin.strftime('%d/%m/%Y')}."
             elif type_notification == 'modification':
-                message = f"Une prestation à laquelle vous êtes assigné a été modifiée. Dates: du {prestation.date_debut.strftime('%d/%m/%Y')} au {prestation.date_fin.strftime('%d/%m/%Y')}."
+                message = f"Une prestation à laquelle vous êtes assigné a été modifiée."
             elif type_notification == 'annulation':
-                message = f"Une prestation à laquelle vous étiez assigné a été annulée. Dates: du {prestation.date_debut.strftime('%d/%m/%Y')} au {prestation.date_fin.strftime('%d/%m/%Y')}."
+                message = f"Une prestation à laquelle vous étiez assigné a été annulée."
             else:
-                message = f"Mise à jour concernant une prestation. Dates: du {prestation.date_debut.strftime('%d/%m/%Y')} au {prestation.date_fin.strftime('%d/%m/%Y')}."
-            
-            # Créer la notification
+                message = f"Mise à jour concernant une prestation."
+
             notification = Notification(
                 message=message,
                 type='info',
@@ -41,9 +43,9 @@ def notifier_transporteurs(prestation, transporteurs_ids, type_notification='ass
                 prestation_id=prestation.id,
                 date_creation=datetime.utcnow()
             )
-            
+
             db.session.add(notification)
-        
+
         db.session.commit()
         return True
     except Exception as e:
