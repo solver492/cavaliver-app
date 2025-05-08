@@ -1,6 +1,8 @@
+import os
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
-from models import Facture, Prestation
+from werkzeug.utils import secure_filename
+from models import Facture, Prestation, FichierFacture
 from extensions import db
 from utils_modules.notifications import is_authorized
 
@@ -41,3 +43,31 @@ def delete(id):
     db.session.commit()
     flash('Facture supprimée avec succès.', 'success')
     return redirect(url_for('facture.index'))
+
+@facture_bp.route('/upload_file/<int:facture_id>', methods=['POST'])
+@login_required
+def upload_file(facture_id):
+    facture = Facture.query.get_or_404(facture_id)
+    if 'file' not in request.files:
+        flash('Aucun fichier sélectionné', 'error')
+        return redirect(url_for('facture.view', id=facture_id))
+    
+    file = request.files['file']
+    if file.filename == '':
+        flash('Aucun fichier sélectionné', 'error')
+        return redirect(url_for('facture.view', id=facture_id))
+
+    if file:
+        type_fichier = request.form.get('type_fichier', 'autre')
+        filename = secure_filename(file.filename)
+        fichier = FichierFacture(
+            facture_id=facture_id,
+            nom_fichier=filename,
+            type_fichier=type_fichier
+        )
+        db.session.add(fichier)
+        file.save(os.path.join('uploads', filename))
+        db.session.commit()
+        flash('Fichier téléversé avec succès', 'success')
+        
+    return redirect(url_for('facture.view', id=facture_id))
