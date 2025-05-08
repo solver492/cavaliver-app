@@ -30,7 +30,8 @@ def edit(id):
 @login_required
 def view(id):
     facture = Facture.query.get_or_404(id)
-    return render_template('factures/view.html', facture=facture, title='Détails de la facture')
+    client = facture.client
+    return render_template('factures/view.html', facture=facture, client=client, title='Détails de la facture')
 
 @facture_bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
