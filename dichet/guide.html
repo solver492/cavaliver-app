@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guide Utilisateur - {{ config.APP_NAME }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/guide.css') }}">
-    {# Polices de caractères hébergées localement pour plus de fiabilité #}
-    <link rel="stylesheet" href="{{ url_for('static', filename='fonts/inter.css') }}">
+    <title>Guide et bonnes pratiques - {{ config.APP_NAME }}</title>
     <style>
         :root {
             --primary: #005e40;
@@ -18,7 +15,7 @@
             --border-radius: 8px;
         }
         body {
-            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
             background-color: #f5f5f5;
@@ -174,6 +171,10 @@
             border-radius: var(--border-radius);
             text-align: center;
         }
+        .support-section h3 {
+            color: var(--secondary);
+            margin-top: 0;
+        }
         .support-contact {
             display: flex;
             justify-content: center;
@@ -326,7 +327,8 @@
             to { opacity: 1; }
         }
         @media (max-width: 640px) {
-            .feature-grid {
+            .feature-grid,
+            .benefits-grid {
                 grid-template-columns: 1fr;
             }
             .tab-button {
@@ -345,335 +347,88 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/guide.css') }}">
 </head>
 <body>
 
 <div class="help-widget">
-
     <div class="widget-header">
-        <div class="logo-icon">S</div>
-        <h1>Guide Utilisateur - STAR PLAN</h1>
+        <div class="logo-icon">C</div>
+        <h1>Guide d'Aide</h1>
         <button class="close-button">&times;</button>
     </div>
-
     <div class="search-bar">
-        <input type="text" class="search-input" placeholder="Rechercher une aide...">
+        <input type="text" id="guide-search" class="search-input" placeholder="Rechercher une fonctionnalité...">
     </div>
-
     <div class="tab-navigation">
-        <button class="tab-button active" data-tab="commercial">
-            <i class="icon">💼</i> Commercial
+        <button class="tab-button active" data-tab="avantages">
+            <i class="icon">⭐</i> Avantages
         </button>
-        <button class="tab-button" data-tab="transporteur-content">
+        <button class="tab-button" data-tab="transporteur">
             <i class="icon">🚚</i> Transporteur
+        </button>
+        <button class="tab-button" data-tab="commercial">
+            <i class="icon">💼</i> Commercial
         </button>
         <button class="tab-button" data-tab="admin">
             <i class="icon">⚙️</i> Admin
         </button>
-        <button class="tab-button" data-tab="avantages">
-            <i class="icon">🌟</i> Avantages
-        </button>
-    </div>
-
-    <!-- Contenu Commercial -->
-    <div class="tab-content active" id="commercial">
-        <div class="section">
-            <h3><span class="section-icon">👥</span> Gestion des clients</h3>
-            <div class="step">
-                <div class="step-title">Ajouter un nouveau client</div>
-                <p>Pour ajouter un nouveau client, cliquez sur le bouton "+ Nouveau client" en haut à droite de l'écran dans la section "Gestion des clients".</p>
-            </div>
-            <div class="step">
-                <div class="step-title">Vue avancée des clients</div>
-                <p>Utilisez le bouton "Vue Avancée" pour accéder à une visualisation détaillée et filtrable de vos clients.</p>
-            </div>
-            <div class="step">
-                <div class="step-title">Consulter la fiche client</div>
-                <p>Dans la liste des clients, cliquez sur le bouton d'action fiche client pour accéder à sa fiche complète avec ses coordonnées.</p>
-            </div>
-        </div>
-
-        <div class="section">
-            <h3><span class="section-icon">📦</span> Création de prestations</h3>
-            <div class="step">
-                <div class="step-title">Nouvelle prestation</div>
-                <p>Cliquez sur "Nouvelle Prestation" dans les options rapides du tableau de bord ou naviguez vers la section Prestations.</p>
-            </div>
-            <div class="step">
-                <div class="step-title">Assignation des transporteurs</div>
-                <p>Dans la fiche prestation, vous pouvez assigner un transporteur dans la section "Transporteurs assignés" puis cliquer sur "Modifier les transporteurs".</p>
-            </div>
-            <div class="step">
-                <div class="step-title">Gestion des étapes intermédiaires</div>
-                <p>Pour ajouter des points d'arrêt entre deux destinations, allez dans la page Vue prestation, puis cliquez sur le bouton jaune "Gérer les étapes" dans le bloc Adresse. Vous pouvez ajouter des étapes en cas de groupage avec plusieurs arrêts.</p>
-            </div>
-            <div class="step">
-                <div class="step-title">Ajout d'observations</div>
-                <p>Vous pouvez ajouter des observations sur une prestation dans le bloc prévu à cet effet. Chaque observation est automatiquement accompagnée de votre nom, de la date et du contenu.</p>
-            </div>
-        </div>
-
-        <div class="section">
-            <h3><span class="section-icon">📊</span> Facturation</h3>
-            <div class="step">
-                <div class="step-title">Créer une facture</div>
-                <p>Module opérationnel futurement</p>
-                <div class="module-unavailable">Fonctionnalité en développement</div>
-            </div>
-        </div>
-
-        <div class="info-note">
-            <h4><i class="icon">ℹ️</i> Information</h4>
-            <p>En tant que commercial, vous êtes responsable de la gestion des clients, des prestations et de la distribution des tâches. Vous recevez des agendas partagés par l'administrateur que vous pouvez gérer et assigner aux transporteurs.</p>
-        </div>
-
-        <div class="tip-box">
-            <h4><i class="icon">💡</i> Astuce</h4>
-            <p>Vous pouvez imprimer la fiche de prestation pour vos clients. Le logo de la société ainsi que le type de société impliquée dans la prestation seront visibles sur l'impression.</p>
-        </div>
-
-        <div class="support-section">
-            <h3>Besoin d'aide supplémentaire ?</h3>
-            <div class="support-contact">
-                <div class="support-item">
-                    <i class="icon">✉️</i> digitalsolverland@gmail.com
-                </div>
-                <div class="support-item">
-                    <i class="icon">📞</i> +33773163772
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Contenu Transporteur -->
-    <div class="tab-content" id="transporteur-content">
-        <div class="section">
-            <h3><span class="section-icon">🚚</span> Prestations assignées</h3>
-            <div class="step">
-                <div class="step-title">Consulter mes prestations</div>
-                <p>Votre tableau de bord affiche automatiquement les prestations qui vous sont assignées pour la journée.</p>
-            </div>
-            <div class="step">
-                <div class="step-title">Accéder aux détails</div>
-                <p>Cliquez sur une prestation pour voir tous les détails : adresses, horaires, instructions spéciales et contact client.</p>
-            </div>
-        </div>
-
-        <div class="section">
-            <h3><span class="section-icon">📱</span> Mise à jour des statuts</h3>
-            <div class="step">
-                <div class="step-title">Démarrer une prestation</div>
-                <p>Avant de commencer, consultez les détails complets et prenez connaissance du point de départ et du point d'arrivée.</p>
-            </div>
-            <div class="step">
-                <div class="step-title">Finaliser une prestation</div>
-                <p>Une fois terminée, mettez à jour le statut en "Terminée" et ajoutez des photos si nécessaire dans votre gestion d'événement dans l'agenda généré dans votre module "Gestion des agendas".</p>
-            </div>
-            <div class="step">
-                <div class="step-title">Ajouter des observations</div>
-                <p>Dans la page Vue prestation, vous pouvez ajouter des observations dans le bloc prévu à cet effet. Il est important d'actualiser la page pour que les informations soient bien enregistrées. Il n'est pas nécessaire de cliquer sur "Enregistrer" deux fois : l'actualisation suffit.</p>
-            </div>
-        </div>
-
-        <div class="section">
-            <h3><span class="section-icon">📅</span> Gestion du calendrier</h3>
-            <div class="step">
-                <div class="step-title">Consulter mon planning</div>
-                <p>Cliquez sur "Calendrier" pour voir votre planning complet des prestations à venir.</p>
-            </div>
-            <div class="step">
-                <div class="step-title">Partager mon agenda</div>
-                <p>Vous pouvez partager votre agenda avec le commercial pour une meilleure coordination des prestations.</p>
-            </div>
-        </div>
-
-        <div class="tip-box">
-            <h4><i class="icon">💡</i> Astuce</h4>
-            <p>Vérifiez régulièrement vos notifications sur l'icône de cloche rouge pour rester informé des nouvelles prestations ou modifications.</p>
-            <div class="notification-preview">
-                Nouvelle prestation assignée : Déménagement de maison le 08/05/2025
-                <div class="notification-icon">1</div>
-            </div>
-        </div>
-
-        <div class="feature-grid">
-            <div class="feature-card">
-                <h4><i class="icon">📷</i> Photos</h4>
-                <p>Ajoutez des photos avant/après pour documenter l'état des biens transportés.</p>
-            </div>
-            <div class="feature-card">
-                <h4><i class="icon">📝</i> Notes</h4>
-                <p>Utilisez la section "Observations" pour signaler toute information importante.</p>
-            </div>
-        </div>
-
-        <div class="support-section">
-            <h3>Besoin d'aide supplémentaire ?</h3>
-            <div class="support-contact">
-                <div class="support-item">
-                    <i class="icon">✉️</i> digitalsolverland@gmail.com
-                </div>
-                <div class="support-item">
-                    <i class="icon">📞</i> +33773163772
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Contenu Admin -->
-    <div class="tab-content" id="admin">
-        <div class="section">
-            <h3><span class="section-icon">👥</span> Gestion des utilisateurs</h3>
-            <div class="step">
-                <div class="step-title">Créer un compte utilisateur</div>
-                <p>Dans la section "Utilisateurs", vous pouvez ajouter de nouveaux utilisateurs et définir leurs rôles (Commercial, Transporteur,).</p>
-            </div>
-        </div>
-
-        <div class="section">
-            <h3><span class="section-icon">📅</span> Gestion des agendas</h3>
-            <div class="step">
-                <div class="step-title">Créer et partager des agendas</div>
-                <p>En tant qu'administrateur, il est primordial de créer les agendas et de les partager avec les commerciaux concernés.</p>
-            </div>
-            <div class="step">
-                <div class="step-title">Coordination des équipes</div>
-                <p>Vous supervisez la distribution du travail entre les équipes commerciales qui, à leur tour, gèrent les transporteurs.</p>
-            </div>
-        </div>
-
-        <div class="section">
-            <h3><span class="section-icon">📊</span> Supervision et statistiques</h3>
-            <div class="step">
-                <div class="step-title">Tableau de bord analytique</div>
-                <p>Consultez l'évolution du chiffre d'affaires et autres métriques importantes pour piloter l'activité.</p>
-            </div>
-            <div class="step">
-                <div class="step-title">Suivi des performances</div>
-                <p>Analysez les données pour optimiser la gestion des ressources et améliorer la productivité.</p>
-            </div>
-        </div>
-
-        <div class="info-note">
-            <h4><i class="icon">ℹ️</i> Important</h4>
-            <p>En tant qu'administrateur, votre rôle principal est de créer et partager les agendas avec les commerciaux. Le commercial gère ensuite les clients, les prestations et la distribution des tâches aux transporteurs. Ce système d'agendas partagés permet une coordination efficace entre tous les acteurs.</p>
-        </div>
-
-        <div class="interface-example">
-            <div class="interface-header">
-                Flux de travail recommandé
-            </div>
-            <div class="interface-body">
-                <ol>
-                    <li>L'administrateur crée les agendas et les partage avec les commerciaux</li>
-                    <li>Les commerciaux gèrent les clients et créent les prestations</li>
-                    <li>Les commerciaux assignent les prestations aux transporteurs</li>
-                    <li>Les transporteurs exécutent les prestations et mettent à jour leur statut</li>
-                    <li>L'administrateur supervise l'ensemble et analyse les performances</li>
-                </ol>
-            </div>
-        </div>
-
-        <div class="support-section">
-            <h3>Besoin d'aide supplémentaire ?</h3>
-            <div class="support-contact">
-                <div class="support-item">
-                    <i class="icon">✉️</i> digitalsolverland@gmail.com
-                </div>
-                <div class="support-item">
-                    <i class="icon">📞</i> +33773163772
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Contenu Avantages -->
-    <div class="tab-content" id="avantages">
-        <div class="benefits-section">
-            <h2>Avantages de l'Application STAR PLAN</h2>
-            <div class="benefits-grid">
-                <div class="benefit-item">
-                    <div class="benefit-icon">🔄</div>
-                    <div class="benefit-title">Coordination Optimisée</div>
-                    <p>Une communication fluide entre administrateurs, commerciaux et transporteurs grâce à un système d'agendas partagés et de notifications en temps réel.</p>
+    <div class="tab-content active" id="avantages">
+        <div class="section">
+            <h2><span class="section-icon">⭐</span> Avantages de l'Application </h2>
+            <p>L'application est conçue pour optimiser votre workflow et maximiser votre productivité. Voici quelques-uns des principaux avantages :</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4><i class="icon">⏰</i> Gain de Temps</h4>
+                    <p>Automatisation des processus récurrents comme la création de prestations, l'assignation des transporteurs et la gestion des agendas vous permettent de gagner jusqu'à 40% de temps.</p>
                 </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">⏱️</div>
-                    <div class="benefit-title">Gain de Temps Considérable</div>
-                    <p>Automatisation des processus d'assignation et de suivi des prestations, réduisant les tâches administratives de plus de 40%.</p>
+                <div class="feature-card">
+                    <h4><i class="icon">📅</i> Gestion des Agendas Partagés</h4>
+                    <p>Les agendas partagés facilitent la coordination entre administrateurs, commerciaux et transporteurs, évitant les conflits et garantissant une visibilité globale.</p>
                 </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">📊</div>
-                    <div class="benefit-title">Visibilité Complète</div>
-                    <p>Tableau de bord analytique permettant de suivre les performances, la productivité et le chiffre d'affaires en temps réel.</p>
+                <div class="feature-card">
+                    <h4><i class="icon">📊</i> Tableau de Bord Analytique</h4>
+                    <p>Accédez en temps réel aux données clés sur vos performances, chiffres d'affaires et activités récentes pour piloter efficacement votre activité.</p>
                 </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">📱</div>
-                    <div class="benefit-title">Mobilité & Flexibilité</div>
-                    <p>Accès à toute l'information nécessaire sur le terrain pour les transporteurs avec mises à jour synchronisées pour tous les acteurs.</p>
+                <div class="feature-card">
+                    <h4><i class="icon">📂</i> Gestion des Documents</h4>
+                    <p>Téléchargez et organisez facilement tous les documents liés à vos clients et prestations, avec des catégories et tags personnalisables pour une recherche rapide.</p>
                 </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">🔍</div>
-                    <div class="benefit-title">Traçabilité Complète</div>
-                    <p>Historique détaillé de chaque action, observation et modification avec horodatage et identification de l'auteur pour une totale transparence.</p>
+                <div class="feature-card">
+                    <h4><i class="icon">📝</i> Observations Collaboratives</h4>
+                    <p>Partagez des observations en temps réel avec toute l'équipe via le bloc "Observations". Chaque observation est horodatée et signée automatiquement pour une traçabilité complète.</p>
                 </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">🚀</div>
-                    <div class="benefit-title">Évolutivité</div>
-                    <p>Structure modulaire permettant d'intégrer facilement de nouvelles fonctionnalités comme la facturation (prochainement disponible).</p>
+                <div class="feature-card">
+                    <h4><i class="icon">🚀</i> Évolutivité</h4>
+                    <p>L'application est constamment mise à jour avec de nouvelles fonctionnalités comme la facturation (prochainement disponible) pour répondre à vos besoins évoluant.</p>
                 </div>
             </div>
         </div>
 
         <div class="section">
-            <h3><span class="section-icon">🔄</span> Flux de travail intégré</h3>
-            <div class="workflow-section">
-                <div class="workflow-step">
-                    <div class="workflow-number">1</div>
-                    <div class="workflow-content">
-                        <div class="workflow-title">Création & Partage d'Agendas</div>
-                        <p>L'administrateur crée les agendas et les partage avec les commerciaux concernés, établissant le cadre de travail.</p>
-                    </div>
-                </div>
-                <div class="workflow-step">
-                    <div class="workflow-number">2</div>
-                    <div class="workflow-content">
-                        <div class="workflow-title">Gestion des Clients & Prestations</div>
-                        <p>Les commerciaux ajoutent et gèrent les clients, créent les prestations et définissent les détails opérationnels.</p>
-                    </div>
-                </div>
-                <div class="workflow-step">
-                    <div class="workflow-number">3</div>
-                    <div class="workflow-content">
-                        <div class="workflow-title">Assignation aux Transporteurs</div>
-                        <p>Les commerciaux assignent les prestations aux transporteurs appropriés, avec possibilité de gérer plusieurs transporteurs par prestation.</p>
-                    </div>
-                </div>
-                <div class="workflow-step">
-                    <div class="workflow-number">4</div>
-                    <div class="workflow-content">
-                        <div class="workflow-title">Exécution & Suivi</div>
-                        <p>Les transporteurs reçoivent les informations, exécutent les prestations et mettent à jour leur statut en temps réel.</p>
-                    </div>
-                </div>
-                <div class="workflow-step">
-                    <div class="workflow-number">5</div>
-                    <div class="workflow-content">
-                        <div class="workflow-title">Analyse & Optimisation</div>
-                        <p>L'administrateur analyse les performances et les données pour optimiser les ressources et améliorer la productivité.</p>
-                    </div>
-                </div>
-            </div>
+            <h3><span class="section-icon">🔄</span> Flux de Travail Intégré</h3>
+            <p>Voici un aperçu du flux de travail simplifié grâce à l'application  :</p>
+            <ol>
+                <li><strong>Création & Partage d'Agendas</strong> : L'administrateur crée les agendas et les partage avec les commerciaux concernés.</li>
+                <li><strong>Gestion des Clients & Prestations</strong> : Les commerciaux ajoutent et gèrent les clients, créent les prestations et définissent les détails opérationnels.</li>
+                <li><strong>Assignation aux Transporteurs</strong> : Les commerciaux assignent les prestations aux transporteurs appropriés, avec possibilité de gérer plusieurs transporteurs par prestation.</li>
+                <li><strong>Exécution & Suivi</strong> : Les transporteurs reçoivent les informations, exécutent les prestations et mettent à jour leur statut en temps réel.</li>
+                <li><strong>Analyse & Optimisation</strong> : L'administrateur analyse les performances et les données pour optimiser les ressources et améliorer la productivité.</li>
+            </ol>
         </div>
 
         <div class="section">
-            <h3><span class="section-icon">📋</span> Gestion détaillée des prestations</h3>
+            <h3><span class="section-icon">📋</span> Gestion Détaillée des Prestations</h3>
             <div class="step">
-                <div class="step-title">Prestations multi-étapes</div>
+                <div class="step-title">Prestations Multi-Étapes</div>
                 <p>Ajoutez facilement des points d'arrêt entre deux destinations pour gérer les groupages et les livraisons multiples. Le système coordonne automatiquement les transporteurs impliqués.</p>
             </div>
             <div class="step">
-                <div class="step-title">Suivi des statuts intelligent</div>
+                <div class="step-title">Suivi des Statuts Intelligent</div>
                 <p>Le statut global d'une prestation est actualisé automatiquement en fonction des actions des transporteurs, permettant une vision claire de l'avancement pour toutes les parties.</p>
             </div>
         </div>
@@ -710,22 +465,235 @@
             </div>
         </div>
     </div>
+    <!-- Contenu Commercial -->
+    <div class="tab-content" id="commercial">
+        <div class="section">
+            <h3><span class="section-icon">👥</span> Gestion des clients</h3>
+            <div class="step">
+                <div class="step-title">Ajouter un nouveau client</div>
+                <p>Pour ajouter un nouveau client, cliquez sur le bouton "+ Nouveau client" en haut à droite de l'écran dans la section "Gestion des clients".</p>
+            </div>
+            <div class="step">
+                <div class="step-title">Vue avancée des clients</div>
+                <p>Utilisez le bouton "Vue Avancée" pour accéder à une visualisation détaillée et filtrable de vos clients.</p>
+            </div>
+            <div class="step">
+                <div class="step-title">Consulter la fiche client</div>
+                <p>Dans la liste des clients, cliquez sur le nom du client pour accéder à sa fiche complète avec historique et coordonnées.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3><span class="section-icon">📦</span> Création de prestations</h3>
+            <div class="step">
+                <div class="step-title">Nouvelle prestation</div>
+                <p>Cliquez sur "Nouvelle Prestation" dans les options rapides du tableau de bord ou naviguez vers la section Prestations.</p>
+            </div>
+            <div class="step">
+                <div class="step-title">Assignation des transporteurs</div>
+                <p>Dans la fiche prestation, vous pouvez assigner un transporteur dans la section "Transporteurs assignés", puis cliquer sur "Modifier les transporteurs".</p>
+            </div>
+            <div class="step">
+                <div class="step-title">Gestion des étapes intermédiaires</div>
+                <p>Pour ajouter des points d'arrêt entre deux destinations, allez dans la page Vue prestation, puis cliquez sur le bouton jaune "Gérer les étapes" dans le bloc Adresse. Vous pouvez ajouter des étapes en cas de groupage avec plusieurs arrêts.</p>
+            </div>
+            <div class="step">
+                <div class="step-title">Ajout d'observations</div>
+                <p>Vous pouvez ajouter des observations sur une prestation dans le bloc prévu à cet effet. Chaque observation est automatiquement accompagnée de votre nom, de la date et du contenu.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3><span class="section-icon">📅</span> Gestion des agendas et des prestations</h3>
+
+            <div class="important-alert">
+                <h4><i class="icon">⚠️</i> Suppression d’un agenda</h4>
+                <p>Il ne faut jamais supprimer un agenda contenant des événements. C’est à l’utilisateur ayant créé un événement de le supprimer d’abord. Ensuite, l’agenda pourra être supprimé.</p>
+                <p>👉 Cette règle évite les conflits de données et garantit une traçabilité des actions.</p>
+            </div>
+
+            <div class="info-note">
+                <h4><i class="icon">ℹ️</i> Rôle de l’administrateur et du commercial</h4>
+                <p>L’administrateur ne reçoit pas d’agenda ; il les crée et les partage avec les commerciaux.</p>
+                <p>Le commercial est responsable de :</p>
+                <ul>
+                    <li>Ajouter les événements,</li>
+                    <li>Uploader les fichiers,</li>
+                    <li>Ajouter des observations,</li>
+                    <li>Assigner le client au transporteur.</li>
+                </ul>
+                <p>Le commercial peut aussi recevoir des agendas de la part des transporteurs.</p>
+            </div>
+
+            <div class="tip-box">
+                <h4><i class="icon">💡</i> Astuce</h4>
+                <p> cliquer sur "Enregistrer" : est actualisé votre page cela vas intégré que ce sois un evenement dans un agenda ou une observation dans une prestation .</p>
+            </div>
+
+            <div class="feature-card">
+                <h4><i class="icon">🚚</i> Gestion des étapes et du transport</h4>
+                <p>Pour ajouter des points d’arrêt (étapes) entre deux destinations :</p>
+                <ol>
+                    <li>Aller dans la page Vue prestation,</li>
+                    <li>Dans le bloc Adresse, cliquer sur le bouton "Gérer les étapes" (en jaune).</li>
+                </ol>
+                <p>Le commercial peut :</p>
+                <ul>
+                    <li>Ajouter des étapes (en cas de groupage avec plusieurs arrêts),</li>
+                    <li>Assigner plusieurs camions à une même prestation.</li>
+                </ul>
+                <p>Le transporteur, dans la même page, peut ajouter des observations (dans le bloc “Observations”) et doit actualiser la page pour que les informations soient enregistrées.</p>
+                <div class="tip-box">
+                    <h4><i class="icon">📌</i> Astuce</h4>
+                    <p> cliquer sur "Enregistrer" : est actualisé votre page cela vas intégré que ce sois un evenement dans un agenda ou une observation dans une prestation .</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <h4><i class="icon">✏️</i> Observations et impression</h4>
+                <p>Admin et commerciaux peuvent ajouter des observations à une prestation.</p>
+                <p>Chaque observation est horodatée et signée automatiquement.</p>
+                <p><strong>Possibilité d’imprimer la fiche de prestation.</strong></p>
+                <p>Le logo de la société ainsi que le type de société apparaîtront sur le document.</p>
+            </div>
+
+            <div class="feature-card">
+                <h4><i class="icon">✅</i> Sélection et statut du transporteur</h4>
+                <p>Dans la page de sélection du transporteur :</p>
+                <ul>
+                    <li>Le statut du transporteur dépend de son acceptation et de la tâche marquée comme "terminée".</li>
+                    <li>Le statut de la prestation est mis à jour en fonction du transporteur et de ses arrêts.</li>
+                </ul>
+                <p>Si plusieurs transporteurs sont assignés à une seule prestation :</p>
+                <ul>
+                    <li>Le dernier transporteur à terminer son trajet doit marquer la tâche comme terminée,</li>
+                    <li>Ensuite, les autres doivent aussi marquer la tâche comme terminée,</li>
+                </ul>
+                <div class="tip-box">
+                    <h4><i class="icon">📌</i> Coordination</h4>
+                    <p>Cela assure une coordination et une cohérence dans le suivi.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="support-section">
+            <h3>Besoin d'aide supplémentaire ?</h3>
+            <div class="support-contact">
+                <div class="support-item">
+                    <i class="icon">✉️</i> digitalsolverland@gmail.com
+                </div>
+                <div class="support-item">
+                    <i class="icon">📞</i> +33773163772
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenu Transporteur -->
+    <div class="tab-content" id="transporteur">
+        <div class="section">
+            <h3><span class="section-icon">🚚</span> Prestations assignées</h3>
+            <div class="step">
+                <div class="step-title">Consulter mes prestations</div>
+                <p>Votre tableau de bord affiche automatiquement les prestations qui vous sont assignées pour la journée.</p>
+            </div>
+            <div class="step">
+                <div class="step-title">Accéder aux détails</div>
+                <p>Cliquez sur une prestation pour voir tous les détails : adresses, horaires, instructions spéciales et contact client.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3><span class="section-icon">📱</span> Mise à jour des statuts</h3>
+            <div class="step">
+                <div class="step-title">Démarrer une prestation</div>
+                <p>Avant de commencer, consultez les détails complets et prenez connaissance du point de départ et du point d'arrivée.</p>
+            </div>
+            <div class="step">
+                <div class="step-title">Finaliser une prestation</div>
+                <p>Une fois terminée, mettez à jour le statut en "Terminée" et ajoutez des photos si nécessaire dans votre gestion d'événement dans l'agenda généré dans votre module "Gestion des agendas".</p>
+            </div>
+            <div class="step">
+                <div class="step-title">Ajouter des observations</div>
+                <p>Dans la page Vue prestation, vous pouvez ajouter des observations dans le bloc prévu à cet effet. Il est important d'actualiser la page pour que les informations soient bien enregistrées. Il n'est pas nécessaire de cliquer sur "Enregistrer" : l'actualisation suffit.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3><span class="section-icon">📅</span> Gestion du calendrier</h3>
+            <div class="step">
+                <div class="step-title">Consulter mon planning</div>
+                <p>Cliquez sur "Calendrier" pour voir votre planning complet des prestations à venir.</p>
+            </div>
+            <div class="step">
+                <div class="step-title">Partager mon agenda</div>
+                <p>Vous pouvez partager votre agenda avec le commercial pour une meilleure coordination des prestations.</p>
+            </div>
+        </div>
+
+        <div class="tip-box">
+            <h4><i class="icon">💡</i> Astuce</h4>
+            <p>Vérifiez régulièrement vos notifications sur l'icône de cloche rouge pour rester informé des nouvelles prestations ou modifications.</p>
+        </div>
+
+        <div class="support-section">
+            <h3>Besoin d'aide supplémentaire ?</h3>
+            <div class="support-contact">
+                <div class="support-item">
+                    <i class="icon">✉️</i> digitalsolverland@gmail.com
+                </div>
+                <div class="support-item">
+                    <i class="icon">📞</i> +33773163772
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenu Admin -->
+    <div class="tab-content" id="admin">
+        <div class="section">
+            <h3><span class="section-icon">📅</span> Gestion des agendas</h3>
+            <div class="step">
+                <div class="step-title">Créer et partager des agendas</div>
+                <p>En tant qu'administrateur, il est primordial de créer les agendas et de les partager avec les commerciaux concernés.</p>
+            </div>
+            <div class="step">
+                <div class="step-title">Coordination des équipes</div>
+                <p>Vous supervisez la distribution du travail entre les équipes commerciales qui, à leur tour, gèrent les transporteurs.</p>
+            </div>
+        </div>
+
+        <div class="support-section">
+            <h3>Besoin d'aide supplémentaire ?</h3>
+            <div class="support-contact">
+                <div class="support-item">
+                    <i class="icon">✉️</i> digitalsolverland@gmail.com
+                </div>
+                <div class="support-item">
+                    <i class="icon">📞</i> +33773163772
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
     // Fonction pour changer d'onglets
     document.querySelectorAll('.tab-button').forEach(button => {
         button.addEventListener('click', () => {
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            // Désactiver tous les onglets
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            // Activer l'onglet sélectionné
             button.classList.add('active');
             const tabId = button.getAttribute('data-tab');
-            const targetContent = document.getElementById(tabId);
-            if (targetContent) {
-                targetContent.classList.add('active');
-            } else {
-                console.error('Content not found for tab:', tabId);
-            }
+            document.getElementById(tabId).classList.add('active');
         });
     });
 
@@ -744,14 +712,8 @@
             }
         });
     });
-
-    // Fermer le widget
-    document.querySelector('.close-button').addEventListener('click', () => {
-        window.location.href = "{{ url_for('dashboard.index') }}";
-    });
 </script>
 
-{# Inclusion du script de recherche de l'application #}
 <script src="{{ url_for('static', filename='js/guide-search.js') }}"></script>
 
 </body>

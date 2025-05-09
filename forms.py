@@ -116,15 +116,27 @@ class FactureForm(FlaskForm):
         ('L\'écuyer', 'L\'écuyer'),
         ('Nassali', 'Nassali')
     ])
+    mode_paiement = SelectField('Mode de paiement', choices=[
+        ('', 'Sélectionner un mode de paiement'),
+        ('virement', 'Virement bancaire'),
+        ('cheque', 'Chèque'),
+        ('especes', 'Espèces'),
+        ('cb', 'Carte bancaire')
+    ])
     numero = StringField('Numéro de facture', validators=[DataRequired()])
     date_emission = DateField('Date d\'émission', validators=[DataRequired()], default=datetime.now)
-    date_echeance = DateField('Date d\'échéance', validators=[DataRequired()], default=datetime.now() + timedelta(days=30))
-
-    # Montants
-    montant_ht = FloatField('Montant TTC de la prestation', validators=[DataRequired()])
-    taux_tva = FloatField('Montant de l\'acompte', default=0)
-    montant_ttc = FloatField('Montant Commission commerciale', default=0)
-    montant_acompte = FloatField('Montant de l\'acompte', default=0)
+    date_echeance = DateField('Date d\'échéance', validators=[DataRequired()], default=lambda: datetime.now() + timedelta(days=30))
+    montant_ht = FloatField('Montant HT', validators=[DataRequired()])
+    taux_tva = FloatField('Montant de l\'acompte', default=0.0)
+    montant_ttc = FloatField('Montant TTC', validators=[DataRequired()])
+    statut = SelectField('Statut', choices=[
+        ('En attente', 'En attente'),
+        ('Payée', 'Payée'),
+        ('Retard', 'Retard'),
+        ('Annulée', 'Annulée')
+    ], default='En attente')
+    notes = TextAreaField('Notes')
+    commercial_id = HiddenField('Commercial ID')
 
     # Champs commission
     commission_pourcentage = FloatField('Pourcentage de commission (%)', default=0)

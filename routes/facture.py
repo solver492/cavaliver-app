@@ -2,13 +2,13 @@ import os
 from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
-from models import Facture, Prestation, FichierFacture
+from models import Facture, Client, Prestation, FichierFacture
 from extensions import db
+from forms import FactureSearchForm, FactureForm
 from utils_modules.notifications import is_authorized
 
 facture_bp = Blueprint('facture', __name__)
 
-from forms import FactureSearchForm
 
 @facture_bp.route('/')
 @login_required
@@ -20,13 +20,71 @@ def index():
 @facture_bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add():
-    return render_template('factures/add.html', title='Ajouter une facture')
+    form = FactureForm()
+    
+    # Récupérer la liste des clients et prestations pour les champs select
+    clients = Client.query.filter_by(archive=False).all()
+    prestations = Prestation.query.filter_by(archive=False).all()
+    
+    # Mettre à jour les choix des champs select
+    form.client_id.choices = [(c.id, f"{c.nom} {c.prenom}") for c in clients]
+    form.prestation_id.choices = [(p.id, f"Prestation #{p.id} - {p.adresse_depart[:30]}...") for p in prestations]
+    
+    if form.validate_on_submit():
+        facture = Facture(
+            client_id=form.client_id.data,
+            prestation_id=form.prestation_id.data,
+            societe=form.societe.data,
+            numero=form.numero.data,
+            date_emission=form.date_emission.data,
+            date_echeance=form.date_echeance.data,
+            montant_ht=form.montant_ht.data,
+            taux_tva=form.taux_tva.data,
+            montant_ttc=form.montant_ttc.data,
+            statut=form.statut.data,
+            notes=form.notes.data,
+            commercial_id=current_user.id,
+            mode_paiement=form.mode_paiement.data
+        )
+        db.session.add(facture)
+        db.session.commit()
+        flash('Facture créée avec succès.', 'success')
+        return redirect(url_for('facture.index'))
+    return render_template('factures/add.html', form=form, title='Ajouter une facture')
 
-@facture_bp.route('/edit/<int:id>', methods=['GET', 'POST'])
+@facture_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit(id):
     facture = Facture.query.get_or_404(id)
-    return render_template('factures/edit.html', facture=facture, title='Modifier une facture')
+    form = FactureForm(obj=facture)
+    
+    # Récupérer la liste des clients et prestations pour les champs select
+    clients = Client.query.filter_by(archive=False).all()
+    prestations = Prestation.query.filter_by(archive=False).all()
+    
+    # Mettre à jour les choix des champs select
+    form.client_id.choices = [(c.id, f"{c.nom} {c.prenom}") for c in clients]
+    form.prestation_id.choices = [(p.id, f"Prestation #{p.id} - {p.adresse_depart[:30]}...") for p in prestations]
+    
+    if form.validate_on_submit():
+        facture.client_id = form.client_id.data
+        facture.prestation_id = form.prestation_id.data
+        facture.societe = form.societe.data
+        facture.numero = form.numero.data
+        facture.date_emission = form.date_emission.data
+        facture.date_echeance = form.date_echeance.data
+        facture.montant_ht = form.montant_ht.data
+        facture.taux_tva = form.taux_tva.data
+        facture.montant_ttc = form.montant_ttc.data
+        facture.statut = form.statut.data
+        facture.notes = form.notes.data
+        facture.mode_paiement = form.mode_paiement.data
+        
+        db.session.commit()
+        flash('Facture modifiée avec succès.', 'success')
+        return redirect(url_for('facture.index'))
+        
+    return render_template('factures/edit.html', form=form, facture=facture, title='Modifier une facture')
 
 @facture_bp.route('/view/<int:id>')
 @login_required
