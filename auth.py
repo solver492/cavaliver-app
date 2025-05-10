@@ -15,9 +15,10 @@ def role_required(*roles):
             if current_user.role in ['admin', 'commercial']:
                 module = request.blueprint
                 if module in ['stockage', 'facture']:
-                    flash('Module en développement. Accès temporairement restreint.', 'warning')
+                    flash('Ce module est en cours de développement et sera disponible dans un futur proche. Accès temporairement restreint.', 'warning')
                     return redirect(url_for('dashboard.index'))
 
+            # Vérifier le rôle de l'utilisateur
             if not any(current_user.role == role for role in roles):
                 abort(403)
             return f(*args, **kwargs)

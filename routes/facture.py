@@ -6,12 +6,14 @@ from models import Facture, Client, Prestation, FichierFacture
 from extensions import db
 from forms import FactureSearchForm, FactureForm
 from utils_modules.notifications import is_authorized
+from auth import role_required
 
 facture_bp = Blueprint('facture', __name__)
 
 
 @facture_bp.route('/')
 @login_required
+@role_required('commercial', 'admin', 'superadmin')
 def index():
     factures = Facture.query.all()
     form = FactureSearchForm()
@@ -19,6 +21,7 @@ def index():
 
 @facture_bp.route('/add', methods=['GET', 'POST'])
 @login_required
+@role_required('commercial', 'admin', 'superadmin')
 def add():
     form = FactureForm()
     
@@ -54,6 +57,7 @@ def add():
 
 @facture_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
+@role_required('commercial', 'admin', 'superadmin')
 def edit(id):
     facture = Facture.query.get_or_404(id)
     form = FactureForm(obj=facture)
@@ -88,6 +92,7 @@ def edit(id):
 
 @facture_bp.route('/view/<int:id>')
 @login_required
+@role_required('commercial', 'admin', 'superadmin')
 def view(id):
     facture = Facture.query.get_or_404(id)
     client = facture.client
@@ -95,6 +100,7 @@ def view(id):
 
 @facture_bp.route('/delete/<int:id>', methods=['POST'])
 @login_required
+@role_required('commercial', 'admin', 'superadmin')
 def delete(id):
     facture = Facture.query.get_or_404(id)
     db.session.delete(facture)
@@ -104,6 +110,7 @@ def delete(id):
 
 @facture_bp.route('/upload_file/<int:facture_id>', methods=['POST'])
 @login_required
+@role_required('commercial', 'admin', 'superadmin')
 def upload_file(facture_id):
     facture = Facture.query.get_or_404(facture_id)
     if 'file' not in request.files:
@@ -134,6 +141,7 @@ def upload_file(facture_id):
 
 @facture_bp.route('/download/<int:fichier_id>')
 @login_required
+@role_required('commercial', 'admin', 'superadmin')
 def download_file(fichier_id):
     fichier = FichierFacture.query.get_or_404(fichier_id)
     if not os.path.exists(fichier.chemin_fichier):
@@ -143,6 +151,7 @@ def download_file(fichier_id):
 
 @facture_bp.route('/delete_file/<int:facture_id>', methods=['GET'])
 @login_required
+@role_required('commercial', 'admin', 'superadmin')
 def delete_file(facture_id):
     file_id = request.args.get('file_id')
     if not file_id:
