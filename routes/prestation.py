@@ -99,13 +99,6 @@ def add():
     # Vérifier les permissions
     check_permission()
     
-    # Vérifier la limite de prestations
-    if current_user.role in ['commercial', 'admin']:
-        prestation_count = count_user_prestations(current_user.id)
-        if prestation_count >= 3:
-            flash('Vous avez atteint la limite de 3 prestations. Vous êtes en mode accès anticipé. Veuillez contacter DSL pour en créer davantage.', 'danger')
-            return redirect(url_for('prestation.index'))
-    
     form = PrestationForm()
     
     try:

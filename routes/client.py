@@ -85,13 +85,6 @@ def index():
 @login_required
 @role_required('commercial', 'admin', 'superadmin')
 def add():
-    # Vérifier la limite de clients
-    if current_user.role in ['commercial', 'admin']:
-        client_count = count_user_clients(current_user.id)
-        if client_count >= 3:
-            flash('Vous avez atteint la limite de 3 clients. vous etes en mode access anticipé Veuillez contacter DSL  pour en créer davantage .   .' 'danger')
-            return redirect(url_for('client.index'))
-
     form = ClientForm()
     
     if form.validate_on_submit():

@@ -59,6 +59,31 @@
             padding: 8px;
             border: 1px solid #dee2e6;
         }
+        /* Style pour les observations */
+        .observations-section {
+            page-break-before: always;
+            padding-top: 50%;
+            position: relative;
+        }
+        .observations-content {
+            position: relative;
+            z-index: 1;
+        }
+        /* Style pour les étapes intermédiaires */
+        .etapes-container {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .etape-item {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 4px 8px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
         @media print {
             @page {
                 size: A4;
@@ -127,10 +152,32 @@
                 <th>Adresse de départ</th>
                 <td>{{ prestation.adresse_depart }}</td>
             </tr>
+            {% if prestation.etapes_depart %}
+            <tr>
+                <th>Étapes intermédiaires (départ)</th>
+                <td>
+                    {% for etape in prestation.etapes_depart.split('||') %}
+                        {% if not loop.first %}<br>{% endif %}
+                        {{ loop.index }}. {{ etape.strip() }}
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endif %}
             <tr>
                 <th>Adresse d'arrivée</th>
                 <td>{{ prestation.adresse_arrivee }}</td>
             </tr>
+            {% if prestation.etapes_arrivee %}
+            <tr>
+                <th>Étapes intermédiaires (arrivée)</th>
+                <td>
+                    {% for etape in prestation.etapes_arrivee.split('||') %}
+                        {% if not loop.first %}<br>{% endif %}
+                        {{ loop.index }}. {{ etape.strip() }}
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endif %}
             <tr>
                 <th>Société</th>
                 <td>{{ prestation.societe}}</td>
@@ -148,8 +195,12 @@
 
         <!-- Observations -->
         {% if prestation.observations %}
-        <h3>Observations</h3>
-        {{ prestation.observations | safe }}
+        <div class="observations-section">
+            <h3>Observations</h3>
+            <div class="observations-content">
+                {{ prestation.observations | safe }}
+            </div>
+        </div>
         {% endif %}
     </div>
 </body>

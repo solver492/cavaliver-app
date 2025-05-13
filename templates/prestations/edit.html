@@ -38,6 +38,15 @@
                             <span class="input-group-text">€</span>
                         </div>
                     </div>
+                    <div class="col-md-6">
+                        {{ form.societe.label(class="form-label") }}
+                        <select name="societe" class="form-select" required>
+                            <option value="">Sélectionner une société</option>
+                            <option value="Cavalier" {% if prestation and prestation.societe == 'Cavalier' %}selected{% endif %}>Cavalier</option>
+                            <option value="L'écuyer" {% if prestation and prestation.societe == "L'écuyer" %}selected{% endif %}>L'écuyer</option>
+                            <option value="Nassali" {% if prestation and prestation.societe == 'Nassali' %}selected{% endif %}>Nassali</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
